@@ -11,6 +11,22 @@ The pair of outputs per dialect is the interesting part. Every difference betwee
 after the GenAI conventions were split out of `open-telemetry/semantic-conventions`,
 and `docs/moving-target.md` has to be able to name each one.
 
+## Per-dialect notes
+
+`vercel/in.json` is one trace carrying all three span shapes the AI SDK emits,
+because that is what a capture of a single `generateText` call actually
+contains: the outer span the caller's code creates (`ai.*` only, with the
+pre-rename token counts), the adapter span beneath it (`gen_ai.*` already, but
+spelling the provider `gen_ai.system`), and the `ai.toolCall` span for the tool
+the model asked for. Splitting them across directories would have made three
+fixtures out of one recording.
+
+Its two goldens are byte-identical, and that is the finding rather than an
+oversight: every field the SDK produces is defined at both targets, so the
+version drift this fixture exercises is between the emitter and the conventions
+-- `gen_ai.system` was replaced by `gen_ai.provider.name` and the SDK never
+followed -- not between one target and the other.
+
 ## Provenance
 
 These two payloads are hand-built from the attribute sets the dialects in
