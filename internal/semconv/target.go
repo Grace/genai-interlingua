@@ -241,6 +241,22 @@ func (t Target) Represents(f Field) bool {
 	return ok
 }
 
+// CanonicalKey returns the key a field takes under the most recent target that
+// defines it. A field no target can represent has no canonical key, which is a
+// registry bug rather than a runtime condition, so the empty string is returned
+// and callers are expected to have gotten the field from a target in the first
+// place. This is what names a field in a message about a target that cannot
+// carry it: saying "gen_ai.response.status is not defined at v1.41.0" is more
+// use than naming the source attribute it happened to come from.
+func CanonicalKey(f Field) string {
+	for i := len(Targets) - 1; i >= 0; i-- {
+		if k, ok := Targets[i].Key(f); ok {
+			return k
+		}
+	}
+	return ""
+}
+
 var enums = map[Target]map[Field][]string{
 	TargetV1_41_0:   enumsV1_41_0,
 	TargetGenAIMain: enumsGenAIMain,
