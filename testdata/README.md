@@ -25,7 +25,14 @@ Its two goldens are byte-identical, and that is the finding rather than an
 oversight: every field the SDK produces is defined at both targets, so the
 version drift this fixture exercises is between the emitter and the conventions
 -- `gen_ai.system` was replaced by `gen_ai.provider.name` and the SDK never
-followed -- not between one target and the other.
+followed -- not between one target and the other. `braintrust/` is identical
+across its two goldens for the same reason.
+
+`litellm/` is the one to read for the target difference. LiteLLM writes
+`gen_ai.usage.cache_creation.input_tokens`, hard-coding the spelling the frozen
+cut uses, so at `v1.41.0` the normalized key lands on top of the emitter's own
+and at `genai-main` it is renamed to `gen_ai.usage.cache_write.input_tokens`
+with the original left beside it.
 
 ## Provenance
 

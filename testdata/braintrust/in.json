@@ -1,0 +1,80 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          { "key": "service.name", "value": { "stringValue": "answer-eval" } },
+          { "key": "telemetry.sdk.language", "value": { "stringValue": "python" } }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": { "name": "braintrust", "version": "0.2.4" },
+          "spans": [
+            {
+              "traceId": "2b6d9c1e4f807a3b5c6d7e8f90a1b2c3",
+              "spanId": "9988776655443322",
+              "name": "answer_question",
+              "kind": 1,
+              "startTimeUnixNano": "1749837600000000000",
+              "endTimeUnixNano": "1749837602480000000",
+              "attributes": [
+                {
+                  "key": "braintrust.span_attributes",
+                  "value": { "stringValue": "{\"name\": \"answer_question\", \"type\": \"llm\"}" }
+                },
+                { "key": "gen_ai.provider.name", "value": { "stringValue": "anthropic" } },
+                { "key": "gen_ai.request.model", "value": { "stringValue": "claude-sonnet-4-5" } },
+                { "key": "gen_ai.response.model", "value": { "stringValue": "claude-sonnet-4-5-20260514" } },
+                {
+                  "key": "gen_ai.input.messages",
+                  "value": {
+                    "stringValue": "[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"content\":\"Which slide has the Q3 revenue figure?\"}]}]"
+                  }
+                },
+                {
+                  "key": "gen_ai.output.messages",
+                  "value": {
+                    "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"text\",\"content\":\"Slide 14.\"}],\"finish_reason\":\"end_turn\"}]"
+                  }
+                },
+                {
+                  "key": "braintrust.metrics",
+                  "value": {
+                    "stringValue": "{\"prompt_tokens\": 1120, \"completion_tokens\": 64, \"prompt_cached_tokens\": 896, \"tokens\": 1184, \"start\": 1749837600.11, \"end\": 1749837602.48}"
+                  }
+                },
+                {
+                  "key": "braintrust.scores",
+                  "value": { "stringValue": "{\"factuality\": 0.92}" }
+                },
+                {
+                  "key": "braintrust.input_json",
+                  "value": { "stringValue": "{\"question\": \"Which slide has the Q3 revenue figure?\"}" }
+                },
+                {
+                  "key": "braintrust.output_json",
+                  "value": { "stringValue": "{\"answer\": \"Slide 14.\"}" }
+                },
+                {
+                  "key": "braintrust.expected_json",
+                  "value": { "stringValue": "{\"answer\": \"Slide 14\"}" }
+                },
+                {
+                  "key": "braintrust.metadata",
+                  "value": { "stringValue": "{\"deck\": \"q3-review\", \"retriever\": \"hybrid-v2\"}" }
+                },
+                {
+                  "key": "braintrust.tags",
+                  "value": { "arrayValue": { "values": [{ "stringValue": "regression" }, { "stringValue": "q3" }] } }
+                },
+                { "key": "braintrust.project_id", "value": { "stringValue": "p-8842" } }
+              ],
+              "status": {}
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
