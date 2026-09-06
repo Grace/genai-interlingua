@@ -209,17 +209,41 @@ func Dialects() []Dialect {
 	return out
 }
 
+// fallback marks a dialect that recognizes spans by shape rather than by
+// signature, and is therefore consulted only when no dialect that knows what it
+// is looking at has claimed the span.
+//
+// The distinction has to live in detection rather than in scoring. A fallback
+// that recognizes GenAI-shaped attributes would, by construction, score on
+// every GenAI span in the trace, including the ones a real dialect identifies
+// with certainty. It would not win those, but the score it took would come
+// straight out of the winner's margin, and the margin is what gets written to
+// the span as interlingua.dialect.confidence. A positive identification should
+// not read as less confident merely because a fallback also exists.
+type fallback interface{ isFallback() }
+
 // Detect picks the dialect with the highest score and returns it along with its
 // margin over the runner-up. A margin of zero on a positive score means two
 // dialects tied; the caller still gets a usable parse, but the confidence
 // written to the span says the choice was not clear-cut.
 //
-// The second return is false when nothing scored: the span carries no GenAI
-// evidence at all and should pass through untouched rather than be labeled.
+// A span no dialect recognizes is offered to the fallbacks, which match on
+// shape. A fallback that claims a span reports a confidence of zero: it did not
+// beat anything, it was the only thing left, and a span labeled raw with a
+// confidence of zero is telling the truth about how it was identified.
+//
+// The second return is false when nothing claims the span at all: it carries no
+// GenAI evidence and should pass through untouched rather than be labeled.
 func Detect(s Span) (Dialect, int, bool) {
 	var best Dialect
+	var fallbacks []Dialect
 	high, second := 0, 0
+
 	for _, d := range registry {
+		if f, ok := d.(fallback); ok {
+			fallbacks = append(fallbacks, f.(Dialect))
+			continue
+		}
 		n := d.Score(s)
 		switch {
 		case n > high:
@@ -228,10 +252,19 @@ func Detect(s Span) (Dialect, int, bool) {
 			second = n
 		}
 	}
+	if best != nil {
+		return best, high - second, true
+	}
+
+	for _, d := range fallbacks {
+		if n := d.Score(s); n > high {
+			best, high = d, n
+		}
+	}
 	if best == nil {
 		return nil, 0, false
 	}
-	return best, high - second, true
+	return best, 0, true
 }
 
 // Parse detects and parses in one step, stamping the winner and its margin onto

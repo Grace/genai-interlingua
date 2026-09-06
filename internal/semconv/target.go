@@ -257,6 +257,28 @@ func CanonicalKey(f Field) string {
 	return ""
 }
 
+// fieldsByKey is every attribute key any target defines, mapped back to its
+// field. Built once from the key maps rather than written out, so it cannot
+// disagree with them.
+var fieldsByKey = func() map[string]Field {
+	out := make(map[string]Field)
+	for _, t := range Targets {
+		for f, k := range keys[t] {
+			out[k] = f
+		}
+	}
+	return out
+}()
+
+// FieldForKey resolves an attribute key that some target defines back to the
+// field it carries. It is how a span can be read as conformant without knowing
+// which schema version its author was aiming at: a key that means the same
+// thing at both targets resolves the same way from either.
+func FieldForKey(key string) (Field, bool) {
+	f, ok := fieldsByKey[key]
+	return f, ok
+}
+
 var enums = map[Target]map[Field][]string{
 	TargetV1_41_0:   enumsV1_41_0,
 	TargetGenAIMain: enumsGenAIMain,
