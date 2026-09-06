@@ -1,0 +1,29 @@
+# Minimal pipeline for demonstrating the processor by hand:
+#
+#   ./demo/build/interlingua-collector --config demo/otelcol.yaml
+#   curl -H 'Content-Type: application/json' -d @testdata/openllmetry/in.json \
+#     http://127.0.0.1:4318/v1/traces
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 127.0.0.1:4318
+
+processors:
+  genaiinterlingua:
+    target: v1.41.0
+    preserve_original: true
+
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [genaiinterlingua]
+      exporters: [debug]
+  telemetry:
+    logs:
+      level: info
