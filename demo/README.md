@@ -22,6 +22,8 @@ The agent is the point. The spans arriving at the Collector were produced by the
 Traceloop SDK doing what it normally does, not written by this repository, which
 is the same reason `testdata/capture/` exists.
 
+![A normalized GenAI span in Jaeger](../docs/img/jaeger-normalized-span.jpg)
+
 ## What to look at
 
 **In Jaeger**, the `openai.chat` span carries `gen_ai.provider.name`,

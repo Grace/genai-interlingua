@@ -162,11 +162,26 @@ $ docker compose -f demo/compose.yaml up --build
 $ open http://localhost:16686
 ```
 
-Nothing reaches the internet at run time and no API key is needed. Jaeger shows
-you the normalized span; `docker compose logs collector` shows you the same span
-with `interlingua.lossy` on it, which is the part a trace UI will not make
-obvious. The Collector's OTLP port is published, so you can also push any fixture
-in from the host -- `testdata/litellm/in.json` comes back with 49 entries in
+Nothing reaches the internet at run time and no API key is needed.
+
+![A normalized GenAI span in Jaeger, showing gen_ai.* attributes alongside interlingua.dialect, interlingua.lossy and interlingua.target](docs/img/jaeger-normalized-span.jpg)
+
+That is a real span from that stack, and it is worth reading closely. Four rows
+tell the whole story:
+
+- **`gen_ai.usage.reasoning_tokens: 8`** is what OpenLLMetry emitted -- the
+  conventions' field, misspelled without its `.output` segment.
+  **`gen_ai.usage.reasoning.output_tokens: 8`** is the normalized one beside it.
+- **`gen_ai.usage.total_tokens: 439`** is still on the span *and* named in
+  `interlingua.lossy`. `preserve_original` did not throw it away, and the span
+  says plainly that the conventions have no field for it.
+- **`interlingua.dialect: openllmetry`** with **`confidence: 3`** — detection was
+  a judgement call, and the span records how close it was.
+- **`interlingua.target: v1.41.0`** — which vocabulary those `gen_ai.*` keys
+  belong to, on the span, because there is no schema URL to carry it.
+
+The Collector's OTLP port is published, so you can also push any fixture in from
+the host -- `testdata/litellm/in.json` comes back with 49 entries in
 `interlingua.lossy`.
 
 ## Layout
