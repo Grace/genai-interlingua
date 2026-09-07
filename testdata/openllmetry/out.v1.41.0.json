@@ -4,15 +4,33 @@
       "resource": {
         "attributes": [
           {
-            "key": "service.name",
-            "value": {
-              "stringValue": "support-triage"
-            }
-          },
-          {
             "key": "telemetry.sdk.language",
             "value": {
               "stringValue": "python"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.44.0"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "4c8e9fab-8807-476b-af32-7ea80c665252"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "capture"
             }
           }
         ]
@@ -20,143 +38,24 @@
       "scopeSpans": [
         {
           "scope": {
-            "name": "opentelemetry.instrumentation.openai",
-            "version": "0.48.2"
+            "name": "opentelemetry.instrumentation.openai.v1",
+            "version": "0.62.3"
           },
           "spans": [
             {
-              "traceId": "5b8efff798038103d269b633813fc60c",
-              "spanId": "eee19b7ec3c1b174",
-              "parentSpanId": "eee19b7ec3c1b173",
+              "traceId": "60cd7abeecf4ac0df275bc399796477a",
+              "spanId": "31e4d2d30eba9021",
+              "parentSpanId": "111874e88a141fe5",
+              "flags": 256,
               "name": "openai.chat",
-              "kind": 3,
-              "startTimeUnixNano": "1749823200000000000",
-              "endTimeUnixNano": "1749823201482000000",
+              "kind": "SPAN_KIND_CLIENT",
+              "startTimeUnixNano": "1788787292418099000",
+              "endTimeUnixNano": "1788787292437940000",
               "attributes": [
                 {
-                  "key": "gen_ai.system",
-                  "value": {
-                    "stringValue": "OpenAI"
-                  }
-                },
-                {
-                  "key": "llm.request.type",
+                  "key": "gen_ai.operation.name",
                   "value": {
                     "stringValue": "chat"
-                  }
-                },
-                {
-                  "key": "llm.is_streaming",
-                  "value": {
-                    "boolValue": false
-                  }
-                },
-                {
-                  "key": "llm.chat.stop_sequences",
-                  "value": {
-                    "arrayValue": {
-                      "values": [
-                        {
-                          "stringValue": "\n\nObservation:"
-                        }
-                      ]
-                    }
-                  }
-                },
-                {
-                  "key": "llm.request.functions.0.name",
-                  "value": {
-                    "stringValue": "lookup_order"
-                  }
-                },
-                {
-                  "key": "llm.request.functions.0.description",
-                  "value": {
-                    "stringValue": "Look up an order by its identifier."
-                  }
-                },
-                {
-                  "key": "llm.request.functions.0.parameters",
-                  "value": {
-                    "stringValue": "{\"type\": \"object\", \"properties\": {\"order_id\": {\"type\": \"string\"}}, \"required\": [\"order_id\"]}"
-                  }
-                },
-                {
-                  "key": "gen_ai.prompt.0.role",
-                  "value": {
-                    "stringValue": "system"
-                  }
-                },
-                {
-                  "key": "gen_ai.prompt.0.content",
-                  "value": {
-                    "stringValue": "You are a support agent. Use the tools you are given."
-                  }
-                },
-                {
-                  "key": "gen_ai.prompt.1.role",
-                  "value": {
-                    "stringValue": "user"
-                  }
-                },
-                {
-                  "key": "gen_ai.prompt.1.content",
-                  "value": {
-                    "stringValue": "Where is order A-1187?"
-                  }
-                },
-                {
-                  "key": "gen_ai.completion.0.role",
-                  "value": {
-                    "stringValue": "assistant"
-                  }
-                },
-                {
-                  "key": "gen_ai.completion.0.finish_reason",
-                  "value": {
-                    "stringValue": "tool_calls"
-                  }
-                },
-                {
-                  "key": "gen_ai.completion.0.tool_calls.0.id",
-                  "value": {
-                    "stringValue": "call_9RtYbK2mXqLp"
-                  }
-                },
-                {
-                  "key": "gen_ai.completion.0.tool_calls.0.name",
-                  "value": {
-                    "stringValue": "lookup_order"
-                  }
-                },
-                {
-                  "key": "gen_ai.completion.0.tool_calls.0.arguments",
-                  "value": {
-                    "stringValue": "{\"order_id\": \"A-1187\"}"
-                  }
-                },
-                {
-                  "key": "gen_ai.usage.prompt_tokens",
-                  "value": {
-                    "intValue": "412"
-                  }
-                },
-                {
-                  "key": "gen_ai.usage.completion_tokens",
-                  "value": {
-                    "intValue": "27"
-                  }
-                },
-                {
-                  "key": "gen_ai.usage.cache_creation_input_tokens",
-                  "value": {
-                    "intValue": "1024"
-                  }
-                },
-                {
-                  "key": "gen_ai.usage.total_tokens",
-                  "value": {
-                    "intValue": "439"
                   }
                 },
                 {
@@ -166,51 +65,87 @@
                   }
                 },
                 {
-                  "key": "traceloop.prompt.key",
+                  "key": "gen_ai.provider.name",
                   "value": {
-                    "stringValue": "order_status"
+                    "stringValue": "openai"
                   }
                 },
                 {
-                  "key": "traceloop.prompt.version",
+                  "key": "gen_ai.is_streaming",
                   "value": {
-                    "intValue": "3"
+                    "boolValue": false
                   }
                 },
                 {
-                  "key": "traceloop.association.properties.user_id",
+                  "key": "gen_ai.openai.api_base",
                   "value": {
-                    "stringValue": "u-7741"
+                    "stringValue": "http://127.0.0.1:8080/v1/"
                   }
                 },
                 {
                   "key": "gen_ai.input.messages",
                   "value": {
-                    "stringValue": "[{\"role\":\"system\",\"parts\":[{\"type\":\"text\",\"content\":\"You are a support agent. Use the tools you are given.\"}]},{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"content\":\"Where is order A-1187?\"}]}]"
+                    "stringValue": "[{\"role\": \"system\", \"parts\": [{\"content\": \"You are a support agent. Use the tools you are given.\", \"type\": \"text\"}]}, {\"role\": \"user\", \"parts\": [{\"content\": \"Where is order A-1187?\", \"type\": \"text\"}]}]"
                   }
                 },
                 {
-                  "key": "gen_ai.operation.name",
+                  "key": "gen_ai.tool.definitions",
                   "value": {
-                    "stringValue": "chat"
+                    "stringValue": "[{\"type\": \"function\", \"name\": \"lookup_order\", \"description\": \"Look up an order by its identifier.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"order_id\": {\"type\": \"string\"}}, \"required\": [\"order_id\"]}}]"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "tool_call"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "gen_ai.openai.response.system_fingerprint",
+                  "value": {
+                    "stringValue": "fp_capture0"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.total_tokens",
+                  "value": {
+                    "intValue": "439"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.output_tokens",
+                  "value": {
+                    "intValue": "27"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.input_tokens",
+                  "value": {
+                    "intValue": "412"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.cache_read.input_tokens",
+                  "value": {
+                    "intValue": "256"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.reasoning_tokens",
+                  "value": {
+                    "intValue": "8"
                   }
                 },
                 {
                   "key": "gen_ai.output.messages",
                   "value": {
-                    "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"tool_call\",\"id\":\"call_9RtYbK2mXqLp\",\"name\":\"lookup_order\",\"arguments\":{\"order_id\":\"A-1187\"}}],\"finish_reason\":\"tool_calls\"}]"
-                  }
-                },
-                {
-                  "key": "gen_ai.prompt.name",
-                  "value": {
-                    "stringValue": "order_status"
-                  }
-                },
-                {
-                  "key": "gen_ai.provider.name",
-                  "value": {
-                    "stringValue": "openai"
+                    "stringValue": "[{\"role\": \"assistant\", \"parts\": [{\"type\": \"tool_call\", \"name\": \"lookup_order\", \"id\": \"call_9RtYbK2mXqLp\", \"arguments\": {\"order_id\": \"A-1187\"}}], \"finish_reason\": \"tool_call\"}]"
                   }
                 },
                 {
@@ -223,18 +158,6 @@
                   "key": "gen_ai.request.model",
                   "value": {
                     "stringValue": "gpt-4o-mini"
-                  }
-                },
-                {
-                  "key": "gen_ai.request.stop_sequences",
-                  "value": {
-                    "arrayValue": {
-                      "values": [
-                        {
-                          "stringValue": "\n\nObservation:"
-                        }
-                      ]
-                    }
                   }
                 },
                 {
@@ -256,18 +179,6 @@
                   }
                 },
                 {
-                  "key": "gen_ai.response.finish_reasons",
-                  "value": {
-                    "arrayValue": {
-                      "values": [
-                        {
-                          "stringValue": "tool_calls"
-                        }
-                      ]
-                    }
-                  }
-                },
-                {
                   "key": "gen_ai.response.id",
                   "value": {
                     "stringValue": "chatcmpl-CD8yqQ2y3kZs1o0Wm7bT"
@@ -280,27 +191,9 @@
                   }
                 },
                 {
-                  "key": "gen_ai.tool.definitions",
+                  "key": "gen_ai.usage.reasoning.output_tokens",
                   "value": {
-                    "stringValue": "[{\"description\":\"Look up an order by its identifier.\",\"name\":\"lookup_order\",\"parameters\":{\"properties\":{\"order_id\":{\"type\":\"string\"}},\"required\":[\"order_id\"],\"type\":\"object\"},\"type\":\"function\"}]"
-                  }
-                },
-                {
-                  "key": "gen_ai.usage.cache_creation.input_tokens",
-                  "value": {
-                    "intValue": "1024"
-                  }
-                },
-                {
-                  "key": "gen_ai.usage.input_tokens",
-                  "value": {
-                    "intValue": "412"
-                  }
-                },
-                {
-                  "key": "gen_ai.usage.output_tokens",
-                  "value": {
-                    "intValue": "27"
+                    "intValue": "8"
                   }
                 },
                 {
@@ -318,7 +211,7 @@
                 {
                   "key": "interlingua.dialect.confidence",
                   "value": {
-                    "intValue": "7"
+                    "intValue": "3"
                   }
                 },
                 {
@@ -327,19 +220,13 @@
                     "arrayValue": {
                       "values": [
                         {
-                          "stringValue": "gen_ai.completion.*"
+                          "stringValue": "gen_ai.openai.api_base"
                         },
                         {
-                          "stringValue": "gen_ai.prompt.*"
-                        },
-                        {
-                          "stringValue": "gen_ai.prompt.version"
+                          "stringValue": "gen_ai.openai.response.system_fingerprint"
                         },
                         {
                           "stringValue": "gen_ai.usage.total_tokens"
-                        },
-                        {
-                          "stringValue": "traceloop.association.properties.user_id"
                         }
                       ]
                     }
@@ -353,32 +240,137 @@
                 }
               ],
               "status": {}
-            },
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "python"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.44.0"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "4c8e9fab-8807-476b-af32-7ea80c665252"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "capture"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "traceloop.tracer"
+          },
+          "spans": [
             {
-              "traceId": "5b8efff798038103d269b633813fc60c",
-              "spanId": "eee19b7ec3c1b175",
-              "parentSpanId": "eee19b7ec3c1b174",
-              "name": "POST",
-              "kind": 3,
-              "startTimeUnixNano": "1749823200004000000",
-              "endTimeUnixNano": "1749823201480000000",
+              "traceId": "60cd7abeecf4ac0df275bc399796477a",
+              "spanId": "111874e88a141fe5",
+              "flags": 256,
+              "name": "support_triage.workflow",
+              "kind": "SPAN_KIND_INTERNAL",
+              "startTimeUnixNano": "1788787292418023000",
+              "endTimeUnixNano": "1788787292441637000",
               "attributes": [
                 {
-                  "key": "http.request.method",
+                  "key": "traceloop.workflow.name",
                   "value": {
-                    "stringValue": "POST"
+                    "stringValue": "support_triage"
                   }
                 },
                 {
-                  "key": "server.address",
+                  "key": "traceloop.span.kind",
                   "value": {
-                    "stringValue": "api.openai.com"
+                    "stringValue": "workflow"
                   }
                 },
                 {
-                  "key": "http.response.status_code",
+                  "key": "traceloop.entity.name",
                   "value": {
-                    "intValue": "200"
+                    "stringValue": "support_triage"
+                  }
+                },
+                {
+                  "key": "traceloop.entity.input",
+                  "value": {
+                    "stringValue": "{\"args\": [], \"kwargs\": {}}"
+                  }
+                },
+                {
+                  "key": "traceloop.entity.output",
+                  "value": {
+                    "stringValue": "\"{\\n  \\\"id\\\": \\\"chatcmpl-CD8yqQ2y3kZs1o0Wm7bT\\\",\\n  \\\"choices\\\": [\\n    {\\n      \\\"finish_reason\\\": \\\"tool_calls\\\",\\n      \\\"index\\\": 0,\\n      \\\"logprobs\\\": null,\\n      \\\"message\\\": {\\n        \\\"content\\\": null,\\n        \\\"role\\\": \\\"assistant\\\",\\n        \\\"tool_calls\\\": [\\n          {\\n            \\\"id\\\": \\\"call_9RtYbK2mXqLp\\\",\\n            \\\"function\\\": {\\n              \\\"arguments\\\": \\\"{\\\\\\\"order_id\\\\\\\": \\\\\\\"A-1187\\\\\\\"}\\\",\\n              \\\"name\\\": \\\"lookup_order\\\"\\n            },\\n            \\\"type\\\": \\\"function\\\"\\n          }\\n        ]\\n      }\\n    }\\n  ],\\n  \\\"created\\\": 1789000000,\\n  \\\"model\\\": \\\"gpt-4o-mini-2024-07-18\\\",\\n  \\\"object\\\": \\\"chat.completion\\\",\\n  \\\"system_fingerprint\\\": \\\"fp_capture0\\\",\\n  \\\"usage\\\": {\\n    \\\"completion_tokens\\\": 27,\\n    \\\"prompt_tokens\\\": 412,\\n    \\\"total_tokens\\\": 439,\\n    \\\"completion_tokens_details\\\": {\\n      \\\"accepted_prediction_tokens\\\": 0,\\n      \\\"audio_tokens\\\": 0,\\n      \\\"reasoning_tokens\\\": 8,\\n      \\\"rejected_prediction_tokens\\\": 0\\n    },\\n    \\\"prompt_tokens_details\\\": {\\n      \\\"audio_tokens\\\": 0,\\n      \\\"cached_tokens\\\": 256\\n    }\\n  }\\n}\""
+                  }
+                },
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "invoke_workflow"
+                  }
+                },
+                {
+                  "key": "gen_ai.workflow.name",
+                  "value": {
+                    "stringValue": "support_triage"
+                  }
+                },
+                {
+                  "key": "interlingua.dialect",
+                  "value": {
+                    "stringValue": "openllmetry"
+                  }
+                },
+                {
+                  "key": "interlingua.dialect.confidence",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
+                  "key": "interlingua.lossy",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "traceloop.entity.input"
+                        },
+                        {
+                          "stringValue": "traceloop.entity.name"
+                        },
+                        {
+                          "stringValue": "traceloop.entity.output"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "interlingua.target",
+                  "value": {
+                    "stringValue": "v1.41.0"
                   }
                 }
               ],

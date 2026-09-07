@@ -22,6 +22,7 @@ const conformanceDoc = "../../docs/conformance.md"
 // the dialect does.
 type coverage struct {
 	name        dialect.Name
+	provenance  map[string]bool
 	fields      map[semconv.Field]bool
 	dialectLoss map[dialect.Reason]map[string]bool
 	targetLoss  map[semconv.Target]map[Reason]map[string]bool
@@ -30,6 +31,7 @@ type coverage struct {
 func newCoverage(name dialect.Name) *coverage {
 	c := &coverage{
 		name:        name,
+		provenance:  make(map[string]bool),
 		fields:      make(map[semconv.Field]bool),
 		dialectLoss: make(map[dialect.Reason]map[string]bool),
 		targetLoss:  make(map[semconv.Target]map[Reason]map[string]bool),
@@ -88,6 +90,10 @@ func TestConformanceTable(t *testing.T) {
 
 	for _, input := range inputs {
 		payload := mustReadFile(t, input)
+		// Provenance is read from a marker beside the fixture rather than
+		// asserted in the prose below, so that the table's account of where its
+		// inputs came from cannot drift from where they actually came from.
+		provenance := strings.TrimSpace(string(mustReadFile(t, filepath.Join(filepath.Dir(input), "PROVENANCE"))))
 		for _, target := range semconv.Targets {
 			opts := DefaultOptions()
 			opts.Target = target
@@ -103,6 +109,7 @@ func TestConformanceTable(t *testing.T) {
 					byDialect[r.Dialect] = c
 					order = append(order, r.Dialect)
 				}
+				c.provenance[provenance] = true
 				c.observe(r, target)
 			}
 		}
@@ -159,12 +166,22 @@ carried one, which is usually because the emitter has nothing to put there and
 occasionally because the fixture does not exercise it. Read a mark as evidence
 and a blank as silence.
 
-The fixtures are still hand-built rather than captured from running frameworks
-(see ` + "`testdata/README.md`" + `), so this table currently describes the mappings this
-repository claims, checked against itself. It becomes a claim about the
-frameworks when the capture harness replaces the inputs.
+Where the inputs came from matters for how much this table is worth. A row
+built from a **captured** fixture is a claim about what that library really
+emits, recorded by running it. A row built from a **hand-built** fixture is a
+claim this repository makes about the library, checked only against itself.
+Both are listed below, per dialect, and ` + "`testdata/capture/capture.sh`" + `
+regenerates the captured ones.
 
 `)
+
+	fmt.Fprintf(&b, "## Fixture provenance\n\n")
+	writeRow(&b, []string{"Dialect", "Inputs"})
+	writeRow(&b, []string{"---", "---"})
+	for _, n := range order {
+		writeRow(&b, []string{"`" + string(n) + "`", strings.Join(sortedKeys(byDialect[n].provenance), ", ")})
+	}
+	b.WriteString("\n")
 
 	fmt.Fprintf(&b, "## Field coverage\n\n")
 	b.WriteString("`y` means the normalized span carried the field. The two target\n")

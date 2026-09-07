@@ -12,10 +12,23 @@ carried one, which is usually because the emitter has nothing to put there and
 occasionally because the fixture does not exercise it. Read a mark as evidence
 and a blank as silence.
 
-The fixtures are still hand-built rather than captured from running frameworks
-(see `testdata/README.md`), so this table currently describes the mappings this
-repository claims, checked against itself. It becomes a claim about the
-frameworks when the capture harness replaces the inputs.
+Where the inputs came from matters for how much this table is worth. A row
+built from a **captured** fixture is a claim about what that library really
+emits, recorded by running it. A row built from a **hand-built** fixture is a
+claim this repository makes about the library, checked only against itself.
+Both are listed below, per dialect, and `testdata/capture/capture.sh`
+regenerates the captured ones.
+
+## Fixture provenance
+
+| Dialect | Inputs |
+| --- | --- |
+| `braintrust` | hand-built |
+| `litellm` | hand-built |
+| `openinference` | hand-built |
+| `openllmetry` | captured, hand-built |
+| `raw` | hand-built |
+| `vercel` | hand-built |
 
 ## Field coverage
 
@@ -42,7 +55,7 @@ the dialect parsed it.
 | `gen_ai.usage.cache_write.input_tokens` | y | y | - | y | y | y | - | - |
 | `gen_ai.usage.audio.input_tokens` | - | y | - | - | y | - | - | - |
 | `gen_ai.usage.output_tokens` | y | y | y | y | y | y | y | y |
-| `gen_ai.usage.reasoning.output_tokens` | y | y | - | - | y | - | - | - |
+| `gen_ai.usage.reasoning.output_tokens` | y | y | - | - | y | y | - | - |
 | `gen_ai.conversation.id` | y | y | - | - | y | - | - | - |
 | `gen_ai.tool.name` | y | y | - | - | - | - | - | y |
 | `gen_ai.tool.call.id` | y | y | - | - | - | - | - | y |
@@ -85,8 +98,10 @@ reports on the span itself.
 
 ### openllmetry
 
-- **no_field** — `gen_ai.usage.total_tokens`, `traceloop.association.properties.user_id`
+- **no_field** — `gen_ai.openai.api_base`, `gen_ai.openai.response.system_fingerprint`, `gen_ai.usage.total_tokens`, `traceloop.association.properties.user_id`
+- **unstructured** — `traceloop.entity.input`, `traceloop.entity.output`
 - **flattened** — `gen_ai.completion.*`, `gen_ai.prompt.*`
+- **ambiguous** — `traceloop.entity.name`
 
 ### raw
 

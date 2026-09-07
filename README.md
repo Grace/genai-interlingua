@@ -107,10 +107,18 @@ only if the whole pipeline actually emitted it. Editing the table to claim
 something the fixtures do not demonstrate fails the test.
 
 Its header says what it is and is not: a mark is evidence, a blank is silence.
-And the fixtures are currently hand-built specifications rather than captures
-from running frameworks, which [`testdata/README.md`](testdata/README.md) says
-too. Replacing them with real captures is the next thing that would make the
-table a claim about the frameworks rather than about this repository.
+It also reports, per dialect, whether the inputs behind a row were **captured**
+from a running library or **hand-built** here, read from a marker file next to
+each fixture so that account cannot drift from the truth.
+
+One dialect is captured so far. `testdata/capture/capture.sh openllmetry` runs
+the real Traceloop SDK against a local mock OpenAI server -- no API key, nothing
+sent anywhere -- and records what it puts on the wire. That first capture
+immediately found that OpenLLMetry has migrated to the conventions, and that
+four attributes it now emits were being silently walked past, including
+`gen_ai.usage.reasoning_tokens`: the conventions' own field, misspelled by the
+emitter without its `.output` segment. Details in
+[`testdata/README.md`](testdata/README.md).
 
 ## As a Collector processor
 
@@ -169,4 +177,8 @@ Go 1.25 for the core, 1.26 for the processor module (the Collector's floor).
 `gofmt`, `go vet ./...` and `go test -race ./...` are green in both modules, and
 `-update` is idempotent for the goldens and the conformance table.
 
-Not done yet: real captured fixtures, a containerized demo with Jaeger, CI.
+CI runs both modules, checks the generated files regenerate identically, and
+builds a real Collector to assert the processor registers in it.
+
+Not done yet: captures for the remaining five dialects, and a containerized demo
+with Jaeger.

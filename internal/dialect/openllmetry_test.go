@@ -230,3 +230,62 @@ func TestAssociationPropertiesAreAllRecordedAsLost(t *testing.T) {
 		t.Errorf("workflow name = %q, want %q", got, want)
 	}
 }
+
+// The keys below all come from a real capture (testdata/capture/capture.sh
+// openllmetry). Every one of them was silently walked past before that capture
+// existed: parsed by nothing, lost by nothing, and therefore invisible.
+func TestOpenLLMetryHandlesTheKeysItMigratedTo(t *testing.T) {
+	p := (openLLMetry{}).Parse(Span{Attributes: map[string]Value{
+		"gen_ai.is_streaming":           Bool(false),
+		"gen_ai.usage.reasoning_tokens": Int(8),
+	}})
+
+	// The library moved this out of the llm.* namespace without changing what
+	// it means.
+	if got := mustField(t, p, semconv.RequestStream); got.Bool {
+		t.Errorf("request stream = %v, want false", got.Bool)
+	}
+
+	// OpenLLMetry adopted the conventions' reasoning count but dropped the
+	// .output segment from the name. Same number, wrong key.
+	if got, want := mustField(t, p, semconv.UsageReasoningOutputTokens).Int, int64(8); got != want {
+		t.Errorf("reasoning output tokens = %d, want %d", got, want)
+	}
+}
+
+func TestOpenLLMetryNamesTheVendorExtensionsItCannotCarry(t *testing.T) {
+	p := (openLLMetry{}).Parse(Span{Attributes: map[string]Value{
+		"gen_ai.openai.api_base":                    String("http://127.0.0.1:8080/v1"),
+		"gen_ai.openai.response.system_fingerprint": String("fp_capture0"),
+	}})
+
+	// An attribute the normalizer ignores is indistinguishable, to a reader,
+	// from one it does not know exists. These are recorded rather than dropped
+	// so the difference is legible on the span.
+	for _, key := range []string{
+		"gen_ai.openai.api_base",
+		"gen_ai.openai.response.system_fingerprint",
+	} {
+		var found bool
+		for _, l := range p.Loss {
+			if l.Key == key && l.Reason == ReasonNoField {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("%s was not recorded as a no_field loss; losses = %+v", key, p.Loss)
+		}
+	}
+}
+
+// The legacy spelling has to keep working: the migration did not retire the
+// releases already deployed, and testdata/openllmetry-legacy exists for the
+// same reason.
+func TestOpenLLMetryStillReadsTheLegacyStreamingKey(t *testing.T) {
+	p := (openLLMetry{}).Parse(Span{Attributes: map[string]Value{
+		"llm.is_streaming": Bool(true),
+	}})
+	if got := mustField(t, p, semconv.RequestStream); !got.Bool {
+		t.Errorf("request stream = %v, want true", got.Bool)
+	}
+}

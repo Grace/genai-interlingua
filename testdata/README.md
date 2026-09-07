@@ -36,13 +36,40 @@ with the original left beside it.
 
 ## Provenance
 
-These two payloads are hand-built from the attribute sets the dialects in
-`internal/dialect` parse, not captured from a running framework. They are shaped
-after real OpenLLMetry and OpenInference output, but nothing has verified them
-against the emitters themselves.
+Each directory carries a `PROVENANCE` marker, `captured` or `hand-built`, and
+`docs/conformance.md` reports it per dialect. It is a file rather than a sentence
+in this README because the table's account of where its inputs came from should
+not be able to drift from where they actually came from.
 
-The capture harness in `testdata/capture/` replaces them with recorded payloads,
-each framework run against a local mock OpenAI-compatible server so that capture
-needs no API keys and produces the same bytes twice. Until that lands, treat
-these as specifications of what the dialects claim to handle rather than as
-evidence of what the frameworks emit.
+`openllmetry/` is **captured**. `testdata/capture/capture.sh openllmetry` runs
+the real Traceloop SDK against a local mock OpenAI-compatible server and records
+what it puts on the wire, so it needs no API key and the recording is the
+library's output rather than this repository's idea of it.
+
+Everything else is **hand-built** from the attribute sets the dialects in
+`internal/dialect` parse. They are shaped after real output, but nothing has
+verified them against the emitters. Read them as specifications of what the
+dialects claim to handle, not as evidence of what the frameworks emit.
+
+### What the first capture changed
+
+Capturing OpenLLMetry rather than imagining it was worth doing immediately, and
+the results are the argument for finishing the rest.
+
+The library has migrated to the conventions. It now emits `gen_ai.input.messages`,
+`gen_ai.provider.name`, `gen_ai.operation.name` and `gen_ai.usage.input_tokens`
+directly, where the hand-built fixture had the indexed `gen_ai.prompt.N.role`
+shape, `gen_ai.system`, and `gen_ai.usage.prompt_tokens`. Detection confidence
+for the captured span is 3 rather than 7, because most of what used to identify
+OpenLLMetry is now just conformance.
+
+It also emits four attributes the parser had never been shown, and silently
+walked past all four: `gen_ai.is_streaming` (the old `llm.is_streaming`, moved),
+`gen_ai.usage.reasoning_tokens` (the conventions' field, misspelled without the
+`.output` segment), and `gen_ai.openai.api_base` and
+`gen_ai.openai.response.system_fingerprint` (vendor extensions with no home).
+The first two are now mapped and the last two are now recorded as losses.
+
+The legacy shape did not stop existing when the library moved, so it is kept as
+`openllmetry-legacy/`, hand-built, and both detect as `openllmetry`. That is why
+the provenance table lists that dialect as `captured, hand-built`.

@@ -90,9 +90,11 @@ field with confidence. OpenLLMetry's `traceloop.entity.name` is the example: it
 names an agent on an agent span, a tool on a tool span, and nothing identifiable
 when `traceloop.span.kind` is missing. Recording it beats guessing which.
 
-Neither `coerced` nor `ambiguous` appears in `docs/conformance.md` at present: no
-fixture triggers either. They are described here because they are codes the
-pipeline can emit, not because you are likely to see them today.
+`ambiguous` reaches `docs/conformance.md` through the captured OpenLLMetry
+workflow span, which sets `traceloop.entity.name` with no `traceloop.span.kind`
+beside it -- exactly the case above. `coerced` still appears nowhere: no fixture
+triggers it, and it is described here because the pipeline can emit it, not
+because you are likely to see it today.
 
 ### The target version cannot express it
 

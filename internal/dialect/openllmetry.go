@@ -83,7 +83,9 @@ func (d openLLMetry) Parse(s Span) Parsed {
 	p.TakeFirst(s, semconv.RequestPresencePenalty,
 		"gen_ai.request.presence_penalty", "llm.presence_penalty")
 	p.Take(s, "llm.chat.stop_sequences", semconv.RequestStopSequences)
-	p.Take(s, "llm.is_streaming", semconv.RequestStream)
+	// Current OpenLLMetry spells this gen_ai.is_streaming; releases before the
+	// migration spell it llm.is_streaming. Both are in the wild.
+	p.TakeFirst(s, semconv.RequestStream, "gen_ai.is_streaming", "llm.is_streaming")
 
 	p.Take(s, "gen_ai.usage.prompt_tokens", semconv.UsageInputTokens)
 	p.Take(s, "gen_ai.usage.completion_tokens", semconv.UsageOutputTokens)
@@ -92,6 +94,26 @@ func (d openLLMetry) Parse(s Span) Parsed {
 	if s.Has("gen_ai.usage.total_tokens") {
 		p.Lose("gen_ai.usage.total_tokens", ReasonNoField,
 			"the conventions carry input and output counts only")
+	}
+
+	// OpenLLMetry adopted most of the conventions' token names but spells the
+	// reasoning count gen_ai.usage.reasoning_tokens, without the .output
+	// segment the conventions use. It is the same number, so it is taken rather
+	// than lost, and this is the kind of near miss that makes scoring detection
+	// worth more than prefix matching.
+	p.Take(s, "gen_ai.usage.reasoning_tokens", semconv.UsageReasoningOutputTokens)
+
+	// Vendor extensions with no home in the conventions at any version. They are
+	// named as losses rather than ignored, because an attribute the normalizer
+	// silently walks past is indistinguishable, to a reader, from one it does
+	// not know exists.
+	for _, k := range []string{
+		"gen_ai.openai.api_base",
+		"gen_ai.openai.response.system_fingerprint",
+	} {
+		if s.Has(k) {
+			p.Lose(k, ReasonNoField, "OpenAI-specific, not in the conventions")
+		}
 	}
 
 	kind := ""
