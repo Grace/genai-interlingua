@@ -23,7 +23,7 @@ regenerates the captured ones.
 
 | Dialect | Inputs |
 | --- | --- |
-| `braintrust` | hand-built |
+| `braintrust` | captured |
 | `litellm` | captured |
 | `openinference` | captured |
 | `openllmetry` | captured, hand-built |
@@ -39,7 +39,7 @@ the dialect parsed it.
 
 | Field | v1.41.0 | genai-main | braintrust | litellm | openinference | openllmetry | raw | vercel |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `gen_ai.provider.name` | y | y | y | y | y | y | y | y |
+| `gen_ai.provider.name` | y | y | - | y | y | y | y | y |
 | `gen_ai.request.model` | y | y | y | y | y | y | y | y |
 | `gen_ai.request.max_tokens` | y | y | - | y | y | y | y | y |
 | `gen_ai.request.temperature` | y | y | - | y | y | y | y | y |
@@ -50,7 +50,7 @@ the dialect parsed it.
 | `gen_ai.response.model` | y | y | y | y | - | y | - | y |
 | `gen_ai.response.finish_reasons` | y | y | - | - | y | y | y | y |
 | `gen_ai.usage.input_tokens` | y | y | y | y | y | y | y | y |
-| `gen_ai.usage.cache_read.input_tokens` | y | y | y | - | y | - | - | - |
+| `gen_ai.usage.cache_read.input_tokens` | y | y | - | - | y | - | - | - |
 | `gen_ai.usage.cache_write.input_tokens` | y | y | - | - | - | y | - | - |
 | `gen_ai.usage.audio.input_tokens` | - | y | - | - | y | - | - | - |
 | `gen_ai.usage.output_tokens` | y | y | y | y | y | y | y | y |
@@ -62,8 +62,8 @@ the dialect parsed it.
 | `gen_ai.tool.call.result` | y | y | - | - | - | - | - | y |
 | `gen_ai.tool.definitions` | y | y | - | y | y | y | - | y |
 | `gen_ai.operation.name` | y | y | y | y | y | y | - | y |
-| `gen_ai.input.messages` | y | y | y | y | y | y | - | y |
-| `gen_ai.output.messages` | y | y | y | y | y | y | - | y |
+| `gen_ai.input.messages` | y | y | - | y | y | y | - | y |
+| `gen_ai.output.messages` | y | y | - | y | y | y | - | y |
 | `gen_ai.evaluation.name` | y | y | y | - | - | - | - | - |
 | `gen_ai.evaluation.score.value` | y | y | y | - | - | - | - | - |
 | `gen_ai.prompt.name` | y | y | - | - | - | y | - | - |
@@ -81,8 +81,9 @@ reports on the span itself.
 
 ### braintrust
 
-- **no_field** — `braintrust.expected_json`, `braintrust.metadata`, `braintrust.metrics`, `braintrust.project_id`, `braintrust.tags`
-- **unstructured** — `braintrust.input_json`, `braintrust.output_json`
+- **no_field** — `braintrust.expected_json`, `braintrust.metadata`, `braintrust.metrics`, `braintrust.span_attributes`, `braintrust.tags`
+- **unstructured** — `braintrust.context_json`, `braintrust.input_json`, `braintrust.output_json`
+- **flattened** — `braintrust.scores`
 
 ### litellm
 

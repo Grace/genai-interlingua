@@ -46,13 +46,44 @@ the real Traceloop SDK against a local mock OpenAI-compatible server and records
 what it puts on the wire, so it needs no API key and the recording is the
 library's output rather than this repository's idea of it.
 
-`openinference/`, `litellm/` and `vercel/` are captured the same way.
+`openinference/`, `litellm/`, `vercel/` and `braintrust/` are captured the same
+way.
 
-`braintrust/` and `raw/` are **hand-built**, and stay that way for reasons in
-`capture/README.md`: Braintrust needs an API key to initialize, and `raw` is the
-fallback for arbitrary conformant spans rather than any one library's output.
-Read those two as specifications of what the dialects claim to handle, not as
-evidence of what a framework emits.
+`raw/` is the only **hand-built** one left, and stays that way: it is the
+fallback for arbitrary already-conformant spans rather than any one library's
+output, so there is nothing to capture it *from*.
+
+### Braintrust is captured, but read its row differently
+
+Braintrust needed an API key, which is why it was hand-built for so long. It
+turns out not to: the SDK requires `BRAINTRUST_API_KEY` to be *present* but only
+ever uses it to build an `Authorization` header, never validating it, so the
+capture runs with a placeholder and `BRAINTRUST_API_URL` pinned at the local
+sink. Nothing reaches Braintrust and anyone can reproduce it.
+
+What is different is *what the capture proves*. The other four libraries invent
+their attribute names and write them themselves. Braintrust's `braintrust.*`
+namespace is an **ingestion contract** -- the names Braintrust reads off incoming
+OTel spans and maps into its own model, where `braintrust.input_json` becomes the
+`input` field. Its own `wrap_openai` emits no OTel at all; it logs through a
+private transport. So an application sets these, and `capture_braintrust.py`
+sets them, from a real model call in the shapes Braintrust documents.
+
+What is real with no help from the runner is the pipeline: a genuine
+`BraintrustSpanProcessor` filters and forwards the spans and adds its own
+`braintrust.context_json`, which is how that attribute got into the fixture.
+
+This is why braintrust's row in the conformance table is sparser than the
+others. Capturing it removed three marks the hand-built fixture had claimed --
+`gen_ai.provider.name`, `gen_ai.usage.cache_read.input_tokens`, and both message
+fields -- because Braintrust's contract defines none of them. A real Braintrust
+span usually *does* carry `gen_ai.*` fields, but they come from whatever
+instrumentation sits beside Braintrust rather than from Braintrust, and this
+table credits a dialect only for what that dialect contributes.
+
+It also gained a mark the hand-built fixture never earned: `braintrust.scores`
+under **flattened**, because the capture includes a second span carrying several
+scores and the conventions carry one evaluation per span.
 
 ### What the first capture changed
 

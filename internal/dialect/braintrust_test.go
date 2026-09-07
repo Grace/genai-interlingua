@@ -128,3 +128,25 @@ func TestBraintrustRecordsAScoringSpanAsHavingNoOperation(t *testing.T) {
 		t.Errorf("a score span was recorded with reason %q, want %q", l.Reason, ReasonNoField)
 	}
 }
+
+// braintrust.context_json is the one attribute in this dialect that no
+// application writes: a real BraintrustSpanProcessor injects it on the way out,
+// which is how it turned up in testdata/braintrust when that fixture stopped
+// being hand-built. It has no schema to map onto, so it is recorded rather than
+// carried -- but it must be recorded, because an attribute the normalizer walks
+// past silently is indistinguishable from one it does not know exists.
+func TestBraintrustRecordsTheContextItsOwnProcessorAdds(t *testing.T) {
+	p := (braintrust{}).Parse(Span{Attributes: map[string]Value{
+		"braintrust.context_json": String(`{"caller":"capture"}`),
+	}})
+
+	var found bool
+	for _, l := range p.Loss {
+		if l.Key == "braintrust.context_json" && l.Reason == ReasonUnstructured {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("braintrust.context_json was not recorded as unstructured; losses = %+v", p.Loss)
+	}
+}

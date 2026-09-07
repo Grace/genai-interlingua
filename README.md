@@ -65,7 +65,7 @@ rather than a thing you discover later.
 
 **The claims are checked by tests, not by prose.**
 [`docs/conformance.md`](docs/conformance.md) is generated from the fixtures, and
-CI fails if it disagrees with them. Four of the six dialects are backed by spans
+CI fails if it disagrees with them. Five of the six dialects are backed by spans
 captured from the real libraries, and the table says which — a row cannot borrow
 credibility it did not earn.
 
@@ -244,9 +244,11 @@ It also reports, per dialect, whether the inputs behind a row were **captured**
 from a running library or **hand-built** here, read from a marker file next to
 each fixture so that account cannot drift from the truth.
 
-Four of the six are captured. `testdata/capture/capture.sh` runs the real
-libraries against a local mock OpenAI server -- no API key, nothing sent
-anywhere -- and records what they put on the wire.
+Five of the six are captured -- everything except `raw`, which is the fallback
+for already-conformant spans and so has no library to capture from.
+`testdata/capture/capture.sh` runs the real libraries against a local mock
+OpenAI server -- no API key, nothing sent anywhere -- and records what they put
+on the wire.
 
 Three of those four captures found a bug that hand-built fixtures had hidden:
 
@@ -262,10 +264,15 @@ Three of those four captures found a bug that hand-built fixtures had hidden:
   none of which the conventions price at any version and none of which were
   being recorded.
 
-The Vercel capture found nothing, which is the other useful outcome.
-`raw` is synthetic by definition and `braintrust` needs an API key to
-initialize, so both stay hand-built and the table says so on their rows.
-Details in [`testdata/README.md`](testdata/README.md).
+The Vercel capture found nothing, which is the other useful outcome. The
+Braintrust one found nothing wrong with the *parser* but removed three marks the
+hand-built fixture had been claiming, which is the same lesson pointed at the
+evidence instead of the code.
+
+`raw` stays hand-built because it is the fallback for arbitrary conformant spans
+rather than any library's output. Details, including why braintrust's row should
+be read differently from the rest, in
+[`testdata/README.md`](testdata/README.md).
 
 ## Layout
 
@@ -305,7 +312,5 @@ builds a real Collector to assert the processor registers in it.
 
 Released with goreleaser on a `v*` tag, after the other three jobs pass.
 
-Not done yet: captured fixtures for `braintrust`, whose SDK needs an API key to
-initialize — which is the one thing the capture harness exists to avoid. It stays
-hand-built, and `docs/conformance.md` says so on its own row rather than letting
-it borrow the credibility of the captured ones.
+Five of the six dialects are backed by captured spans; `raw` is the fallback for
+already-conformant spans and has no library to capture from.

@@ -33,17 +33,32 @@ Collector has been shaped by that Collector's receiver and exporter, and the
 thing under test is what the *library* emitted. The sink is deliberately the
 dumbest possible OTLP endpoint.
 
-## The two that are not captured
+## The one that is not captured
 
 `raw/` is synthetic by definition. It is the fallback for a span that is already
 conformant, or nearly, and no single library emits it -- capturing "a span some
 other tool produced" would just be picking one of the others again.
 
-`braintrust/` needs a Braintrust account and an API key to initialize its SDK,
-which is the one thing this harness is built to avoid. Capturing it would mean
-either checking in a credential or making the fixture unreproducible for anyone
-without one. It stays hand-built, and `docs/conformance.md` says so on its own
-row rather than letting it borrow the credibility of the captured rows.
+## Braintrust, and why it needs no key after all
+
+Braintrust looked uncapturable because its SDK refuses to start without
+`BRAINTRUST_API_KEY`. Reading the SDK shows the requirement is shallower than it
+appears: the key is checked for presence, then used only to build an
+`Authorization` header on the OTLP export. It is never validated, and no login
+happens at init.
+
+So `capture_braintrust.py` passes a placeholder, sets `BRAINTRUST_API_URL` to the
+local sink *before importing the SDK*, and passes `api_url` explicitly. The
+processor builds its endpoint as `{api_url}/otel/v1/traces`, which the sink
+accepts because it ignores the request path. Nothing reaches Braintrust, no real
+credential is involved, and the fixture is reproducible by anyone.
+
+If you are changing this file, keep that ordering. `BRAINTRUST_API_URL` must be
+set before the import, so that any code path which reads it at import time still
+points at localhost rather than defaulting to `https://api.braintrust.dev`.
+
+`testdata/README.md` explains why braintrust's conformance row should be read
+differently from the other four even though all five are captured.
 
 ## Adding a dialect
 

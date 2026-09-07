@@ -4,15 +4,33 @@
       "resource": {
         "attributes": [
           {
-            "key": "service.name",
-            "value": {
-              "stringValue": "answer-eval"
-            }
-          },
-          {
             "key": "telemetry.sdk.language",
             "value": {
               "stringValue": "python"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.44.0"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "f8c23f0f-9de0-4af9-a80e-b8ae33c09e8b"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "capture"
             }
           }
         ]
@@ -20,97 +38,82 @@
       "scopeSpans": [
         {
           "scope": {
-            "name": "braintrust",
-            "version": "0.2.4"
+            "name": "capture"
           },
           "spans": [
             {
-              "traceId": "2b6d9c1e4f807a3b5c6d7e8f90a1b2c3",
-              "spanId": "9988776655443322",
-              "name": "answer_question",
-              "kind": 1,
-              "startTimeUnixNano": "1749837600000000000",
-              "endTimeUnixNano": "1749837602480000000",
+              "traceId": "6d063eab821e3b0554ca3f58087069cd",
+              "spanId": "39f8243faea70e00",
+              "flags": 256,
+              "name": "support_triage",
+              "kind": "SPAN_KIND_INTERNAL",
+              "startTimeUnixNano": "1788791462011552000",
+              "endTimeUnixNano": "1788791462234235000",
               "attributes": [
-                {
-                  "key": "braintrust.span_attributes",
-                  "value": {
-                    "stringValue": "{\"name\": \"answer_question\", \"type\": \"llm\"}"
-                  }
-                },
-                {
-                  "key": "braintrust.metrics",
-                  "value": {
-                    "stringValue": "{\"prompt_tokens\": 1120, \"completion_tokens\": 64, \"prompt_cached_tokens\": 896, \"tokens\": 1184, \"start\": 1749837600.11, \"end\": 1749837602.48}"
-                  }
-                },
-                {
-                  "key": "braintrust.scores",
-                  "value": {
-                    "stringValue": "{\"factuality\": 0.92}"
-                  }
-                },
                 {
                   "key": "braintrust.input_json",
                   "value": {
-                    "stringValue": "{\"question\": \"Which slide has the Q3 revenue figure?\"}"
+                    "stringValue": "[{\"role\": \"system\", \"content\": \"You are a support agent. Use the tools you are given.\"}, {\"role\": \"user\", \"content\": \"Where is order A-1187?\"}]"
                   }
                 },
                 {
                   "key": "braintrust.output_json",
                   "value": {
-                    "stringValue": "{\"answer\": \"Slide 14.\"}"
+                    "stringValue": "[{\"content\": null, \"refusal\": null, \"role\": \"assistant\", \"annotations\": null, \"audio\": null, \"function_call\": null, \"tool_calls\": [{\"id\": \"call_9RtYbK2mXqLp\", \"function\": {\"arguments\": \"{\\\"order_id\\\": \\\"A-1187\\\"}\", \"name\": \"lookup_order\"}, \"type\": \"function\"}]}]"
                   }
                 },
                 {
                   "key": "braintrust.expected_json",
                   "value": {
-                    "stringValue": "{\"answer\": \"Slide 14\"}"
+                    "stringValue": "{\"tool\": \"lookup_order\"}"
+                  }
+                },
+                {
+                  "key": "braintrust.metrics",
+                  "value": {
+                    "stringValue": "{\"prompt_tokens\": 412, \"completion_tokens\": 27, \"tokens\": 439}"
+                  }
+                },
+                {
+                  "key": "braintrust.scores",
+                  "value": {
+                    "stringValue": "{\"correctness\": 1.0}"
                   }
                 },
                 {
                   "key": "braintrust.metadata",
                   "value": {
-                    "stringValue": "{\"deck\": \"q3-review\", \"retriever\": \"hybrid-v2\"}"
+                    "stringValue": "{\"model\": \"gpt-4o-mini-2024-07-18\"}"
                   }
                 },
                 {
                   "key": "braintrust.tags",
                   "value": {
-                    "arrayValue": {
-                      "values": [
-                        {
-                          "stringValue": "regression"
-                        },
-                        {
-                          "stringValue": "q3"
-                        }
-                      ]
-                    }
+                    "stringValue": "[\"support\", \"triage\"]"
                   }
                 },
                 {
-                  "key": "braintrust.project_id",
+                  "key": "braintrust.span_attributes",
                   "value": {
-                    "stringValue": "p-8842"
+                    "stringValue": "{\"type\": \"llm\", \"name\": \"support_triage\"}"
+                  }
+                },
+                {
+                  "key": "braintrust.context_json",
+                  "value": {
+                    "stringValue": "{\"span_origin\": {\"name\": \"braintrust.sdk.python\", \"version\": \"0.37.0\", \"instrumentation\": {\"name\": \"braintrust-python-otel\"}}}"
                   }
                 },
                 {
                   "key": "gen_ai.evaluation.name",
                   "value": {
-                    "stringValue": "factuality"
+                    "stringValue": "correctness"
                   }
                 },
                 {
                   "key": "gen_ai.evaluation.score.value",
                   "value": {
-                    "doubleValue": 0.92
-                  }
-                },
-                {
-                  "key": "gen_ai.input.messages",
-                  "value": {
-                    "stringValue": "[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"content\":\"Which slide has the Q3 revenue figure?\"}]}]"
+                    "intValue": "1"
                   }
                 },
                 {
@@ -120,45 +123,27 @@
                   }
                 },
                 {
-                  "key": "gen_ai.output.messages",
-                  "value": {
-                    "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"text\",\"content\":\"Slide 14.\"}],\"finish_reason\":\"end_turn\"}]"
-                  }
-                },
-                {
-                  "key": "gen_ai.provider.name",
-                  "value": {
-                    "stringValue": "anthropic"
-                  }
-                },
-                {
                   "key": "gen_ai.request.model",
                   "value": {
-                    "stringValue": "claude-sonnet-4-5"
+                    "stringValue": "gpt-4o-mini"
                   }
                 },
                 {
                   "key": "gen_ai.response.model",
                   "value": {
-                    "stringValue": "claude-sonnet-4-5-20260514"
-                  }
-                },
-                {
-                  "key": "gen_ai.usage.cache_read.input_tokens",
-                  "value": {
-                    "intValue": "896"
+                    "stringValue": "gpt-4o-mini-2024-07-18"
                   }
                 },
                 {
                   "key": "gen_ai.usage.input_tokens",
                   "value": {
-                    "intValue": "1120"
+                    "intValue": "412"
                   }
                 },
                 {
                   "key": "gen_ai.usage.output_tokens",
                   "value": {
-                    "intValue": "64"
+                    "intValue": "27"
                   }
                 },
                 {
@@ -179,6 +164,9 @@
                     "arrayValue": {
                       "values": [
                         {
+                          "stringValue": "braintrust.context_json"
+                        },
+                        {
                           "stringValue": "braintrust.expected_json"
                         },
                         {
@@ -194,10 +182,118 @@
                           "stringValue": "braintrust.output_json"
                         },
                         {
-                          "stringValue": "braintrust.project_id"
+                          "stringValue": "braintrust.tags"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "interlingua.target",
+                  "value": {
+                    "stringValue": "v1.41.0"
+                  }
+                }
+              ],
+              "status": {}
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "python"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.44.0"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "f8c23f0f-9de0-4af9-a80e-b8ae33c09e8b"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "capture"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "capture"
+          },
+          "spans": [
+            {
+              "traceId": "d7e0b60abf31dd5459358df206e2eca9",
+              "spanId": "223a2b562e226a6e",
+              "flags": 256,
+              "name": "grade",
+              "kind": "SPAN_KIND_INTERNAL",
+              "startTimeUnixNano": "1788791462238186000",
+              "endTimeUnixNano": "1788791462238223000",
+              "attributes": [
+                {
+                  "key": "braintrust.scores",
+                  "value": {
+                    "stringValue": "{\"correctness\": 1.0, \"helpfulness\": 0.8, \"tone\": 0.9}"
+                  }
+                },
+                {
+                  "key": "braintrust.span_attributes",
+                  "value": {
+                    "stringValue": "{\"type\": \"score\", \"name\": \"grade\"}"
+                  }
+                },
+                {
+                  "key": "braintrust.context_json",
+                  "value": {
+                    "stringValue": "{\"span_origin\": {\"name\": \"braintrust.sdk.python\", \"version\": \"0.37.0\", \"instrumentation\": {\"name\": \"braintrust-python-otel\"}}}"
+                  }
+                },
+                {
+                  "key": "interlingua.dialect",
+                  "value": {
+                    "stringValue": "braintrust"
+                  }
+                },
+                {
+                  "key": "interlingua.dialect.confidence",
+                  "value": {
+                    "intValue": "3"
+                  }
+                },
+                {
+                  "key": "interlingua.lossy",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "braintrust.context_json"
                         },
                         {
-                          "stringValue": "braintrust.tags"
+                          "stringValue": "braintrust.scores"
+                        },
+                        {
+                          "stringValue": "braintrust.span_attributes"
                         }
                       ]
                     }
