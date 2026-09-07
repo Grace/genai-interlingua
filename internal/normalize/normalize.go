@@ -39,6 +39,7 @@ const (
 	AttrConfidence = "interlingua.dialect.confidence"
 	AttrTarget     = "interlingua.target"
 	AttrLossy      = "interlingua.lossy"
+	AttrLossyCount = "interlingua.lossy.count"
 )
 
 // Options configures one normalization.
@@ -169,9 +170,24 @@ func Span(s dialect.Span, opts Options) (Result, bool) {
 	r.Set[AttrDialect] = dialect.String(string(p.Dialect))
 	r.Set[AttrConfidence] = dialect.Int(int64(p.Confidence))
 	r.Set[AttrTarget] = dialect.String(string(opts.Target))
-	if lossy := r.Lossy(); len(lossy) > 0 {
+	// The list and its length are both written, and the length is written even
+	// when it is zero.
+	//
+	// The list is the detail: which keys this span is not a faithful carrier
+	// of. The count is the dimension you can actually work with -- group by it,
+	// threshold it, alert on it, watch it move after a library upgrade. Several
+	// backends store an array attribute as an opaque string, and even the ones
+	// that do better will not average it.
+	//
+	// Zero is written rather than omitted because "this span lost nothing" and
+	// "this span was never normalized" are different facts, and a query for
+	// lossless spans should not have to express itself as the absence of a
+	// field.
+	lossy := r.Lossy()
+	if len(lossy) > 0 {
 		r.Set[AttrLossy] = dialect.StrSeq(lossy)
 	}
+	r.Set[AttrLossyCount] = dialect.Int(int64(len(lossy)))
 
 	if !opts.PreserveOriginal {
 		r.Remove = removals(p.Consumed, r.Set)

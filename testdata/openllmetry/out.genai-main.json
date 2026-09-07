@@ -65,12 +65,6 @@
                   }
                 },
                 {
-                  "key": "gen_ai.provider.name",
-                  "value": {
-                    "stringValue": "openai"
-                  }
-                },
-                {
                   "key": "gen_ai.is_streaming",
                   "value": {
                     "boolValue": false
@@ -146,6 +140,12 @@
                   "key": "gen_ai.output.messages",
                   "value": {
                     "stringValue": "[{\"role\": \"assistant\", \"parts\": [{\"type\": \"tool_call\", \"name\": \"lookup_order\", \"id\": \"call_9RtYbK2mXqLp\", \"arguments\": {\"order_id\": \"A-1187\"}}], \"finish_reason\": \"tool_call\"}]"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "openai"
                   }
                 },
                 {
@@ -230,6 +230,12 @@
                         }
                       ]
                     }
+                  }
+                },
+                {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "3"
                   }
                 },
                 {
@@ -365,6 +371,12 @@
                         }
                       ]
                     }
+                  }
+                },
+                {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "3"
                   }
                 },
                 {

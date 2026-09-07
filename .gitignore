@@ -3,3 +3,4 @@
 .DS_Store
 /demo/build/
 /testdata/capture/node_modules/
+/demo/.env

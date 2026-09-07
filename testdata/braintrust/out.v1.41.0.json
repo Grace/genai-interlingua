@@ -189,6 +189,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "7"
+                  }
+                },
+                {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "v1.41.0"
@@ -297,6 +303,12 @@
                         }
                       ]
                     }
+                  }
+                },
+                {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "3"
                   }
                 },
                 {

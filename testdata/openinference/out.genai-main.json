@@ -349,6 +349,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "8"
+                  }
+                },
+                {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "genai-main"

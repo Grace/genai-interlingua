@@ -663,6 +663,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "49"
+                  }
+                },
+                {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "genai-main"

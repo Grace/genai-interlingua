@@ -125,6 +125,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "v1.41.0"
@@ -446,6 +452,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "5"
+                  }
+                },
+                {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "v1.41.0"
@@ -682,6 +694,12 @@
                         }
                       ]
                     }
+                  }
+                },
+                {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "4"
                   }
                 },
                 {

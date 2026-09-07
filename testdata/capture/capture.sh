@@ -19,7 +19,7 @@ trap 'rm -rf "$raw"' EXIT
 SINK_PORT=${SINK_PORT:-4318}
 MOCK_PORT=${MOCK_PORT:-8080}
 
-DIALECTS=(openllmetry openinference litellm braintrust vercel raw)
+DIALECTS=(openllmetry openinference litellm braintrust vercel raw langchain)
 
 # Runners are named capture_<dialect> rather than <dialect> because a Python
 # file named openinference.py shadows the openinference package it imports, and

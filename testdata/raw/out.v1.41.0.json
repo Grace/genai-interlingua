@@ -166,6 +166,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "v1.41.0"

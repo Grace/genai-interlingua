@@ -97,7 +97,7 @@ reports on the span itself.
 
 ### openllmetry
 
-- **no_field** — `gen_ai.openai.api_base`, `gen_ai.openai.response.system_fingerprint`, `gen_ai.usage.total_tokens`, `traceloop.association.properties.user_id`
+- **no_field** — `gen_ai.openai.api_base`, `gen_ai.openai.response.system_fingerprint`, `gen_ai.usage.total_tokens`, `traceloop.association.properties.lc_versions`, `traceloop.association.properties.ls_integration`, `traceloop.association.properties.ls_max_tokens`, `traceloop.association.properties.ls_model_name`, `traceloop.association.properties.ls_model_type`, `traceloop.association.properties.ls_provider`, `traceloop.association.properties.ls_temperature`, `traceloop.association.properties.user_id`, `traceloop.entity.path`, `traceloop.span.kind`
 - **unstructured** — `traceloop.entity.input`, `traceloop.entity.output`
 - **flattened** — `gen_ai.completion.*`, `gen_ai.prompt.*`
 - **ambiguous** — `traceloop.entity.name`
@@ -124,7 +124,9 @@ the default target is a decision rather than a constant.
   - **no_attribute** — `gen_ai.usage.audio.input_tokens`, `gen_ai.usage.audio.output_tokens`
 - openllmetry
   - **no_attribute** — `gen_ai.prompt.version`
+  - **no_value** — `gen_ai.provider.name`
 
 ### genai-main
 
-Nothing. Every field the dialects produced is expressible here.
+- openllmetry
+  - **no_value** — `gen_ai.provider.name`

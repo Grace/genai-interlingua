@@ -66,9 +66,26 @@ func (openLLMetry) Score(s Span) int {
 func (d openLLMetry) Parse(s Span) Parsed {
 	var p Parsed
 
-	if v, ok := s.Attr("gen_ai.system"); ok {
-		p.Set(semconv.ProviderName, String(strings.ToLower(v.Str)))
-		p.Consumed = append(p.Consumed, "gen_ai.system")
+	// Both spellings are read. gen_ai.system is the legacy one; current
+	// OpenLLMetry writes gen_ai.provider.name directly, and reading it back is
+	// what subjects it to the target's value check rather than letting it
+	// through unexamined because it already looks conformant.
+	//
+	// That check earns its keep here. Instrumenting LangChain through this
+	// library puts gen_ai.provider.name=langchain on the chain spans, and
+	// langchain is not a provider -- it is the framework calling one. No target
+	// defines it, so it is recorded as a loss instead of being taken at face
+	// value, and a query grouping by provider does not grow a bucket that is
+	// not a provider.
+	for _, k := range []string{"gen_ai.provider.name", "gen_ai.system"} {
+		v, ok := s.Attr(k)
+		if !ok {
+			continue
+		}
+		if _, already := p.Fields[semconv.ProviderName]; !already {
+			p.Set(semconv.ProviderName, String(strings.ToLower(v.Str)))
+		}
+		p.Consumed = append(p.Consumed, k)
 	}
 
 	p.Take(s, "gen_ai.request.model", semconv.RequestModel)

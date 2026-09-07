@@ -185,3 +185,104 @@ func TestSpanWithNoGenAIEvidenceIsLeftAlone(t *testing.T) {
 		t.Errorf("an unclaimed span still came back with attributes to set: %v", r.SetKeys())
 	}
 }
+
+// The count is written even when it is zero, which is the half that is easy to
+// get wrong. "This span lost nothing" and "this span was never normalized" are
+// different facts, and a query for lossless spans should not have to express
+// itself as the absence of a field.
+func TestLossCountIsWrittenEvenWhenNothingWasLost(t *testing.T) {
+	// A span whose every attribute the dialect can carry and the target can
+	// express.
+	r := mustNormalize(t, chatSpan(nil), semconv.TargetGenAIMain)
+
+	if _, ok := r.Set[AttrLossy]; ok {
+		t.Fatalf("expected a lossless span, but %s is set to %v", AttrLossy, r.Set[AttrLossy])
+	}
+	v, ok := r.Set[AttrLossyCount]
+	if !ok {
+		t.Fatalf("%s is missing on a lossless span", AttrLossyCount)
+	}
+	if v.Kind != dialect.KindInt || v.Int != 0 {
+		t.Errorf("%s = %v, want the integer 0", AttrLossyCount, v)
+	}
+}
+
+// And when there is loss, the number has to be the length of the list beside
+// it. Two attributes describing the same fact are worth having only while they
+// agree.
+func TestLossCountMatchesTheListItSummarizes(t *testing.T) {
+	s := chatSpan(map[string]dialect.Value{
+		"gen_ai.usage.total_tokens":                dialect.Int(439),
+		"traceloop.association.properties.user_id": dialect.String("u-7741"),
+	})
+	r := mustNormalize(t, s, semconv.TargetGenAIMain)
+
+	list := r.Set[AttrLossy].StrSeq
+	if len(list) == 0 {
+		t.Fatalf("expected this span to lose something; set = %v", r.Set)
+	}
+	if got, want := r.Set[AttrLossyCount].Int, int64(len(list)); got != want {
+		t.Errorf("%s = %d but %s has %d entries", AttrLossyCount, got, AttrLossy, want)
+	}
+}
+
+// Instrumenting LangChain through OpenLLMetry puts gen_ai.provider.name=langchain
+// on the chain spans. LangChain is not a provider, it is the framework calling
+// one, and no target's enum defines it.
+//
+// The value arrives already spelled like a conventions attribute, which is
+// exactly why it has to be read back and checked rather than waved through for
+// looking conformant. Otherwise a span claims interlingua.target=v1.41.0 while
+// carrying a value v1.41.0 forbids, and a query grouping by provider grows a
+// bucket that is not a provider.
+func TestConformantLookingValueTheTargetForbidsIsStillRecorded(t *testing.T) {
+	s := dialect.Span{
+		Name: "RunnableSequence.workflow",
+		Attributes: map[string]dialect.Value{
+			"gen_ai.provider.name":  dialect.String("langchain"),
+			"traceloop.span.kind":   dialect.String("workflow"),
+			"traceloop.entity.name": dialect.String("RunnableSequence"),
+		},
+	}
+	r, ok := Span(s, DefaultOptions())
+	if !ok {
+		t.Fatal("expected the span to be claimed")
+	}
+
+	var found bool
+	for _, l := range r.TargetLoss {
+		if l.Key == "gen_ai.provider.name" && l.Reason == ReasonNoValue {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("gen_ai.provider.name=langchain was not recorded as no_value; target losses = %+v", r.TargetLoss)
+	}
+	if v, ok := r.Set["gen_ai.provider.name"]; ok {
+		t.Errorf("a forbidden value was written to the normalized output as %v", v)
+	}
+}
+
+// The counterweight: a legitimate provider on the model call itself is taken,
+// not flagged. The check has to discriminate or it is just noise.
+func TestAProviderTheTargetDefinesIsNotFlagged(t *testing.T) {
+	s := dialect.Span{
+		Name: "ChatOpenAI.chat",
+		Attributes: map[string]dialect.Value{
+			"gen_ai.provider.name":       dialect.String("openai"),
+			"gen_ai.usage.prompt_tokens": dialect.Int(412),
+		},
+	}
+	r, ok := Span(s, DefaultOptions())
+	if !ok {
+		t.Fatal("expected the span to be claimed")
+	}
+	if got := r.Set["gen_ai.provider.name"].Str; got != "openai" {
+		t.Errorf("provider = %q, want openai", got)
+	}
+	for _, l := range r.TargetLoss {
+		if l.Key == "gen_ai.provider.name" {
+			t.Errorf("a legal provider was flagged: %+v", l)
+		}
+	}
+}
