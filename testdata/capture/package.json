@@ -1,0 +1,16 @@
+{
+  "name": "genai-interlingua-capture",
+  "private": true,
+  "type": "module",
+  "description": "Node runners for the capture harness. Not part of the Go modules.",
+  "dependencies": {
+    "@ai-sdk/openai": "^2",
+    "@opentelemetry/api": "^1",
+    "@opentelemetry/exporter-trace-otlp-http": "latest",
+    "@opentelemetry/resources": "^2",
+    "@opentelemetry/sdk-trace-node": "^2",
+    "@opentelemetry/semantic-conventions": "^1",
+    "ai": "^5",
+    "zod": "^4.5.4"
+  }
+}

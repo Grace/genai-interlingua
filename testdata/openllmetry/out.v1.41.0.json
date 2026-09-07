@@ -24,7 +24,7 @@
           {
             "key": "service.instance.id",
             "value": {
-              "stringValue": "4c8e9fab-8807-476b-af32-7ea80c665252"
+              "stringValue": "47b565f7-dd80-474a-8185-8d70ceacda71"
             }
           },
           {
@@ -43,14 +43,14 @@
           },
           "spans": [
             {
-              "traceId": "60cd7abeecf4ac0df275bc399796477a",
-              "spanId": "31e4d2d30eba9021",
-              "parentSpanId": "111874e88a141fe5",
+              "traceId": "db5ffc41232f675cc16d1d89cb0ab9ae",
+              "spanId": "b123d7b3b0d224fd",
+              "parentSpanId": "953710dacdc958e4",
               "flags": 256,
               "name": "openai.chat",
               "kind": "SPAN_KIND_CLIENT",
-              "startTimeUnixNano": "1788787292418099000",
-              "endTimeUnixNano": "1788787292437940000",
+              "startTimeUnixNano": "1788788050235448000",
+              "endTimeUnixNano": "1788788050258441000",
               "attributes": [
                 {
                   "key": "gen_ai.operation.name",
@@ -269,7 +269,7 @@
           {
             "key": "service.instance.id",
             "value": {
-              "stringValue": "4c8e9fab-8807-476b-af32-7ea80c665252"
+              "stringValue": "47b565f7-dd80-474a-8185-8d70ceacda71"
             }
           },
           {
@@ -287,13 +287,13 @@
           },
           "spans": [
             {
-              "traceId": "60cd7abeecf4ac0df275bc399796477a",
-              "spanId": "111874e88a141fe5",
+              "traceId": "db5ffc41232f675cc16d1d89cb0ab9ae",
+              "spanId": "953710dacdc958e4",
               "flags": 256,
               "name": "support_triage.workflow",
               "kind": "SPAN_KIND_INTERNAL",
-              "startTimeUnixNano": "1788787292418023000",
-              "endTimeUnixNano": "1788787292441637000",
+              "startTimeUnixNano": "1788788050235364000",
+              "endTimeUnixNano": "1788788050262346000",
               "attributes": [
                 {
                   "key": "traceloop.workflow.name",

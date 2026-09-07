@@ -3,62 +3,186 @@
     {
       "resource": {
         "attributes": [
-          { "key": "service.name", "value": { "stringValue": "ticket-triage" } },
-          { "key": "telemetry.sdk.language", "value": { "stringValue": "nodejs" } }
-        ]
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "capture"
+            }
+          }
+        ],
+        "droppedAttributesCount": 0
       },
       "scopeSpans": [
         {
-          "scope": { "name": "ai", "version": "5.0.26" },
+          "scope": {
+            "name": "ai"
+          },
           "spans": [
             {
-              "traceId": "c4a1f7e29b0d3856a1f2c3d4e5f60718",
-              "spanId": "aa01bb02cc03dd04",
-              "name": "ai.generateText",
+              "traceId": "85ebdb4d13864fa11366570a33194c67",
+              "spanId": "ac8b47bbdc82ad55",
+              "parentSpanId": "65c9090446d31433",
+              "name": "ai.toolCall",
               "kind": 1,
-              "startTimeUnixNano": "1749830400000000000",
-              "endTimeUnixNano": "1749830401930000000",
+              "startTimeUnixNano": "1788788016873000000",
+              "endTimeUnixNano": "1788788016873241417",
               "attributes": [
-                { "key": "operation.name", "value": { "stringValue": "ai.generateText summarize_ticket" } },
-                { "key": "ai.operationId", "value": { "stringValue": "ai.generateText" } },
-                { "key": "ai.model.provider", "value": { "stringValue": "openai.chat" } },
-                { "key": "ai.model.id", "value": { "stringValue": "gpt-4o-mini" } },
-                { "key": "ai.telemetry.functionId", "value": { "stringValue": "summarize_ticket" } },
-                { "key": "ai.settings.maxOutputTokens", "value": { "intValue": "1024" } },
-                { "key": "ai.settings.maxRetries", "value": { "intValue": "2" } },
                 {
-                  "key": "ai.prompt",
-                  "value": { "stringValue": "{\"prompt\":\"Where is order A-1187?\"}" }
-                },
-                { "key": "ai.response.text", "value": { "stringValue": "" } },
-                {
-                  "key": "ai.response.toolCalls",
+                  "key": "operation.name",
                   "value": {
-                    "stringValue": "[{\"toolCallId\":\"call_9RtYbK2mXqLp\",\"toolName\":\"lookup_order\",\"args\":{\"order_id\":\"A-1187\"}}]"
+                    "stringValue": "ai.toolCall support_triage"
                   }
                 },
-                { "key": "ai.response.finishReason", "value": { "stringValue": "tool-calls" } },
-                { "key": "ai.usage.promptTokens", "value": { "intValue": "412" } },
-                { "key": "ai.usage.completionTokens", "value": { "intValue": "27" } }
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "support_triage"
+                  }
+                },
+                {
+                  "key": "ai.operationId",
+                  "value": {
+                    "stringValue": "ai.toolCall"
+                  }
+                },
+                {
+                  "key": "ai.telemetry.functionId",
+                  "value": {
+                    "stringValue": "support_triage"
+                  }
+                },
+                {
+                  "key": "ai.toolCall.name",
+                  "value": {
+                    "stringValue": "lookup_order"
+                  }
+                },
+                {
+                  "key": "ai.toolCall.id",
+                  "value": {
+                    "stringValue": "call_9RtYbK2mXqLp"
+                  }
+                },
+                {
+                  "key": "ai.toolCall.args",
+                  "value": {
+                    "stringValue": "{\"order_id\":\"A-1187\"}"
+                  }
+                },
+                {
+                  "key": "ai.toolCall.result",
+                  "value": {
+                    "stringValue": "{\"order_id\":\"A-1187\",\"status\":\"in transit\"}"
+                  }
+                }
               ],
-              "status": {}
-            },
+              "droppedAttributesCount": 0,
+              "events": [],
+              "droppedEventsCount": 0,
+              "status": {
+                "code": 0
+              },
+              "links": [],
+              "droppedLinksCount": 0,
+              "flags": 257
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "capture"
+            }
+          }
+        ],
+        "droppedAttributesCount": 0
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "ai"
+          },
+          "spans": [
             {
-              "traceId": "c4a1f7e29b0d3856a1f2c3d4e5f60718",
-              "spanId": "aa01bb02cc03dd05",
-              "parentSpanId": "aa01bb02cc03dd04",
+              "traceId": "85ebdb4d13864fa11366570a33194c67",
+              "spanId": "abfee917dad68884",
+              "parentSpanId": "65c9090446d31433",
               "name": "ai.generateText.doGenerate",
-              "kind": 3,
-              "startTimeUnixNano": "1749830400010000000",
-              "endTimeUnixNano": "1749830401900000000",
+              "kind": 1,
+              "startTimeUnixNano": "1788788016851000000",
+              "endTimeUnixNano": "1788788016870754458",
               "attributes": [
-                { "key": "ai.operationId", "value": { "stringValue": "ai.generateText.doGenerate" } },
-                { "key": "ai.model.provider", "value": { "stringValue": "openai.chat" } },
-                { "key": "ai.model.id", "value": { "stringValue": "gpt-4o-mini" } },
-                { "key": "gen_ai.system", "value": { "stringValue": "openai" } },
-                { "key": "gen_ai.request.model", "value": { "stringValue": "gpt-4o-mini" } },
-                { "key": "gen_ai.request.temperature", "value": { "doubleValue": 0.7 } },
-                { "key": "gen_ai.request.max_tokens", "value": { "intValue": "1024" } },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "ai.generateText.doGenerate support_triage"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "support_triage"
+                  }
+                },
+                {
+                  "key": "ai.operationId",
+                  "value": {
+                    "stringValue": "ai.generateText.doGenerate"
+                  }
+                },
+                {
+                  "key": "ai.telemetry.functionId",
+                  "value": {
+                    "stringValue": "support_triage"
+                  }
+                },
+                {
+                  "key": "ai.model.provider",
+                  "value": {
+                    "stringValue": "openai.chat"
+                  }
+                },
+                {
+                  "key": "ai.model.id",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "ai.settings.maxOutputTokens",
+                  "value": {
+                    "intValue": 1024
+                  }
+                },
+                {
+                  "key": "ai.settings.temperature",
+                  "value": {
+                    "doubleValue": 0.7
+                  }
+                },
+                {
+                  "key": "ai.settings.topP",
+                  "value": {
+                    "doubleValue": 0.95
+                  }
+                },
+                {
+                  "key": "ai.settings.maxRetries",
+                  "value": {
+                    "intValue": 2
+                  }
+                },
+                {
+                  "key": "ai.request.headers.user-agent",
+                  "value": {
+                    "stringValue": "ai/5.0.253"
+                  }
+                },
                 {
                   "key": "ai.prompt.messages",
                   "value": {
@@ -71,56 +195,285 @@
                     "arrayValue": {
                       "values": [
                         {
-                          "stringValue": "{\"type\":\"function\",\"name\":\"lookup_order\",\"description\":\"Look up an order by its identifier.\",\"parameters\":{\"type\":\"object\",\"properties\":{\"order_id\":{\"type\":\"string\"}},\"required\":[\"order_id\"]}}"
+                          "stringValue": "{\"type\":\"function\",\"name\":\"lookup_order\",\"description\":\"Look up an order by its identifier.\",\"inputSchema\":{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"type\":\"object\",\"properties\":{\"order_id\":{\"type\":\"string\"}},\"required\":[\"order_id\"],\"additionalProperties\":false}}"
                         }
                       ]
                     }
                   }
                 },
-                { "key": "ai.prompt.toolChoice", "value": { "stringValue": "{\"type\":\"auto\"}" } },
-                { "key": "ai.response.text", "value": { "stringValue": "" } },
+                {
+                  "key": "ai.prompt.toolChoice",
+                  "value": {
+                    "stringValue": "{\"type\":\"auto\"}"
+                  }
+                },
+                {
+                  "key": "gen_ai.system",
+                  "value": {
+                    "stringValue": "openai.chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.max_tokens",
+                  "value": {
+                    "intValue": 1024
+                  }
+                },
+                {
+                  "key": "gen_ai.request.temperature",
+                  "value": {
+                    "doubleValue": 0.7
+                  }
+                },
+                {
+                  "key": "gen_ai.request.top_p",
+                  "value": {
+                    "doubleValue": 0.95
+                  }
+                },
+                {
+                  "key": "ai.response.finishReason",
+                  "value": {
+                    "stringValue": "tool-calls"
+                  }
+                },
                 {
                   "key": "ai.response.toolCalls",
                   "value": {
-                    "stringValue": "[{\"toolCallId\":\"call_9RtYbK2mXqLp\",\"toolName\":\"lookup_order\",\"args\":{\"order_id\":\"A-1187\"}}]"
+                    "stringValue": "[{\"toolCallId\":\"call_9RtYbK2mXqLp\",\"toolName\":\"lookup_order\",\"input\":\"{\\\"order_id\\\": \\\"A-1187\\\"}\"}]"
                   }
                 },
-                { "key": "ai.response.id", "value": { "stringValue": "chatcmpl-CD8yqQ2y3kZs1o0Wm7bT" } },
-                { "key": "ai.response.model", "value": { "stringValue": "gpt-4o-mini-2024-07-18" } },
-                { "key": "ai.response.timestamp", "value": { "stringValue": "2026-06-13T14:00:01.000Z" } },
-                { "key": "ai.response.msToFirstChunk", "value": { "doubleValue": 412.5 } },
+                {
+                  "key": "ai.response.id",
+                  "value": {
+                    "stringValue": "chatcmpl-CD8yqQ2y3kZs1o0Wm7bT"
+                  }
+                },
+                {
+                  "key": "ai.response.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini-2024-07-18"
+                  }
+                },
+                {
+                  "key": "ai.response.timestamp",
+                  "value": {
+                    "stringValue": "2026-09-10T00:26:40.000Z"
+                  }
+                },
                 {
                   "key": "ai.response.providerMetadata",
-                  "value": { "stringValue": "{\"openai\":{\"cachedPromptTokens\":384}}" }
+                  "value": {
+                    "stringValue": "{\"openai\":{\"acceptedPredictionTokens\":0,\"rejectedPredictionTokens\":0}}"
+                  }
                 },
-                { "key": "ai.request.headers.authorization", "value": { "stringValue": "Bearer sk-proj-REDACTED" } },
-                { "key": "gen_ai.response.finish_reasons", "value": { "arrayValue": { "values": [{ "stringValue": "tool-calls" }] } } },
-                { "key": "gen_ai.response.id", "value": { "stringValue": "chatcmpl-CD8yqQ2y3kZs1o0Wm7bT" } },
-                { "key": "gen_ai.response.model", "value": { "stringValue": "gpt-4o-mini-2024-07-18" } },
-                { "key": "gen_ai.usage.input_tokens", "value": { "intValue": "412" } },
-                { "key": "gen_ai.usage.output_tokens", "value": { "intValue": "27" } }
-              ],
-              "status": {}
-            },
-            {
-              "traceId": "c4a1f7e29b0d3856a1f2c3d4e5f60718",
-              "spanId": "aa01bb02cc03dd06",
-              "parentSpanId": "aa01bb02cc03dd04",
-              "name": "ai.toolCall",
-              "kind": 1,
-              "startTimeUnixNano": "1749830401940000000",
-              "endTimeUnixNano": "1749830402110000000",
-              "attributes": [
-                { "key": "ai.operationId", "value": { "stringValue": "ai.toolCall" } },
-                { "key": "ai.toolCall.name", "value": { "stringValue": "lookup_order" } },
-                { "key": "ai.toolCall.id", "value": { "stringValue": "call_9RtYbK2mXqLp" } },
-                { "key": "ai.toolCall.args", "value": { "stringValue": "{\"order_id\":\"A-1187\"}" } },
                 {
-                  "key": "ai.toolCall.result",
-                  "value": { "stringValue": "{\"status\":\"in_transit\",\"eta\":\"2026-06-15\"}" }
+                  "key": "ai.usage.promptTokens",
+                  "value": {
+                    "intValue": 412
+                  }
+                },
+                {
+                  "key": "ai.usage.completionTokens",
+                  "value": {
+                    "intValue": 27
+                  }
+                },
+                {
+                  "key": "gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "tool-calls"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "gen_ai.response.id",
+                  "value": {
+                    "stringValue": "chatcmpl-CD8yqQ2y3kZs1o0Wm7bT"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini-2024-07-18"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.input_tokens",
+                  "value": {
+                    "intValue": 412
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.output_tokens",
+                  "value": {
+                    "intValue": 27
+                  }
                 }
               ],
-              "status": {}
+              "droppedAttributesCount": 0,
+              "events": [],
+              "droppedEventsCount": 0,
+              "status": {
+                "code": 0
+              },
+              "links": [],
+              "droppedLinksCount": 0,
+              "flags": 257
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "capture"
+            }
+          }
+        ],
+        "droppedAttributesCount": 0
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "ai"
+          },
+          "spans": [
+            {
+              "traceId": "85ebdb4d13864fa11366570a33194c67",
+              "spanId": "65c9090446d31433",
+              "name": "ai.generateText",
+              "kind": 1,
+              "startTimeUnixNano": "1788788016849000000",
+              "endTimeUnixNano": "1788788016874767334",
+              "attributes": [
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "ai.generateText support_triage"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "support_triage"
+                  }
+                },
+                {
+                  "key": "ai.operationId",
+                  "value": {
+                    "stringValue": "ai.generateText"
+                  }
+                },
+                {
+                  "key": "ai.telemetry.functionId",
+                  "value": {
+                    "stringValue": "support_triage"
+                  }
+                },
+                {
+                  "key": "ai.model.provider",
+                  "value": {
+                    "stringValue": "openai.chat"
+                  }
+                },
+                {
+                  "key": "ai.model.id",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "ai.settings.maxOutputTokens",
+                  "value": {
+                    "intValue": 1024
+                  }
+                },
+                {
+                  "key": "ai.settings.temperature",
+                  "value": {
+                    "doubleValue": 0.7
+                  }
+                },
+                {
+                  "key": "ai.settings.topP",
+                  "value": {
+                    "doubleValue": 0.95
+                  }
+                },
+                {
+                  "key": "ai.settings.maxRetries",
+                  "value": {
+                    "intValue": 2
+                  }
+                },
+                {
+                  "key": "ai.request.headers.user-agent",
+                  "value": {
+                    "stringValue": "ai/5.0.253"
+                  }
+                },
+                {
+                  "key": "ai.prompt",
+                  "value": {
+                    "stringValue": "{\"system\":\"You are a support agent. Use the tools you are given.\",\"prompt\":\"Where is order A-1187?\"}"
+                  }
+                },
+                {
+                  "key": "ai.response.finishReason",
+                  "value": {
+                    "stringValue": "tool-calls"
+                  }
+                },
+                {
+                  "key": "ai.response.toolCalls",
+                  "value": {
+                    "stringValue": "[{\"toolCallId\":\"call_9RtYbK2mXqLp\",\"toolName\":\"lookup_order\",\"input\":\"{\\\"order_id\\\": \\\"A-1187\\\"}\"}]"
+                  }
+                },
+                {
+                  "key": "ai.response.providerMetadata",
+                  "value": {
+                    "stringValue": "{\"openai\":{\"acceptedPredictionTokens\":0,\"rejectedPredictionTokens\":0}}"
+                  }
+                },
+                {
+                  "key": "ai.usage.promptTokens",
+                  "value": {
+                    "intValue": 412
+                  }
+                },
+                {
+                  "key": "ai.usage.completionTokens",
+                  "value": {
+                    "intValue": 27
+                  }
+                }
+              ],
+              "droppedAttributesCount": 0,
+              "events": [],
+              "droppedEventsCount": 0,
+              "status": {
+                "code": 0
+              },
+              "links": [],
+              "droppedLinksCount": 0,
+              "flags": 257
             }
           ]
         }

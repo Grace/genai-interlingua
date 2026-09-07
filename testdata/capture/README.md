@@ -33,6 +33,18 @@ Collector has been shaped by that Collector's receiver and exporter, and the
 thing under test is what the *library* emitted. The sink is deliberately the
 dumbest possible OTLP endpoint.
 
+## The two that are not captured
+
+`raw/` is synthetic by definition. It is the fallback for a span that is already
+conformant, or nearly, and no single library emits it -- capturing "a span some
+other tool produced" would just be picking one of the others again.
+
+`braintrust/` needs a Braintrust account and an API key to initialize its SDK,
+which is the one thing this harness is built to avoid. Capturing it would mean
+either checking in a credential or making the fixture unreproducible for anyone
+without one. It stays hand-built, and `docs/conformance.md` says so on its own
+row rather than letting it borrow the credibility of the captured rows.
+
 ## Adding a dialect
 
 Add a program named after the dialect that reads two environment variables,

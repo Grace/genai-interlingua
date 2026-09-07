@@ -46,10 +46,13 @@ the real Traceloop SDK against a local mock OpenAI-compatible server and records
 what it puts on the wire, so it needs no API key and the recording is the
 library's output rather than this repository's idea of it.
 
-Everything else is **hand-built** from the attribute sets the dialects in
-`internal/dialect` parse. They are shaped after real output, but nothing has
-verified them against the emitters. Read them as specifications of what the
-dialects claim to handle, not as evidence of what the frameworks emit.
+`openinference/`, `litellm/` and `vercel/` are captured the same way.
+
+`braintrust/` and `raw/` are **hand-built**, and stay that way for reasons in
+`capture/README.md`: Braintrust needs an API key to initialize, and `raw` is the
+fallback for arbitrary conformant spans rather than any one library's output.
+Read those two as specifications of what the dialects claim to handle, not as
+evidence of what a framework emits.
 
 ### What the first capture changed
 

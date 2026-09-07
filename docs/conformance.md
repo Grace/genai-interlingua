@@ -28,7 +28,7 @@ regenerates the captured ones.
 | `openinference` | captured |
 | `openllmetry` | captured, hand-built |
 | `raw` | hand-built |
-| `vercel` | hand-built |
+| `vercel` | captured |
 
 ## Field coverage
 
@@ -43,13 +43,12 @@ the dialect parsed it.
 | `gen_ai.request.model` | y | y | y | y | y | y | y | y |
 | `gen_ai.request.max_tokens` | y | y | - | y | y | y | y | y |
 | `gen_ai.request.temperature` | y | y | - | y | y | y | y | y |
-| `gen_ai.request.top_p` | y | y | - | y | y | y | - | - |
+| `gen_ai.request.top_p` | y | y | - | y | y | y | - | y |
 | `gen_ai.request.stop_sequences` | y | y | - | - | - | y | - | - |
 | `gen_ai.request.stream` | y | y | - | - | - | y | - | - |
 | `gen_ai.response.id` | y | y | - | - | - | y | y | y |
 | `gen_ai.response.model` | y | y | y | y | - | y | - | y |
 | `gen_ai.response.finish_reasons` | y | y | - | - | y | y | y | y |
-| `gen_ai.response.time_to_first_chunk` | y | y | - | - | - | - | - | y |
 | `gen_ai.usage.input_tokens` | y | y | y | y | y | y | y | y |
 | `gen_ai.usage.cache_read.input_tokens` | y | y | y | - | y | - | - | - |
 | `gen_ai.usage.cache_write.input_tokens` | y | y | - | - | - | y | - | - |
@@ -109,7 +108,7 @@ reports on the span itself.
 
 ### vercel
 
-- **no_field** — `ai.prompt.toolChoice`, `ai.request.headers.authorization`, `ai.response.timestamp`, `ai.settings.maxRetries`
+- **no_field** — `ai.prompt.toolChoice`, `ai.request.headers.user-agent`, `ai.response.timestamp`, `ai.settings.maxRetries`
 - **unstructured** — `ai.prompt`, `ai.response.providerMetadata`
 
 ## What each target could not express

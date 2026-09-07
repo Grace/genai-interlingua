@@ -24,7 +24,7 @@
           {
             "key": "service.instance.id",
             "value": {
-              "stringValue": "49c81373-6da1-4eac-b149-186b3743c972"
+              "stringValue": "cbfd16f3-481d-4971-ae79-70314a498771"
             }
           },
           {
@@ -54,12 +54,12 @@
           },
           "spans": [
             {
-              "traceId": "b1d8ae1b3fb8f0217735e4f3496c3bdf",
-              "spanId": "a5f632a15409374f",
+              "traceId": "89443148be1f25c7347a6825210c17cd",
+              "spanId": "ba48e2429fb1cf09",
               "name": "litellm_request",
               "kind": "SPAN_KIND_INTERNAL",
-              "startTimeUnixNano": "1788787663735867904",
-              "endTimeUnixNano": "1788787664472495104",
+              "startTimeUnixNano": "1788788054134155008",
+              "endTimeUnixNano": "1788788054408071168",
               "attributes": [
                 {
                   "key": "metadata.user_api_key_hash",
@@ -268,7 +268,7 @@
                 {
                   "key": "hidden_params",
                   "value": {
-                    "stringValue": "{\"model_id\": null, \"cache_key\": null, \"api_base\": null, \"response_cost\": 5.88e-05, \"additional_headers\": {\"llm_provider-server\": \"BaseHTTP/0.6 Python/3.13.15\", \"llm_provider-date\": \"Mon, 07 Sep 2026 13:27:44 GMT\", \"llm_provider-content-type\": \"application/json\", \"llm_provider-content-length\": \"722\"}, \"litellm_overhead_time_ms\": null, \"batch_models\": null, \"batch_successful_requests\": null, \"batch_failed_requests\": null, \"litellm_model_name\": null, \"usage_object\": null}"
+                    "stringValue": "{\"model_id\": null, \"cache_key\": null, \"api_base\": null, \"response_cost\": 5.88e-05, \"additional_headers\": {\"llm_provider-server\": \"BaseHTTP/0.6 Python/3.13.15\", \"llm_provider-date\": \"Mon, 07 Sep 2026 13:34:14 GMT\", \"llm_provider-content-type\": \"application/json\", \"llm_provider-content-length\": \"722\"}, \"litellm_overhead_time_ms\": null, \"batch_models\": null, \"batch_successful_requests\": null, \"batch_failed_requests\": null, \"litellm_model_name\": null, \"usage_object\": null}"
                   }
                 },
                 {
@@ -400,7 +400,7 @@
                 {
                   "key": "litellm.call_id",
                   "value": {
-                    "stringValue": "8fb16125-26e9-4f40-b42c-ec10ebf3274b"
+                    "stringValue": "0d3f323c-bd38-4075-90ca-66a91b89c95e"
                   }
                 },
                 {
@@ -488,13 +488,13 @@
               "flags": 256
             },
             {
-              "traceId": "b1d8ae1b3fb8f0217735e4f3496c3bdf",
-              "spanId": "6987f0201482f19b",
-              "parentSpanId": "a5f632a15409374f",
+              "traceId": "89443148be1f25c7347a6825210c17cd",
+              "spanId": "78c663565622603e",
+              "parentSpanId": "ba48e2429fb1cf09",
               "name": "raw_gen_ai_request",
               "kind": "SPAN_KIND_INTERNAL",
-              "startTimeUnixNano": "1788787663735867904",
-              "endTimeUnixNano": "1788787664472495104",
+              "startTimeUnixNano": "1788788054134155008",
+              "endTimeUnixNano": "1788788054408071168",
               "attributes": [
                 {
                   "key": "llm.openai.messages",
