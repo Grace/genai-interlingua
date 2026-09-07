@@ -426,8 +426,48 @@ Go 1.25 for the core, 1.26 for the processor module (the Collector's floor).
 `gofmt`, `go vet ./...` and `go test -race ./...` are green in both modules, and
 `-update` is idempotent for the goldens and the conformance table.
 
-CI runs both modules, checks the generated files regenerate identically, and
-builds a real Collector to assert the processor registers in it.
+CI runs both modules, checks the generated files regenerate identically, builds
+a real Collector to assert the processor registers in it, and fuzzes the codec.
+
+### What it costs per span
+
+Apple M1 Pro, `go test -bench . -benchmem`:
+
+| | ns/op | allocs/op |
+| --- | --- | --- |
+| Decline a non-GenAI span (library) | 1,114 | **0** |
+| Decline a non-GenAI span (Collector) | 2,218 | 2 |
+| Normalize a GenAI span (library) | 11,204 | 40 |
+| Normalize a 2-span batch (Collector) | 31,796 | 118 |
+| Full CLI path: decode, normalize, encode | 173,701 | 268 |
+
+**Read the first two rows first.** Almost every span in a real pipeline is an
+HTTP handler or a database call, so the cost of *declining* is paid constantly
+while normalization is paid rarely. Declining allocates nothing at all in the
+library.
+
+It allocates twice in the Collector, and that is worth being straight about:
+the pdata path builds an attribute map before it knows whether any dialect will
+claim the span, so non-GenAI traffic pays 816 bytes of garbage per span. At
+50k spans/second that is around 40MB/s of allocation for spans nobody
+normalizes. The fix is to let the dialects score against a view over
+`pcommon.Map` rather than a converted map, which is a real refactor rather than
+a tweak. The benchmark exists so that this is a known number instead of a
+surprise.
+
+### Fuzzing
+
+`internal/normalize/otlp.go` is a hand-written OTLP/JSON codec, which is the one
+part of this that reads bytes nobody here wrote. In a Collector it is fed by the
+network, and a panic in a processor takes down a pipeline carrying every span in
+the service.
+
+`FuzzPayload` seeds from every fixture plus the degenerate shapes fixtures
+cannot reach, and asserts two properties beyond not panicking: output that
+claims to be encoded must decode, and **span count must be preserved** — a
+pipeline that silently loses spans is worse than one that fails loudly. 3.7
+million executions, no crashers. CI runs the seed corpus on every commit and
+fuzzes for 60s on pushes to `main`.
 
 Released with goreleaser on a `v*` tag, after the other three jobs pass.
 

@@ -132,7 +132,7 @@ func TestConformanceTable(t *testing.T) {
 // spansOf decodes a fixture into the spans the dialects see. It goes through
 // the same codec the CLI uses rather than a second reader, so the table cannot
 // describe a pipeline different from the one that runs.
-func spansOf(t *testing.T, data []byte) []dialect.Span {
+func spansOf(t testing.TB, data []byte) []dialect.Span {
 	t.Helper()
 	var p payload
 	if err := json.Unmarshal(data, &p); err != nil {

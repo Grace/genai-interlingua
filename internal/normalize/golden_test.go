@@ -62,7 +62,7 @@ func TestGolden(t *testing.T) {
 	}
 }
 
-func mustReadFile(t *testing.T, path string) []byte {
+func mustReadFile(t testing.TB, path string) []byte {
 	t.Helper()
 	b, err := os.ReadFile(path)
 	if err != nil {

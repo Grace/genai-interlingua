@@ -42,6 +42,18 @@ jobs:
       - name: go test
         run: go test -race ./...
 
+      # The seed corpus runs as part of `go test` above, which is most of the
+      # value for free. This adds a short real fuzzing run, and only on pushes:
+      # a fuzz find on a pull request would look like a flaky review rather than
+      # the genuine result it is, and 60s is not long enough to be a gate.
+      #
+      # internal/normalize/otlp.go is hand-written and parses input from the
+      # network. In a Collector a panic there takes down a pipeline carrying
+      # every span in the service.
+      - name: fuzz the OTLP codec
+        if: github.event_name == 'push'
+        run: go test ./internal/normalize -fuzz FuzzPayload -fuzztime=60s
+
       # Drift itself is already caught by the step above: TestConformanceTable
       # and the golden tests compare the committed bytes against freshly
       # generated ones and fail at the offending line. This step asserts the

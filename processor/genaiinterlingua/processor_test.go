@@ -115,7 +115,7 @@ func spansOf(td ptrace.Traces) []ptrace.Span {
 	return out
 }
 
-func mustReadTraces(t *testing.T, path string) ptrace.Traces {
+func mustReadTraces(t testing.TB, path string) ptrace.Traces {
 	t.Helper()
 	b, err := os.ReadFile(path)
 	if err != nil {
@@ -128,7 +128,7 @@ func mustReadTraces(t *testing.T, path string) ptrace.Traces {
 	return td
 }
 
-func mustOptions(t *testing.T, target semconv.Target) normalize.Options {
+func mustOptions(t testing.TB, target semconv.Target) normalize.Options {
 	t.Helper()
 	cfg := createDefaultConfig().(*Config)
 	cfg.Target = target.String()
