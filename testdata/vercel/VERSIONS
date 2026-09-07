@@ -1,0 +1,12 @@
+# Resolved versions of the packages this capture declared.
+# Written by testdata/capture/capture.sh.
+# captured: 2026-09-07T15:44:15Z
+
+@ai-sdk/openai==2.0.125
+@opentelemetry/api==1.9.1
+@opentelemetry/exporter-trace-otlp-http==0.222.0
+@opentelemetry/resources==2.11.0
+@opentelemetry/sdk-trace-node==2.11.0
+@opentelemetry/semantic-conventions==1.43.0
+ai==5.0.253
+zod==4.5.4

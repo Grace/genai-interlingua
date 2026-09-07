@@ -24,7 +24,7 @@
           {
             "key": "service.instance.id",
             "value": {
-              "stringValue": "9c818a40-ae65-4e66-97d9-001303f7ba01"
+              "stringValue": "2cec90cb-b604-4252-aa04-6e23db22089c"
             }
           },
           {
@@ -43,13 +43,13 @@
           },
           "spans": [
             {
-              "traceId": "77d66be22a4ffc8149309684b3a319f7",
-              "spanId": "76a26812b532f640",
-              "parentSpanId": "aaa24d5a6cca68bf",
+              "traceId": "5f90e0fae91e2682e8f9c444b888ab2b",
+              "spanId": "8ed2ac9258fd12cf",
+              "parentSpanId": "e0d3487f0a1b761d",
               "name": "openai.chat",
               "kind": "SPAN_KIND_CLIENT",
-              "startTimeUnixNano": "1788789263812545000",
-              "endTimeUnixNano": "1788789263838423000",
+              "startTimeUnixNano": "1788795791003811000",
+              "endTimeUnixNano": "1788795791027364000",
               "attributes": [
                 {
                   "key": "gen_ai.operation.name",
@@ -215,7 +215,7 @@
           {
             "key": "service.instance.id",
             "value": {
-              "stringValue": "9c818a40-ae65-4e66-97d9-001303f7ba01"
+              "stringValue": "2cec90cb-b604-4252-aa04-6e23db22089c"
             }
           },
           {
@@ -233,12 +233,12 @@
           },
           "spans": [
             {
-              "traceId": "77d66be22a4ffc8149309684b3a319f7",
-              "spanId": "aaa24d5a6cca68bf",
+              "traceId": "5f90e0fae91e2682e8f9c444b888ab2b",
+              "spanId": "e0d3487f0a1b761d",
               "name": "support_triage.workflow",
               "kind": "SPAN_KIND_INTERNAL",
-              "startTimeUnixNano": "1788789263812452000",
-              "endTimeUnixNano": "1788789263843412000",
+              "startTimeUnixNano": "1788795791003727000",
+              "endTimeUnixNano": "1788795791031764000",
               "attributes": [
                 {
                   "key": "traceloop.workflow.name",

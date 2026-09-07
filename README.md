@@ -393,6 +393,38 @@ Only `raw-folk` stays hand-built -- bare names like `prompt_tokens` that
 somebody wrote by hand, which no library emits. Details in
 [`testdata/README.md`](testdata/README.md).
 
+## Staying current with a moving target
+
+A repository arguing that `gen_ai.*` moves should not encode it as a snapshot
+nobody checks. Three things move independently here, and each has something
+watching it.
+
+**The schema.** `internal/semconv` was transcribed by hand from upstream YAML.
+Both registries — `semantic-conventions-genai` at a pinned commit, and
+`semantic-conventions` at the frozen `v1.41.0` tag — are vendored under
+`internal/semconv/testdata/upstream/`, and `TestSchemaMatchesUpstream` holds the
+tables to them: every key must exist upstream, every enum must have the same
+members, and attributes upstream defines that this repository does not model are
+reported rather than failed, because choosing not to model one is editorial and
+not knowing about it is a bug. All 50 and all 72 currently match.
+
+They are vendored as JSON rather than YAML so the core module keeps having no
+dependencies; a Go YAML parser would show up in `go.mod` even as a test import.
+
+**The emitters.** Every fixture carries `VERSIONS` and `KEYS`. Nothing is
+pinned — re-capturing is supposed to pick up new releases — so `KEYS` compares
+attribute key *sets*, which is what actually changes when a library migrates,
+rather than bytes, which change on every capture because trace ids do.
+
+**The release that would change everything.** A weekly job asks whether
+`semantic-conventions-genai` has tagged anything yet. While the answer is no,
+nothing happens. When it becomes yes, it opens an issue containing the to-do
+list from `docs/moving-target.md`, because that document currently argues from
+the absence of exactly that event.
+
+Neither scheduled job commits anything. Deciding what a new attribute means is
+the interesting part and is not automatable.
+
 ## Layout
 
 ```

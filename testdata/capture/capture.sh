@@ -24,6 +24,46 @@ DIALECTS=(openllmetry openinference litellm braintrust vercel raw langchain)
 # Runners are named capture_<dialect> rather than <dialect> because a Python
 # file named openinference.py shadows the openinference package it imports, and
 # the failure that produces names neither the file nor the cause.
+# record_versions writes the resolved versions of whatever the runner actually
+# imported. Nothing here is pinned on purpose -- re-running a capture is meant
+# to pick up new releases, because that is the drift worth detecting -- so the
+# versions are recorded after the fact rather than declared in advance.
+record_versions() {
+  local dialect=$1 out="testdata/$1/VERSIONS"
+  {
+    echo "# Resolved versions of the packages this capture declared."
+    echo "# Written by testdata/capture/capture.sh."
+    echo "#"
+    echo "# Nothing is pinned on purpose: re-capturing is meant to pick up new"
+    echo "# releases, because a library changing what it emits is the drift this"
+    echo "# harness exists to notice. This file records what it was, so that a"
+    echo "# change in KEYS can be told apart from a change in nothing."
+    echo "# captured: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    echo
+    if [ "$dialect" = vercel ]; then
+      node -e '
+        const deps = require("./testdata/capture/package.json").dependencies;
+        for (const name of Object.keys(deps).sort()) {
+          let v = "unknown";
+          try { v = require(`./testdata/capture/node_modules/${name}/package.json`).version } catch {}
+          console.log(`${name}==${v}`);
+        }' 2>/dev/null || echo "(node_modules absent; run npm install in testdata/capture)"
+    else
+      # uv lock --script resolves exactly what `uv run` would use. The lockfile
+      # is deleted immediately afterwards: `uv run --script` honours one if it
+      # finds it, so leaving it behind would silently pin every future capture
+      # and turn this harness into the opposite of a drift detector.
+      local script="$here/capture_$dialect.py"
+      if uv lock --script "$script" >/dev/null 2>&1; then
+        uv run --quiet "$here/versions_from_lock.py" "$script" "$script.lock" || echo "(could not read lock)"
+        rm -f "$script.lock"
+      else
+        echo "(uv lock failed)"
+      fi
+    fi
+  } > "$out"
+}
+
 runner() {
   case "$1" in
     vercel) echo "node $here/capture_vercel.mjs" ;;
@@ -67,6 +107,12 @@ capture_one() {
   fi
 
   mkdir -p "testdata/$dialect"
+
+  # Record what produced this capture. A fixture that cannot say which library
+  # version emitted it cannot support a claim about that library, and "the
+  # attributes changed" is not diagnosable without knowing whether the version
+  # changed too.
+  record_versions "$dialect"
   # Several exports may arrive; merge their resourceSpans into one request so
   # the fixture is a single ExportTraceServiceRequest like everything else here.
   python3 "$here/merge.py" "$out" > "testdata/$dialect/in.json"

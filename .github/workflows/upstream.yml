@@ -1,0 +1,126 @@
+# Watches the two things this repository cannot control: the schema it
+# normalizes to, and whether that schema has finally been released.
+#
+# Neither job changes anything. They open issues, because deciding what to do
+# about upstream moving is the interesting part and is not automatable -- a new
+# attribute might warrant a new Field, or might be something no emitter produces
+# and this repository is right to ignore.
+
+name: upstream
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"    # Mondays, off the hour
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  schema-drift:
+    name: has the target schema moved
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+
+      # Re-vendor into a scratch copy and compare. The committed files stay
+      # pinned: the point is to notice movement, and a job that silently
+      # re-pinned would notice it once and then never again.
+      # Only the attributes are compared, never the _source block. That block
+      # records the ref the file was fetched from, which is "94f432d7126f" in
+      # the committed copy and "main" in the freshly fetched one -- so a naive
+      # whole-file diff reports drift every single week whether or not anything
+      # changed, and a watcher that always fires is a watcher nobody reads.
+      - name: compare upstream against what is vendored
+        id: drift
+        run: |
+          cp internal/semconv/testdata/upstream/genai-main.registry.json /tmp/pinned.json
+          GENAI_REF=main ./internal/semconv/testdata/upstream/refresh.sh
+          cp internal/semconv/testdata/upstream/genai-main.registry.json /tmp/fresh.json
+
+          attrs() { python3 -c "import json,sys; print(json.dumps(json.load(open(sys.argv[1]))['attributes'], indent=2, sort_keys=True))" "$1"; }
+          attrs /tmp/pinned.json > /tmp/pinned.attrs
+          attrs /tmp/fresh.json  > /tmp/fresh.attrs
+
+          if diff -u /tmp/pinned.attrs /tmp/fresh.attrs > /tmp/drift.txt; then
+            echo "moved=false" >> "$GITHUB_OUTPUT"
+            echo "no change to the attribute registry since the pin"
+          else
+            echo "moved=true" >> "$GITHUB_OUTPUT"
+            cat /tmp/drift.txt
+          fi
+
+      - name: open an issue
+        if: steps.drift.outputs.moved == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "\`semantic-conventions-genai\` has changed since the vendored pin."
+            echo
+            echo "Re-pin with:"
+            echo '```'
+            echo "GENAI_REF=<new sha> ./internal/semconv/testdata/upstream/refresh.sh"
+            echo "go test ./internal/semconv -run TestUpstream -v   # what is now unmodelled"
+            echo '```'
+            echo
+            echo "Diff against the pinned copy:"
+            echo '```'
+            head -c 60000 /tmp/drift.txt
+            echo '```'
+          } > /tmp/body.md
+          gh issue create --title "Upstream GenAI schema has moved" \
+            --body-file /tmp/body.md --label upstream 2>/dev/null ||
+          gh issue create --title "Upstream GenAI schema has moved" --body-file /tmp/body.md
+
+  first-release:
+    name: has semantic-conventions-genai tagged anything
+    runs-on: ubuntu-latest
+    steps:
+      # The event this whole repository is about. While the new repo has no
+      # releases there is no version to pin and no schema URL to emit, which is
+      # the argument docs/moving-target.md makes. The day that stops being true
+      # the argument needs rewriting, and finding out six months late would be
+      # a poor advert for a project about staying current with a moving target.
+      - name: check for tags and releases
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tags=$(gh api repos/open-telemetry/semantic-conventions-genai/tags --jq 'length')
+          rels=$(gh api repos/open-telemetry/semantic-conventions-genai/releases --jq 'length')
+          echo "tags=$tags rels=$rels"
+          if [ "$tags" != "0" ] || [ "$rels" != "0" ]; then
+            echo "released=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "released=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: open an issue
+        if: steps.check.outputs.released == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "The repository that owns \`gen_ai.*\` has tagged something for the first time."
+            echo
+            echo "This is the event \`docs/moving-target.md\` predicts, and its last section"
+            echo "stops being a prediction and becomes a to-do list:"
+            echo
+            echo "- [ ] Add the tagged version as a third Target in internal/semconv."
+            echo "- [ ] Make it DefaultTarget. A tagged release beats a frozen deprecated"
+            echo "      one on every axis that made v1.41.0 the default."
+            echo "- [ ] Emit a real schema_url on normalized spans. interlingua.target"
+            echo "      becomes belt-and-braces rather than the only record of which"
+            echo "      vocabulary the gen_ai.* keys belong to."
+            echo "- [ ] Keep v1.41.0 for as long as anyone has a backend pinned to it."
+            echo "      Removing it would be the same mistake as never having offered it."
+            echo "- [ ] Keep genai-main; people track main."
+            echo "- [ ] Rewrite docs/moving-target.md, which currently argues from the"
+            echo "      absence of exactly this."
+          } > /tmp/release-body.md
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "semantic-conventions-genai has published a release" \
+            --body-file /tmp/release-body.md

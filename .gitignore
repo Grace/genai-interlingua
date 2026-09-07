@@ -4,3 +4,4 @@
 /demo/build/
 /testdata/capture/node_modules/
 /demo/.env
+/testdata/capture/*.lock

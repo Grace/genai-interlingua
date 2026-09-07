@@ -34,6 +34,35 @@ cut uses, so at `v1.41.0` the normalized key lands on top of the emitter's own
 and at `genai-main` it is renamed to `gen_ai.usage.cache_write.input_tokens`
 with the original left beside it.
 
+## Staying current
+
+Each fixture carries three generated files besides its goldens:
+
+| | |
+| --- | --- |
+| `PROVENANCE` | `captured` or `hand-built`, read by the conformance table |
+| `VERSIONS` | the library versions that produced this capture |
+| `KEYS` | the span names and attribute keys it carries |
+
+`KEYS` is the drift detector, and it compares key *sets* rather than bytes on
+purpose: re-capturing produces new trace ids and timestamps every time, so a
+byte diff is dirty on every run and useless as a signal. A library starting or
+stopping emitting an attribute is exactly what changed when OpenLLMetry migrated
+to the conventions, and it is the only thing worth being told about.
+
+```console
+$ ./testdata/capture/capture.sh all
+$ go test ./internal/normalize -update
+$ git diff testdata/*/KEYS          # this is the interesting diff
+```
+
+Nothing is pinned. Re-capturing is meant to pick up new releases, because that
+is the drift the harness exists to notice; `VERSIONS` records what it was so a
+change in `KEYS` can be told apart from a change in nothing.
+
+The schema those spans are normalized *to* moves as well, and is checked
+separately — see `internal/semconv/testdata/upstream/`.
+
 ## Provenance
 
 Each directory carries a `PROVENANCE` marker, `captured` or `hand-built`, and

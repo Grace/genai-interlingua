@@ -1,0 +1,12 @@
+# Resolved versions of the packages this capture declared.
+# Written by testdata/capture/capture.sh.
+#
+# Nothing is pinned on purpose: re-capturing is meant to pick up new
+# releases, because a library changing what it emits is the drift this
+# harness exists to notice. This file records what it was, so that a
+# change in KEYS can be told apart from a change in nothing.
+# captured: 2026-09-07T15:44:15Z
+
+braintrust==0.37.0
+openai==3.8.0
+opentelemetry-sdk==1.44.0
