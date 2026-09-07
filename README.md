@@ -382,6 +382,10 @@ Braintrust one found nothing wrong with the *parser* but removed three marks the
 hand-built fixture had been claiming, which is the same lesson pointed at the
 evidence instead of the code.
 
+**[`docs/findings.md`](docs/findings.md) is all of it in one place** — what each
+fixture had assumed, what the library actually did, and why none of it was
+reachable by a test suite that was already green.
+
 That `raw` capture also answers a question the rest of the repository only
 argues about: normalize the reference implementation's span to both targets and
 the entire difference is the value of `interlingua.target`. Every attribute
