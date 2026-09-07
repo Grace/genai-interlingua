@@ -15,10 +15,30 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
 
 	"github.com/Grace/genai-interlingua/internal/normalize"
 	"github.com/Grace/genai-interlingua/internal/semconv"
 )
+
+// version is stamped by the release build through -ldflags. A binary built any
+// other way reports what the module system knows instead, which for `go install
+// ...@v1.2.3` is that tag and for a local build is "(devel)". Reporting the
+// second rather than an empty string matters here: this tool's whole subject is
+// which version of a moving schema you are looking at, and a normalizer that
+// cannot say which version of itself produced a span would be a poor advert for
+// the argument.
+var version string
+
+func buildVersion() string {
+	if version != "" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
+		return info.Main.Version
+	}
+	return "unknown"
+}
 
 func main() {
 	if err := run(); err != nil {
@@ -35,7 +55,16 @@ func run() error {
 	// is a trade worth making only once you trust the mapping.
 	strip := flag.Bool("strip-original", false,
 		"remove the source attributes the dialect consumed")
+	showVersion := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
+
+	if *showVersion {
+		// The default target goes out beside the version because they are two
+		// halves of the same answer: knowing which binary you ran tells you
+		// nothing unless you also know which schema it renders by default.
+		fmt.Printf("interlingua %s (default target %s)\n", buildVersion(), semconv.DefaultTarget)
+		return nil
+	}
 
 	t, err := semconv.ParseTarget(*target)
 	if err != nil {

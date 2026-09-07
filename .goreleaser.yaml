@@ -1,0 +1,65 @@
+# Release build for the CLI.
+#
+# Only cmd/interlingua ships as a binary. The Collector processor is a library
+# that people build into their own distribution with ocb, so it is released by
+# tagging the module rather than by producing an artifact here -- see
+# processor/genaiinterlingua/README.md and demo/builder-config.yaml.
+#
+# `goreleaser check` needs a git remote to validate the release section, so it
+# fails on a clone that has none. `goreleaser release --snapshot --clean
+# --skip=publish` does not, and is the better check anyway: it builds every
+# target and archives them.
+version: 2
+
+project_name: interlingua
+
+before:
+  hooks:
+    # The root module has no dependencies, so this is close to a no-op. It is
+    # here so that a release cannot be cut from a tree where it would not be.
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: interlingua
+    main: ./cmd/interlingua
+    binary: interlingua
+    env:
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    # -s -w strip the symbol table and DWARF; main.version is what `interlingua
+    # -version` reports. Without it the binary falls back to the module info,
+    # which for a goreleaser build is empty rather than the tag.
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: interlingua
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    files:
+      - README.md
+      - COMPATIBILITY.md
+      - LICENSE
+      - src: docs/*.md
+        dst: docs
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
