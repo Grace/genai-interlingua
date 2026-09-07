@@ -35,9 +35,18 @@ dumbest possible OTLP endpoint.
 
 ## The one that is not captured
 
-`raw/` is synthetic by definition. It is the fallback for a span that is already
-conformant, or nearly, and no single library emits it -- capturing "a span some
-other tool produced" would just be picking one of the others again.
+`raw-folk/` is synthetic by definition: bare attribute names somebody wrote by
+hand, which no library emits.
+
+Its sibling `raw/` **is** captured, from
+`opentelemetry-instrumentation-openai-v2` -- OpenTelemetry's own first-party
+instrumentation, and so the control case for this whole repository. Two things
+to know if you re-run it. The message-content switch takes
+`NO_CONTENT`/`SPAN_ONLY`/`EVENT_ONLY`/`SPAN_AND_EVENT` rather than the boolean it
+once did, and an unrecognized value degrades quietly to `NO_CONTENT`, so a
+fixture captured with the old spelling silently contains no messages at all. And
+the package does not declare its dependency on `httpx`, which fails at import
+rather than at install -- the same undeclared dependency `traceloop-sdk` has.
 
 ## Braintrust, and why it needs no key after all
 

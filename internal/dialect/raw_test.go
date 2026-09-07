@@ -145,3 +145,50 @@ func TestRawNamesTheAttributesItCouldNotPlace(t *testing.T) {
 		}
 	}
 }
+
+// openai.* and mcp.* are namespaces the conventions themselves own -- the
+// v1.42.0 release notes move model/gen-ai/, model/openai/ and model/mcp/ into
+// the new repository together -- so a leftover in them is GenAI data that could
+// not be placed, not an unrelated application attribute.
+//
+// This came from capturing OpenTelemetry's own first party instrumentation,
+// which emits openai.response.system_fingerprint. It was being walked past
+// silently, on the one span in the fixtures with the best claim to being
+// already correct.
+func TestRawNamesTheVendorNamespacesTheConventionsOwn(t *testing.T) {
+	p := (raw{}).Parse(Span{Attributes: map[string]Value{
+		"gen_ai.usage.input_tokens":          Int(412),
+		"openai.response.system_fingerprint": String("fp_capture0"),
+		"mcp.tool.invocation_id":             String("inv-1"),
+	}})
+
+	for _, key := range []string{"openai.response.system_fingerprint", "mcp.tool.invocation_id"} {
+		var found bool
+		for _, l := range p.Loss {
+			if l.Key == key && l.Reason == ReasonNoField {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("%s was not recorded as a no_field loss; losses = %+v", key, p.Loss)
+		}
+	}
+}
+
+// The counterweight: this dialect claims spans that are mostly arbitrary, so
+// treating every unrecognized attribute as a loss would report an HTTP span's
+// own attributes as GenAI data the normalizer dropped.
+func TestRawDoesNotReportUnrelatedAttributesAsLosses(t *testing.T) {
+	p := (raw{}).Parse(Span{Attributes: map[string]Value{
+		"gen_ai.usage.input_tokens": Int(412),
+		"http.request.method":       String("POST"),
+		"db.system":                 String("postgresql"),
+		"service.version":           String("1.2.3"),
+	}})
+
+	for _, l := range p.Loss {
+		if l.Key == "http.request.method" || l.Key == "db.system" || l.Key == "service.version" {
+			t.Errorf("%s was reported as a GenAI loss; losses = %+v", l.Key, p.Loss)
+		}
+	}
+}

@@ -27,7 +27,7 @@ regenerates the captured ones.
 | `litellm` | captured |
 | `openinference` | captured |
 | `openllmetry` | captured, hand-built |
-| `raw` | hand-built |
+| `raw` | captured, hand-built |
 | `vercel` | captured |
 
 ## Field coverage
@@ -43,11 +43,11 @@ the dialect parsed it.
 | `gen_ai.request.model` | y | y | y | y | y | y | y | y |
 | `gen_ai.request.max_tokens` | y | y | - | y | y | y | y | y |
 | `gen_ai.request.temperature` | y | y | - | y | y | y | y | y |
-| `gen_ai.request.top_p` | y | y | - | y | y | y | - | y |
+| `gen_ai.request.top_p` | y | y | - | y | y | y | y | y |
 | `gen_ai.request.stop_sequences` | y | y | - | - | - | y | - | - |
 | `gen_ai.request.stream` | y | y | - | - | - | y | - | - |
 | `gen_ai.response.id` | y | y | - | - | - | y | y | y |
-| `gen_ai.response.model` | y | y | y | y | - | y | - | y |
+| `gen_ai.response.model` | y | y | y | y | - | y | y | y |
 | `gen_ai.response.finish_reasons` | y | y | - | - | y | y | y | y |
 | `gen_ai.usage.input_tokens` | y | y | y | y | y | y | y | y |
 | `gen_ai.usage.cache_read.input_tokens` | y | y | - | - | y | - | - | - |
@@ -61,9 +61,9 @@ the dialect parsed it.
 | `gen_ai.tool.call.arguments` | y | y | - | - | - | - | - | y |
 | `gen_ai.tool.call.result` | y | y | - | - | - | - | - | y |
 | `gen_ai.tool.definitions` | y | y | - | y | y | y | - | y |
-| `gen_ai.operation.name` | y | y | y | y | y | y | - | y |
-| `gen_ai.input.messages` | y | y | - | y | y | y | - | y |
-| `gen_ai.output.messages` | y | y | - | y | y | y | - | y |
+| `gen_ai.operation.name` | y | y | y | y | y | y | y | y |
+| `gen_ai.input.messages` | y | y | - | y | y | y | y | y |
+| `gen_ai.output.messages` | y | y | - | y | y | y | y | y |
 | `gen_ai.evaluation.name` | y | y | y | - | - | - | - | - |
 | `gen_ai.evaluation.score.value` | y | y | y | - | - | - | - | - |
 | `gen_ai.prompt.name` | y | y | - | - | - | y | - | - |
@@ -104,7 +104,7 @@ reports on the span itself.
 
 ### raw
 
-- **no_field** — `gen_ai.retry_count`, `llm.cache_hit`, `total_tokens`
+- **no_field** — `gen_ai.retry_count`, `llm.cache_hit`, `openai.response.system_fingerprint`, `total_tokens`
 - **unstructured** — `completion`, `prompt`
 
 ### vercel

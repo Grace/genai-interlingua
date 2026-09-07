@@ -153,12 +153,26 @@ func (d raw) Parse(s Span) Parsed {
 		}
 	}
 
-	// Whatever is left in the two GenAI namespaces was meant to say something
-	// and could not be placed. Naming it is the point: this is the dialect for
+	// Whatever is left in the GenAI namespaces was meant to say something and
+	// could not be placed. Naming it is the point: this is the dialect for
 	// spans nobody designed, and the loss list is the only record of what their
 	// author was trying to record.
+	//
+	// The list is deliberately short. This dialect claims spans that are mostly
+	// arbitrary, and treating every unrecognized attribute as a loss would
+	// report an HTTP span's http.method as GenAI data the normalizer dropped.
+	// These four are namespaces the conventions themselves own: the v1.42.0
+	// release notes move attributes "previously defined under model/gen-ai/,
+	// model/openai/, and model/mcp/" into the new repository, and llm. is the
+	// pre-conventions spelling every dialect here still sees in the wild.
+	//
+	// openai. is on the list because a capture of OpenTelemetry's own first
+	// party instrumentation emits openai.response.system_fingerprint, which was
+	// being walked past silently -- on the one span in the fixtures that has the
+	// best claim to being already correct.
 	for _, k := range s.Keys() {
-		if !strings.HasPrefix(k, "gen_ai.") && !strings.HasPrefix(k, "llm.") {
+		if !strings.HasPrefix(k, "gen_ai.") && !strings.HasPrefix(k, "llm.") &&
+			!strings.HasPrefix(k, "openai.") && !strings.HasPrefix(k, "mcp.") {
 			continue
 		}
 		if slicesContains(p.Consumed, k) {

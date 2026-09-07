@@ -49,9 +49,17 @@ library's output rather than this repository's idea of it.
 `openinference/`, `litellm/`, `vercel/` and `braintrust/` are captured the same
 way.
 
-`raw/` is the only **hand-built** one left, and stays that way: it is the
-fallback for arbitrary already-conformant spans rather than any one library's
-output, so there is nothing to capture it *from*.
+`raw/` is **captured**, from OpenTelemetry's own first-party OpenAI
+instrumentation (`opentelemetry-instrumentation-openai-v2`). That is the control
+case: the reference implementation of the conventions this repository normalizes
+*to*, and the span with the best claim to being already correct. If `raw` ever
+fails to claim it, or the normalizer rewrites something that was already right,
+that is worse news than any dialect's mapping bug.
+
+`raw-folk/` is **hand-built** and stays that way. It covers the other half of
+what `raw` recognizes: bare hand-rolled names like `model`, `prompt_tokens` and
+`finish_reason`. No library emits those -- being ad-hoc is their definition -- so
+there is nothing to capture them from.
 
 ### Braintrust is captured, but read its row differently
 

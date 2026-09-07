@@ -130,6 +130,39 @@ The full picture across all six dialects is in
 Today it is two fields. That number is small because the fixtures are small; it
 is not zero, and it grows every time the new repository adds an attribute.
 
+## What the reference implementation actually emits
+
+An argument about which target to pin is worth checking against the one emitter
+whose opinion is authoritative: OpenTelemetry's own first-party instrumentation.
+`testdata/raw/` is a capture of it (`opentelemetry-instrumentation-openai-v2`
+2.4b0, spans produced by `opentelemetry.util.genai.handler` 1.1b0), and the
+result is more reassuring for the frozen default than expected.
+
+It emits `gen_ai.operation.name`, `gen_ai.provider.name`, the request settings,
+the token counts, `gen_ai.response.finish_reasons`, and the structured
+`gen_ai.input.messages` / `gen_ai.output.messages`. Normalize that span to both
+targets and the *entire* difference between the two outputs is the value of
+`interlingua.target`:
+
+```
+$ diff <(… out.v1.41.0.json) <(… out.genai-main.json)
+<       "stringValue": "v1.41.0"
+>       "stringValue": "genai-main"
+```
+
+Every attribute the reference implementation produces today is expressible at
+the frozen cut. So for spans from the official instrumentation, pinning v1.41.0
+costs nothing at all — which is the best argument available for it being the
+default, and a better one than "it is the only version you can name".
+
+Two caveats worth keeping. Those version numbers are `2.4b0` and `1.1b0`: this is
+beta code tracking an untagged specification, and the gap can open at any time
+without a version number changing to warn you. And the span carries
+`openai.response.system_fingerprint`, which no target expresses at any version —
+so even the reference implementation emits data the conventions have no home for,
+and this repository records it in `interlingua.lossy` rather than dropping it
+quietly.
+
 ## What happens when they finally tag something
 
 Concretely, when `semantic-conventions-genai` publishes `v1.0.0` or whatever it

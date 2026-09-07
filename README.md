@@ -65,8 +65,8 @@ rather than a thing you discover later.
 
 **The claims are checked by tests, not by prose.**
 [`docs/conformance.md`](docs/conformance.md) is generated from the fixtures, and
-CI fails if it disagrees with them. Five of the six dialects are backed by spans
-captured from the real libraries, and the table says which — a row cannot borrow
+CI fails if it disagrees with them. Every dialect is backed by spans captured
+from the real libraries, and the table says which — a row cannot borrow
 credibility it did not earn.
 
 ## Install
@@ -244,13 +244,13 @@ It also reports, per dialect, whether the inputs behind a row were **captured**
 from a running library or **hand-built** here, read from a marker file next to
 each fixture so that account cannot drift from the truth.
 
-Five of the six are captured -- everything except `raw`, which is the fallback
-for already-conformant spans and so has no library to capture from.
+Six of the seven fixtures are captured -- everything except `raw-folk`, which is
+hand-rolled attribute names that no library emits.
 `testdata/capture/capture.sh` runs the real libraries against a local mock
 OpenAI server -- no API key, nothing sent anywhere -- and records what they put
 on the wire.
 
-Three of those four captures found a bug that hand-built fixtures had hidden:
+Four of those captures found a bug that hand-built fixtures had hidden:
 
 - **OpenLLMetry** has migrated to the conventions, and four attributes it now
   emits were being silently walked past -- including
@@ -264,14 +264,26 @@ Three of those four captures found a bug that hand-built fixtures had hidden:
   none of which the conventions price at any version and none of which were
   being recorded.
 
+- **`raw`**, captured from OpenTelemetry's *own* first-party instrumentation --
+  the control case -- was silently walking past
+  `openai.response.system_fingerprint`. `openai.` and `mcp.` are namespaces the
+  conventions themselves own, so a leftover in them is GenAI data that could not
+  be placed, and it is now recorded.
+
 The Vercel capture found nothing, which is the other useful outcome. The
 Braintrust one found nothing wrong with the *parser* but removed three marks the
 hand-built fixture had been claiming, which is the same lesson pointed at the
 evidence instead of the code.
 
-`raw` stays hand-built because it is the fallback for arbitrary conformant spans
-rather than any library's output. Details, including why braintrust's row should
-be read differently from the rest, in
+That `raw` capture also answers a question the rest of the repository only
+argues about: normalize the reference implementation's span to both targets and
+the entire difference is the value of `interlingua.target`. Every attribute
+OpenTelemetry's own instrumentation emits today is expressible at the frozen
+v1.41.0 cut, which is the best available argument for it being the default. See
+[`docs/moving-target.md`](docs/moving-target.md).
+
+Only `raw-folk` stays hand-built -- bare names like `prompt_tokens` that
+somebody wrote by hand, which no library emits. Details in
 [`testdata/README.md`](testdata/README.md).
 
 ## Layout
@@ -282,7 +294,7 @@ internal/dialect     what each emitter says. no schema versions.
 internal/normalize   the only place the two meet, plus the OTLP/JSON codec.
 cmd/interlingua      stdin to stdout.
 processor/…          the same, as a Collector processor. own module.
-testdata/            seven fixtures x two targets, plus the capture harness.
+testdata/            eight fixtures x two targets, plus the capture harness.
 ```
 
 `internal/semconv` and `internal/dialect` do not import each other and neither
@@ -312,5 +324,5 @@ builds a real Collector to assert the processor registers in it.
 
 Released with goreleaser on a `v*` tag, after the other three jobs pass.
 
-Five of the six dialects are backed by captured spans; `raw` is the fallback for
-already-conformant spans and has no library to capture from.
+Every dialect is backed by captured spans, including `raw`, which is captured
+from OpenTelemetry's own first-party instrumentation.

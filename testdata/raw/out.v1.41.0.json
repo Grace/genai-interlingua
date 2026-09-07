@@ -4,9 +4,33 @@
       "resource": {
         "attributes": [
           {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "python"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.44.0"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "613a5879-7753-4813-96a4-4148d45b49c4"
+            }
+          },
+          {
             "key": "service.name",
             "value": {
-              "stringValue": "internal-tools"
+              "stringValue": "capture"
             }
           }
         ]
@@ -14,100 +38,41 @@
       "scopeSpans": [
         {
           "scope": {
-            "name": "internal-tools/llm",
-            "version": ""
+            "name": "opentelemetry.util.genai.handler",
+            "version": "1.1b0"
           },
           "spans": [
             {
-              "traceId": "0d1e2f3a4b5c6d7e8f90a1b2c3d4e5f6",
-              "spanId": "a1b2c3d4e5f60718",
-              "name": "call_model",
-              "kind": 3,
-              "startTimeUnixNano": "1749841200000000000",
-              "endTimeUnixNano": "1749841201740000000",
+              "traceId": "053074667b1113278073667614bb3e19",
+              "spanId": "03491beea3cb073d",
+              "flags": 256,
+              "name": "chat gpt-4o-mini",
+              "kind": "SPAN_KIND_CLIENT",
+              "startTimeUnixNano": "1788792074027616000",
+              "endTimeUnixNano": "1788792074047335000",
               "attributes": [
                 {
-                  "key": "model",
+                  "key": "openai.response.system_fingerprint",
                   "value": {
-                    "stringValue": "gpt-4o-mini"
+                    "stringValue": "fp_capture0"
                   }
                 },
                 {
-                  "key": "provider",
+                  "key": "gen_ai.input.messages",
                   "value": {
-                    "stringValue": "OpenAI"
+                    "stringValue": "[{\"role\":\"system\",\"parts\":[{\"content\":\"You are a support agent. Use the tools you are given.\",\"type\":\"text\"}]},{\"role\":\"user\",\"parts\":[{\"content\":\"Where is order A-1187?\",\"type\":\"text\"}]}]"
                   }
                 },
                 {
-                  "key": "temperature",
+                  "key": "gen_ai.operation.name",
                   "value": {
-                    "doubleValue": 0.7
+                    "stringValue": "chat"
                   }
                 },
                 {
-                  "key": "max_tokens",
+                  "key": "gen_ai.output.messages",
                   "value": {
-                    "intValue": "1024"
-                  }
-                },
-                {
-                  "key": "prompt_tokens",
-                  "value": {
-                    "intValue": "412"
-                  }
-                },
-                {
-                  "key": "completion_tokens",
-                  "value": {
-                    "intValue": "27"
-                  }
-                },
-                {
-                  "key": "total_tokens",
-                  "value": {
-                    "intValue": "439"
-                  }
-                },
-                {
-                  "key": "finish_reason",
-                  "value": {
-                    "stringValue": "stop"
-                  }
-                },
-                {
-                  "key": "request_id",
-                  "value": {
-                    "stringValue": "chatcmpl-CD8yqQ2y3kZs1o0Wm7bT"
-                  }
-                },
-                {
-                  "key": "prompt",
-                  "value": {
-                    "stringValue": "Where is order A-1187?"
-                  }
-                },
-                {
-                  "key": "completion",
-                  "value": {
-                    "stringValue": "Let me check that for you."
-                  }
-                },
-                {
-                  "key": "gen_ai.retry_count",
-                  "value": {
-                    "intValue": "1"
-                  }
-                },
-                {
-                  "key": "llm.cache_hit",
-                  "value": {
-                    "boolValue": false
-                  }
-                },
-                {
-                  "key": "user_id",
-                  "value": {
-                    "stringValue": "u-7741"
+                    "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"arguments\":{\"order_id\":\"A-1187\"},\"name\":\"lookup_order\",\"id\":\"call_9RtYbK2mXqLp\",\"type\":\"tool_call\"}],\"finish_reason\":\"tool_calls\"}]"
                   }
                 },
                 {
@@ -135,12 +100,18 @@
                   }
                 },
                 {
+                  "key": "gen_ai.request.top_p",
+                  "value": {
+                    "doubleValue": 0.95
+                  }
+                },
+                {
                   "key": "gen_ai.response.finish_reasons",
                   "value": {
                     "arrayValue": {
                       "values": [
                         {
-                          "stringValue": "stop"
+                          "stringValue": "tool_calls"
                         }
                       ]
                     }
@@ -150,6 +121,12 @@
                   "key": "gen_ai.response.id",
                   "value": {
                     "stringValue": "chatcmpl-CD8yqQ2y3kZs1o0Wm7bT"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini-2024-07-18"
                   }
                 },
                 {
@@ -182,19 +159,7 @@
                     "arrayValue": {
                       "values": [
                         {
-                          "stringValue": "completion"
-                        },
-                        {
-                          "stringValue": "gen_ai.retry_count"
-                        },
-                        {
-                          "stringValue": "llm.cache_hit"
-                        },
-                        {
-                          "stringValue": "prompt"
-                        },
-                        {
-                          "stringValue": "total_tokens"
+                          "stringValue": "openai.response.system_fingerprint"
                         }
                       ]
                     }
@@ -209,7 +174,8 @@
               ],
               "status": {}
             }
-          ]
+          ],
+          "schemaUrl": "https://opentelemetry.io/schemas/1.37.0"
         }
       ]
     }
