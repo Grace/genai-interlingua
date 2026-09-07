@@ -3,101 +3,208 @@
     {
       "resource": {
         "attributes": [
-          { "key": "service.name", "value": { "stringValue": "research-agent" } },
-          { "key": "telemetry.sdk.language", "value": { "stringValue": "python" } }
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "python"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.44.0"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "2b1a54ec-805d-45c8-a814-a9dce7701783"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "capture"
+            }
+          }
         ]
       },
       "scopeSpans": [
         {
           "scope": {
-            "name": "openinference.instrumentation.langchain",
-            "version": "0.1.44"
+            "name": "openinference.instrumentation.openai",
+            "version": "0.1.58"
           },
           "spans": [
             {
-              "traceId": "9c2f1a4d6b8e30f5a7c1d2e3f4051627",
-              "spanId": "b1c2d3e4f5061728",
-              "parentSpanId": "b1c2d3e4f5061727",
-              "name": "ChatVertexAI",
-              "kind": 1,
-              "startTimeUnixNano": "1749826800000000000",
-              "endTimeUnixNano": "1749826802310000000",
+              "traceId": "9ed94f9bdc36b397e11c51f77d49e01a",
+              "spanId": "e9856d6fe698c4f2",
+              "name": "ChatCompletion",
+              "kind": "SPAN_KIND_INTERNAL",
+              "startTimeUnixNano": "1788787518970589000",
+              "endTimeUnixNano": "1788787518993675000",
               "attributes": [
-                { "key": "openinference.span.kind", "value": { "stringValue": "LLM" } },
-                { "key": "llm.provider", "value": { "stringValue": "google" } },
-                { "key": "llm.system", "value": { "stringValue": "vertexai" } },
-                { "key": "llm.model_name", "value": { "stringValue": "gemini-2.0-flash" } },
                 {
-                  "key": "llm.invocation_parameters",
+                  "key": "llm.system",
                   "value": {
-                    "stringValue": "{\"temperature\": 0.2, \"max_output_tokens\": 800, \"top_p\": 0.9, \"candidate_count\": 1}"
+                    "stringValue": "openai"
                   }
                 },
-                { "key": "llm.token_count.prompt", "value": { "intValue": "1120" } },
-                { "key": "llm.token_count.completion", "value": { "intValue": "64" } },
-                { "key": "llm.token_count.total", "value": { "intValue": "1184" } },
-                { "key": "llm.token_count.prompt_details.cache_read", "value": { "intValue": "896" } },
-                { "key": "llm.token_count.prompt_details.cache_write", "value": { "intValue": "224" } },
-                { "key": "llm.token_count.prompt_details.audio", "value": { "intValue": "240" } },
-                { "key": "llm.token_count.completion_details.reasoning", "value": { "intValue": "32" } },
-                { "key": "llm.input_messages.0.message.role", "value": { "stringValue": "system" } },
                 {
-                  "key": "llm.input_messages.0.message.content",
-                  "value": { "stringValue": "Answer from the attached material only." }
-                },
-                { "key": "llm.input_messages.1.message.role", "value": { "stringValue": "user" } },
-                {
-                  "key": "llm.input_messages.1.message.contents.0.message_content.type",
-                  "value": { "stringValue": "text" }
+                  "key": "input.value",
+                  "value": {
+                    "stringValue": "{\"messages\": [{\"role\": \"system\", \"content\": \"You are a support agent. Use the tools you are given.\"}, {\"role\": \"user\", \"content\": \"Where is order A-1187?\"}], \"model\": \"gpt-4o-mini\", \"max_tokens\": 1024, \"temperature\": 0.7, \"tools\": [{\"type\": \"function\", \"function\": {\"name\": \"lookup_order\", \"description\": \"Look up an order by its identifier.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"order_id\": {\"type\": \"string\"}}, \"required\": [\"order_id\"]}}}], \"top_p\": 0.95}"
+                  }
                 },
                 {
-                  "key": "llm.input_messages.1.message.contents.0.message_content.text",
-                  "value": { "stringValue": "Which slide has the Q3 revenue figure?" }
+                  "key": "input.mime_type",
+                  "value": {
+                    "stringValue": "application/json"
+                  }
                 },
                 {
-                  "key": "llm.input_messages.1.message.contents.1.message_content.type",
-                  "value": { "stringValue": "image" }
+                  "key": "output.value",
+                  "value": {
+                    "stringValue": "{\"id\":\"chatcmpl-CD8yqQ2y3kZs1o0Wm7bT\",\"choices\":[{\"finish_reason\":\"tool_calls\",\"index\":0,\"logprobs\":null,\"message\":{\"content\":null,\"role\":\"assistant\",\"tool_calls\":[{\"id\":\"call_9RtYbK2mXqLp\",\"function\":{\"arguments\":\"{\\\"order_id\\\": \\\"A-1187\\\"}\",\"name\":\"lookup_order\"},\"type\":\"function\"}]}}],\"created\":1789000000,\"model\":\"gpt-4o-mini-2024-07-18\",\"object\":\"chat.completion\",\"system_fingerprint\":\"fp_capture0\",\"usage\":{\"completion_tokens\":27,\"prompt_tokens\":412,\"total_tokens\":439,\"completion_tokens_details\":{\"accepted_prediction_tokens\":0,\"audio_tokens\":0,\"reasoning_tokens\":8,\"rejected_prediction_tokens\":0},\"prompt_tokens_details\":{\"audio_tokens\":0,\"cached_tokens\":256}}}"
+                  }
                 },
                 {
-                  "key": "llm.input_messages.1.message.contents.1.message_content.image.image.url",
-                  "value": { "stringValue": "gs://decks/q3-review/slide-14.png" } 
-                },
-                { "key": "llm.output_messages.0.message.role", "value": { "stringValue": "assistant" } },
-                {
-                  "key": "llm.output_messages.0.message.tool_calls.0.tool_call.id",
-                  "value": { "stringValue": "call_Vx8Qm1Tz" }
-                },
-                {
-                  "key": "llm.output_messages.0.message.tool_calls.0.tool_call.function.name",
-                  "value": { "stringValue": "search_deck" }
-                },
-                {
-                  "key": "llm.output_messages.0.message.tool_calls.0.tool_call.function.arguments",
-                  "value": { "stringValue": "{\"query\": \"Q3 revenue\", \"deck\": \"q3-review\"}" }
+                  "key": "output.mime_type",
+                  "value": {
+                    "stringValue": "application/json"
+                  }
                 },
                 {
                   "key": "llm.tools.0.tool.json_schema",
                   "value": {
-                    "stringValue": "{\"type\": \"function\", \"function\": {\"name\": \"search_deck\", \"description\": \"Search a slide deck.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"query\": {\"type\": \"string\"}, \"deck\": {\"type\": \"string\"}}}}}"
+                    "stringValue": "{\"type\": \"function\", \"function\": {\"name\": \"lookup_order\", \"description\": \"Look up an order by its identifier.\", \"parameters\": {\"type\": \"object\", \"properties\": {\"order_id\": {\"type\": \"string\"}}, \"required\": [\"order_id\"]}}}"
                   }
                 },
-                { "key": "session.id", "value": { "stringValue": "sess-4c2a91" } },
                 {
-                  "key": "metadata",
-                  "value": { "stringValue": "{\"ls_provider\": \"google_genai\", \"ls_model_type\": \"chat\"}" }
+                  "key": "llm.invocation_parameters",
+                  "value": {
+                    "stringValue": "{\"model\": \"gpt-4o-mini\", \"max_tokens\": 1024, \"temperature\": 0.7, \"top_p\": 0.95}"
+                  }
                 },
                 {
-                  "key": "input.value",
-                  "value": { "stringValue": "{\"messages\": [[{\"lc\": 1, \"type\": \"constructor\"}]]}" }
+                  "key": "llm.input_messages.0.message.role",
+                  "value": {
+                    "stringValue": "system"
+                  }
                 },
-                { "key": "input.mime_type", "value": { "stringValue": "application/json" } },
                 {
-                  "key": "output.value",
-                  "value": { "stringValue": "{\"generations\": [[{\"text\": \"\", \"generation_info\": {}}]]}" }
+                  "key": "llm.input_messages.0.message.content",
+                  "value": {
+                    "stringValue": "You are a support agent. Use the tools you are given."
+                  }
                 },
-                { "key": "output.mime_type", "value": { "stringValue": "application/json" } }
+                {
+                  "key": "llm.input_messages.1.message.role",
+                  "value": {
+                    "stringValue": "user"
+                  }
+                },
+                {
+                  "key": "llm.input_messages.1.message.content",
+                  "value": {
+                    "stringValue": "Where is order A-1187?"
+                  }
+                },
+                {
+                  "key": "llm.model_name",
+                  "value": {
+                    "stringValue": "gpt-4o-mini-2024-07-18"
+                  }
+                },
+                {
+                  "key": "llm.token_count.total",
+                  "value": {
+                    "intValue": "439"
+                  }
+                },
+                {
+                  "key": "llm.token_count.prompt",
+                  "value": {
+                    "intValue": "412"
+                  }
+                },
+                {
+                  "key": "llm.token_count.completion",
+                  "value": {
+                    "intValue": "27"
+                  }
+                },
+                {
+                  "key": "llm.token_count.prompt_details.cache_read",
+                  "value": {
+                    "intValue": "256"
+                  }
+                },
+                {
+                  "key": "llm.token_count.prompt_details.audio",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "llm.token_count.completion_details.reasoning",
+                  "value": {
+                    "intValue": "8"
+                  }
+                },
+                {
+                  "key": "llm.token_count.completion_details.audio",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "llm.output_messages.0.message.role",
+                  "value": {
+                    "stringValue": "assistant"
+                  }
+                },
+                {
+                  "key": "llm.output_messages.0.message.tool_calls.0.tool_call.id",
+                  "value": {
+                    "stringValue": "call_9RtYbK2mXqLp"
+                  }
+                },
+                {
+                  "key": "llm.output_messages.0.message.tool_calls.0.tool_call.function.name",
+                  "value": {
+                    "stringValue": "lookup_order"
+                  }
+                },
+                {
+                  "key": "llm.output_messages.0.message.tool_calls.0.tool_call.function.arguments",
+                  "value": {
+                    "stringValue": "{\"order_id\": \"A-1187\"}"
+                  }
+                },
+                {
+                  "key": "llm.finish_reason",
+                  "value": {
+                    "stringValue": "tool_calls"
+                  }
+                },
+                {
+                  "key": "openinference.span.kind",
+                  "value": {
+                    "stringValue": "LLM"
+                  }
+                }
               ],
-              "status": {}
+              "status": {
+                "code": "STATUS_CODE_OK"
+              },
+              "flags": 256
             }
           ]
         }

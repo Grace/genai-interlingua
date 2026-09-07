@@ -295,3 +295,55 @@ func TestOfferedToolsBecomeToolDefinitions(t *testing.T) {
 		t.Errorf("tool definitions = %s, want %s", got, want)
 	}
 }
+
+// Both keys come from a real capture (testdata/capture/capture.sh
+// openinference). The OpenAI instrumentation sets llm.system and no
+// llm.provider, which used to mean the normalized span carried no provider at
+// all while the answer sat on the span unread.
+func TestOpenInferenceFallsBackToSystemForTheProvider(t *testing.T) {
+	p := (openInference{}).Parse(Span{Attributes: map[string]Value{
+		"llm.system": String("openai"),
+	}})
+	if got, want := mustField(t, p, semconv.ProviderName).Str, "openai"; got != want {
+		t.Errorf("provider = %q, want %q", got, want)
+	}
+	for _, l := range p.Loss {
+		if l.Key == "llm.system" {
+			t.Errorf("llm.system was lost even though it was the only provider available")
+		}
+	}
+}
+
+// Where both are present the distinction is real -- a model served through
+// Bedrock has llm.provider aws and llm.system anthropic -- so provider wins and
+// system is the redundant one.
+func TestOpenInferencePrefersProviderOverSystem(t *testing.T) {
+	p := (openInference{}).Parse(Span{Attributes: map[string]Value{
+		"llm.provider": String("aws"),
+		"llm.system":   String("anthropic"),
+	}})
+	// aws is translated to the conventions' spelling on the way through, which
+	// is the other thing this branch does.
+	if got, want := mustField(t, p, semconv.ProviderName).Str, "aws.bedrock"; got != want {
+		t.Errorf("provider = %q, want %q", got, want)
+	}
+	var lost bool
+	for _, l := range p.Loss {
+		if l.Key == "llm.system" && l.Reason == ReasonNoField {
+			lost = true
+		}
+	}
+	if !lost {
+		t.Errorf("llm.system should be recorded as redundant when llm.provider is present; losses = %+v", p.Loss)
+	}
+}
+
+func TestOpenInferenceReadsTheFinishReason(t *testing.T) {
+	p := (openInference{}).Parse(Span{Attributes: map[string]Value{
+		"llm.finish_reason": String("tool_calls"),
+	}})
+	got := mustField(t, p, semconv.ResponseFinishReasons).StrSeq
+	if len(got) != 1 || got[0] != "tool_calls" {
+		t.Errorf("finish reasons = %v, want [tool_calls]", got)
+	}
+}

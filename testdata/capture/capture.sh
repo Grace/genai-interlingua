@@ -21,10 +21,13 @@ MOCK_PORT=${MOCK_PORT:-8080}
 
 DIALECTS=(openllmetry openinference litellm braintrust vercel)
 
+# Runners are named capture_<dialect> rather than <dialect> because a Python
+# file named openinference.py shadows the openinference package it imports, and
+# the failure that produces names neither the file nor the cause.
 runner() {
   case "$1" in
-    vercel) echo "node $here/vercel.mjs" ;;
-    *)      echo "uv run --quiet $here/$1.py" ;;
+    vercel) echo "node $here/capture_vercel.mjs" ;;
+    *)      echo "uv run --quiet $here/capture_$1.py" ;;
   esac
 }
 

@@ -25,7 +25,7 @@ regenerates the captured ones.
 | --- | --- |
 | `braintrust` | hand-built |
 | `litellm` | hand-built |
-| `openinference` | hand-built |
+| `openinference` | captured |
 | `openllmetry` | captured, hand-built |
 | `raw` | hand-built |
 | `vercel` | hand-built |
@@ -48,15 +48,15 @@ the dialect parsed it.
 | `gen_ai.request.stream` | y | y | - | y | - | y | - | - |
 | `gen_ai.response.id` | y | y | - | - | - | y | y | y |
 | `gen_ai.response.model` | y | y | y | y | - | y | - | y |
-| `gen_ai.response.finish_reasons` | y | y | - | - | - | y | y | y |
+| `gen_ai.response.finish_reasons` | y | y | - | - | y | y | y | y |
 | `gen_ai.response.time_to_first_chunk` | y | y | - | - | - | - | - | y |
 | `gen_ai.usage.input_tokens` | y | y | y | y | y | y | y | y |
 | `gen_ai.usage.cache_read.input_tokens` | y | y | y | y | y | - | - | - |
-| `gen_ai.usage.cache_write.input_tokens` | y | y | - | y | y | y | - | - |
+| `gen_ai.usage.cache_write.input_tokens` | y | y | - | y | - | y | - | - |
 | `gen_ai.usage.audio.input_tokens` | - | y | - | - | y | - | - | - |
 | `gen_ai.usage.output_tokens` | y | y | y | y | y | y | y | y |
 | `gen_ai.usage.reasoning.output_tokens` | y | y | - | - | y | y | - | - |
-| `gen_ai.conversation.id` | y | y | - | - | y | - | - | - |
+| `gen_ai.usage.audio.output_tokens` | - | y | - | - | y | - | - | - |
 | `gen_ai.tool.name` | y | y | - | - | - | - | - | y |
 | `gen_ai.tool.call.id` | y | y | - | - | - | - | - | y |
 | `gen_ai.tool.call.arguments` | y | y | - | - | - | - | - | y |
@@ -92,7 +92,7 @@ reports on the span itself.
 
 ### openinference
 
-- **no_field** — `input.mime_type`, `llm.input_messages.1.message.contents.1`, `llm.system`, `llm.token_count.total`, `metadata`, `output.mime_type`
+- **no_field** — `input.mime_type`, `llm.token_count.total`, `output.mime_type`
 - **unstructured** — `input.value`, `llm.invocation_parameters`, `output.value`
 - **flattened** — `llm.input_messages.*`, `llm.output_messages.*`
 
@@ -122,7 +122,7 @@ the default target is a decision rather than a constant.
 ### v1.41.0
 
 - openinference
-  - **no_attribute** — `gen_ai.usage.audio.input_tokens`
+  - **no_attribute** — `gen_ai.usage.audio.input_tokens`, `gen_ai.usage.audio.output_tokens`
 - openllmetry
   - **no_attribute** — `gen_ai.prompt.version`
 

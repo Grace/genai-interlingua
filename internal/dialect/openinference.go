@@ -89,20 +89,50 @@ func (d openInference) Parse(s Span) Parsed {
 		}
 	}
 
-	if v, ok := s.Attr("llm.provider"); ok {
-		name := strings.ToLower(v.Str)
+	// llm.provider names the hosting provider and llm.system the API surface,
+	// which differ for a model served through Bedrock or Azure. Where both are
+	// present, provider is the one gen_ai.provider.name means and system is
+	// genuinely redundant.
+	//
+	// A capture of the OpenAI instrumentation sets only llm.system, though, and
+	// treating it as redundant then loses the provider entirely. So it is the
+	// fallback rather than always a loss: the information is on the span, and
+	// discarding it because a better-named attribute usually exists is a worse
+	// answer than reading the one that does.
+	provider := ""
+	switch {
+	case s.Has("llm.provider"):
+		v, _ := s.Attr("llm.provider")
+		provider = v.Str
+		p.Consumed = append(p.Consumed, "llm.provider")
+		if s.Has("llm.system") {
+			p.Lose("llm.system", ReasonNoField,
+				"llm.system names the API surface, which gen_ai.provider.name already carries")
+		}
+	case s.Has("llm.system"):
+		v, _ := s.Attr("llm.system")
+		provider = v.Str
+		p.Consumed = append(p.Consumed, "llm.system")
+	}
+	if provider != "" {
+		name := strings.ToLower(provider)
 		if alias, ok := openInferenceProviders[name]; ok {
 			name = alias
 		}
 		p.Set(semconv.ProviderName, String(name))
-		p.Consumed = append(p.Consumed, "llm.provider")
-	}
-	if s.Has("llm.system") {
-		p.Lose("llm.system", ReasonNoField,
-			"llm.system names the API surface, which gen_ai.provider.name already carries")
 	}
 
 	p.TakeFirst(s, semconv.RequestModel, "llm.model_name", "embedding.model_name")
+
+	// Captured from the real instrumentation, which sets it on the LLM span
+	// alongside the output messages. The conventions make this a list because a
+	// request for several choices has one reason per choice; OpenInference
+	// carries a single value, so the list has one element rather than being
+	// synthesised from the per-message reasons.
+	if v, ok := s.Attr("llm.finish_reason"); ok && v.Str != "" {
+		p.Set(semconv.ResponseFinishReasons, StrSeq([]string{v.Str}))
+		p.Consumed = append(p.Consumed, "llm.finish_reason")
+	}
 	p.Take(s, "llm.token_count.prompt", semconv.UsageInputTokens)
 	p.Take(s, "llm.token_count.completion", semconv.UsageOutputTokens)
 	p.Take(s, "llm.token_count.prompt_details.cache_read", semconv.UsageCacheReadInputTokens)

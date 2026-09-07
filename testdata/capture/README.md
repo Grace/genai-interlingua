@@ -38,9 +38,9 @@ dumbest possible OTLP endpoint.
 Add a program named after the dialect that reads two environment variables,
 `SINK` and `MOCK`, and makes one instrumented model call:
 
-- Python: `<dialect>.py`, with its dependencies in a PEP 723 header so `uv run`
+- Python: `capture_<dialect>.py`, with its dependencies in a PEP 723 header so `uv run`
   needs no environment management.
-- Node: `<dialect>.mjs`.
+- Node: `capture_<dialect>.mjs`.
 
 Then add the name to `DIALECTS` in `capture.sh`, and a `PROVENANCE` file reading
 `captured` in the fixture directory. `docs/conformance.md` reads that marker, so
