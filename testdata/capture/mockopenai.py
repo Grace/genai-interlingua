@@ -15,10 +15,18 @@ An endpoint that is missing is better than one that returns a plausible lie.
 """
 
 import json
+import os
 import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+
+# Loopback by default: when the capture harness runs this, it is a server on a
+# developer's laptop that answers as OpenAI, and it has no business being
+# reachable from the network. The demo overrides it to 0.0.0.0 because there it
+# has to be reachable from another container, which is a deliberate choice made
+# in one place rather than a default everyone inherits.
+HOST = os.environ.get("MOCK_HOST", "127.0.0.1")
 
 COMPLETION = {
     "id": "chatcmpl-CD8yqQ2y3kZs1o0Wm7bT",
@@ -94,5 +102,5 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    print(f"mock openai listening on :{PORT}", flush=True)
-    HTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
+    print(f"mock openai listening on {HOST}:{PORT}", flush=True)
+    HTTPServer((HOST, PORT), Handler).serve_forever()

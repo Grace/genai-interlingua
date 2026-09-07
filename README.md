@@ -153,11 +153,21 @@ one, so the JSON codec and the pdata processor apply one decision to two shapes.
 `TestMatchesTheCLIGoldens` holds them to it by running every fixture through
 pdata and comparing against the goldens the CLI committed.
 
-`demo/builder-config.yaml` builds a real Collector with it via `ocb`. That has
-been run, not just compiled: a fixture POSTed over OTLP/HTTP comes back with
-`gen_ai.usage.input_tokens: Int(412)` and `interlingua.dialect: Str(openllmetry)`,
-and the HTTP span sharing its batch comes back with its three original attributes
-and nothing added.
+[`demo/`](demo/) runs the whole trip: a support agent instrumented with **real
+OpenLLMetry**, a mock model, this processor in an `ocb`-built Collector, and
+Jaeger.
+
+```console
+$ docker compose -f demo/compose.yaml up --build
+$ open http://localhost:16686
+```
+
+Nothing reaches the internet at run time and no API key is needed. Jaeger shows
+you the normalized span; `docker compose logs collector` shows you the same span
+with `interlingua.lossy` on it, which is the part a trace UI will not make
+obvious. The Collector's OTLP port is published, so you can also push any fixture
+in from the host -- `testdata/litellm/in.json` comes back with 49 entries in
+`interlingua.lossy`.
 
 ## Layout
 
@@ -194,4 +204,4 @@ Go 1.25 for the core, 1.26 for the processor module (the Collector's floor).
 CI runs both modules, checks the generated files regenerate identically, and
 builds a real Collector to assert the processor registers in it.
 
-Not done yet: a containerized demo with Jaeger.
+Not done yet: a release build, and captures for `braintrust` (needs an API key).

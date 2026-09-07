@@ -1,0 +1,63 @@
+# A GenAI span's whole trip: real instrumentation, through the normalizer, into
+# a trace UI.
+#
+#   docker compose -f demo/compose.yaml up --build
+#   open http://localhost:16686        # Jaeger, service "support-agent"
+#   docker compose -f demo/compose.yaml logs -f collector
+#
+# Jaeger shows you the normalized span. The collector logs show you the same
+# span with interlingua.lossy on it, which is the part a trace UI will not make
+# obvious and the part this repository is actually about.
+#
+# Nothing here reaches the internet at run time and no API key is needed: the
+# model is the same mock the capture harness uses.
+
+name: genai-interlingua-demo
+
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"   # UI
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:14269/"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  mock-openai:
+    build:
+      context: ..
+      dockerfile: demo/mock/Dockerfile
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/v1/models')"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  collector:
+    build:
+      context: ..
+      dockerfile: demo/Dockerfile
+    volumes:
+      - ./otelcol-demo.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4318:4318"     # OTLP/HTTP, so you can curl a fixture in from the host
+    depends_on:
+      jaeger:
+        condition: service_healthy
+
+  agent:
+    build:
+      context: ./agent
+    environment:
+      OTEL_ENDPOINT: http://collector:4318
+      MOCK_OPENAI: http://mock-openai:8080
+      INTERVAL_SECONDS: "10"
+    depends_on:
+      mock-openai:
+        condition: service_healthy
+      collector:
+        condition: service_started

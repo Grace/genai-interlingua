@@ -1,0 +1,61 @@
+# The demo pipeline. Spans arrive from the agent in OpenLLMetry's dialect, are
+# normalized to one target, and are exported to Jaeger.
+#
+# The debug exporter is here alongside Jaeger deliberately: Jaeger shows you the
+# normalized span, and `docker compose logs collector` shows you the same span
+# with interlingua.lossy on it, which is the part a trace UI will not make
+# obvious.
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  genaiinterlingua:
+    # Change to genai-main and restart the collector to watch interlingua.target
+    # change on every span.
+    #
+    # For this agent that is the only thing that changes, and it is worth being
+    # clear about why: everything OpenLLMetry emits here is expressible at both
+    # targets, so pinning the frozen cut costs nothing. Pinning only costs you
+    # when an emitter produces a field the frozen cut has no attribute for, and
+    # the fixture that shows it is testdata/openllmetry-legacy, whose span
+    # carries a prompt version:
+    #
+    #   for t in v1.41.0 genai-main; do
+    #     cat testdata/openllmetry-legacy/in.json |
+    #       go run ./cmd/interlingua -target $t |
+    #       jq '[.. | .key? | select(. == "gen_ai.prompt.version")] | length'
+    #   done
+    #   # v1.41.0 -> 0, and the field is named in interlingua.lossy instead
+    #   # genai-main -> 1
+    #
+    # grep will not tell you this: at v1.41.0 the string is still on the span,
+    # inside interlingua.lossy, which is the point rather than a nuisance.
+    target: v1.41.0
+    preserve_original: true
+  batch:
+
+exporters:
+  otlp:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+  debug:
+    verbosity: detailed
+
+service:
+  # info, not warn: the debug exporter writes its output at INFO, so a quieter
+  # level silently produces a demo that appears to do nothing.
+  telemetry:
+    logs:
+      level: info
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [genaiinterlingua, batch]
+      exporters: [otlp, debug]
