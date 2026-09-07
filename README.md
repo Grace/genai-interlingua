@@ -111,14 +111,28 @@ It also reports, per dialect, whether the inputs behind a row were **captured**
 from a running library or **hand-built** here, read from a marker file next to
 each fixture so that account cannot drift from the truth.
 
-One dialect is captured so far. `testdata/capture/capture.sh openllmetry` runs
-the real Traceloop SDK against a local mock OpenAI server -- no API key, nothing
-sent anywhere -- and records what it puts on the wire. That first capture
-immediately found that OpenLLMetry has migrated to the conventions, and that
-four attributes it now emits were being silently walked past, including
-`gen_ai.usage.reasoning_tokens`: the conventions' own field, misspelled by the
-emitter without its `.output` segment. Details in
-[`testdata/README.md`](testdata/README.md).
+Four of the six are captured. `testdata/capture/capture.sh` runs the real
+libraries against a local mock OpenAI server -- no API key, nothing sent
+anywhere -- and records what they put on the wire.
+
+Three of those four captures found a bug that hand-built fixtures had hidden:
+
+- **OpenLLMetry** has migrated to the conventions, and four attributes it now
+  emits were being silently walked past -- including
+  `gen_ai.usage.reasoning_tokens`, the conventions' own field misspelled by the
+  emitter without its `.output` segment.
+- **OpenInference** sets `llm.system` and no `llm.provider` on OpenAI calls, so
+  the provider was being recorded as a redundant loss and discarded while the
+  answer sat unread on the span. Its `llm.finish_reason` was not read at all.
+- **LiteLLM** scored a dead tie with OpenLLMetry on its own span, winning only
+  by being registered first. It also emits twelve `gen_ai.cost.*` attributes,
+  none of which the conventions price at any version and none of which were
+  being recorded.
+
+The Vercel capture found nothing, which is the other useful outcome.
+`raw` is synthetic by definition and `braintrust` needs an API key to
+initialize, so both stay hand-built and the table says so on their rows.
+Details in [`testdata/README.md`](testdata/README.md).
 
 ## As a Collector processor
 
@@ -180,5 +194,4 @@ Go 1.25 for the core, 1.26 for the processor module (the Collector's floor).
 CI runs both modules, checks the generated files regenerate identically, and
 builds a real Collector to assert the processor registers in it.
 
-Not done yet: captures for the remaining five dialects, and a containerized demo
-with Jaeger.
+Not done yet: a containerized demo with Jaeger.
