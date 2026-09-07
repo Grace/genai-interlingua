@@ -121,18 +121,26 @@ def send(payload, key):
 
 
 def main():
+    # --raw sends the untouched emitter output instead, under -raw service names,
+    # so the same span can be compared before and after normalization in the same
+    # environment. It is the honest way to check a claim like "Honeycomb's Gen AI
+    # panel needs these fields": send a span without them and look.
+    raw = "--raw" in sys.argv[1:]
+    suffix = "-raw" if raw else ""
+    pattern = "*/in.json" if raw else "*/out.v1.41.0.json"
+
     key = load_key()
     base = now_ns()
-    fixtures = sorted(p for p in TESTDATA.glob("*/out.v1.41.0.json"))
+    fixtures = sorted(p for p in TESTDATA.glob(pattern))
     if not fixtures:
-        sys.exit("no normalized fixtures found; run: go test ./internal/normalize -update")
+        sys.exit("no fixtures found; run: go test ./internal/normalize -update")
 
     total = 0
     for path in fixtures:
         dialect = path.parent.name
         payload = json.loads(path.read_text())
         payload = retime(payload, base)
-        payload = set_service_name(payload, f"genai-{dialect}")
+        payload = set_service_name(payload, f"genai-{dialect}{suffix}")
         spans = sum(len(ss.get("spans", []))
                     for rs in payload.get("resourceSpans", [])
                     for ss in rs.get("scopeSpans", []))
@@ -146,8 +154,12 @@ def main():
         print(f"  {dialect:20} {spans} span(s) -> HTTP {status} {text}")
         total += spans
 
-    print(f"\nsent {total} spans as {len(fixtures)} services")
-    print("query them: gen_ai.usage.input_tokens grouped by gen_ai.provider.name")
+    what = "raw (un-normalized)" if raw else "normalized"
+    print(f"\nsent {total} {what} spans as {len(fixtures)} services")
+    if raw:
+        print("compare a -raw service against its normalized twin in Honeycomb's Gen AI panel")
+    else:
+        print("query them: gen_ai.usage.input_tokens grouped by gen_ai.provider.name")
 
 
 if __name__ == "__main__":

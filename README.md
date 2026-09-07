@@ -189,31 +189,112 @@ host — `testdata/litellm/in.json` comes back with 49 entries in
 `interlingua.lossy`, because LiteLLM writes a great deal the conventions have no
 words for.
 
-## With Honeycomb
+## How to integrate with Honeycomb
 
-[`docs/honeycomb.md`](docs/honeycomb.md) is the worked example, and every number
-in it came back from a real query rather than being reasoned about.
+Honeycomb is the worked example here because it has a purpose-built GenAI view
+that reads the conventions directly, which makes the difference normalization
+makes unusually easy to see. Nothing in the repository is Honeycomb-specific:
+it is an OTLP exporter and a set of queries, and the same spans work anywhere.
 
-One query, every service, whatever instrumented it:
+### 1. Get an ingest key
+
+Honeycomb → **Environment settings → API Keys** → create a key with **Send
+Events**.
+
+This is an *ingest* key, and it is not the same credential as the one
+Honeycomb's MCP server or the management API uses. Sending with the wrong one
+returns a 401 that does not explain itself, so it is worth checking first.
+
+### 2. Add the exporter
+
+Honeycomb ingests OTLP directly, so there is no vendor exporter to install:
+
+```yaml
+exporters:
+  otlp/honeycomb:
+    endpoint: api.honeycomb.io:443        # api.eu1.honeycomb.io:443 on the EU instance
+    headers:
+      x-honeycomb-team: ${env:HONEYCOMB_API_KEY}
+
+service:
+  pipelines:
+    traces:
+      processors: [genaiinterlingua, batch]
+      exporters: [otlp/honeycomb]
+```
+
+`x-honeycomb-dataset` is Honeycomb Classic only. Current environments route by
+the key and split into datasets by `service.name`.
+
+[`demo/otelcol-honeycomb.yaml`](demo/otelcol-honeycomb.yaml) is the complete
+config this comes from.
+
+### 3. Send something
+
+With Docker, the demo has a profile for it:
+
+```console
+$ HONEYCOMB_API_KEY=... docker compose -f demo/compose.yaml --profile honeycomb up --build
+```
+
+Without Docker, push the repository's own fixtures straight in — seven captured
+dialects, one service each:
+
+```console
+$ HONEYCOMB_API_KEY=... python3 demo/send-to-honeycomb.py
+```
+
+A service per dialect is the situation worth modelling: not one service that
+cannot make up its mind, but several teams that each picked a different
+instrumentation library.
+
+![Honeycomb datasets list showing one dataset per instrumentation library](docs/img/honeycomb-datasets.jpg)
+
+### 4. Check that it worked
+
+The fast check is Honeycomb's **Gen AI** panel on any model-call span. It is
+populated entirely from the conventions, so it is a direct read-out of whether
+your spans are conformant:
+
+![Honeycomb's Gen AI span panel, fully populated: operation chat, provider openai, model, response id, temperature, top_p, max_tokens, finish reasons, and input, output and cache-read token counts](docs/img/honeycomb-genai-panel-normalized.jpg)
+
+Operation, provider, model, response ID, the request parameters, and the token
+counts — all read from `gen_ai.*`.
+
+**Here is the same span, from the same library, without the processor in the
+pipeline:**
+
+![The same span un-normalized: no Gen AI tab at all, only Fields, Span events and Links, with flat indexed attributes like gen_ai.completion.0.tool_calls.0.arguments](docs/img/honeycomb-genai-panel-raw.jpg)
+
+There is no Gen AI tab. Not an empty one — the panel does not appear, because
+nothing on the span is in a vocabulary it recognizes. The data is all still
+there, spelled `gen_ai.completion.0.tool_calls.0.arguments` and
+`gen_ai.usage.prompt_tokens`, as a flat list nobody can aggregate.
+
+Send both yourself and compare:
+
+```console
+$ python3 demo/send-to-honeycomb.py           # normalized
+$ python3 demo/send-to-honeycomb.py --raw     # the same spans, untouched
+```
+
+### Then the queries worth running
 
 ```
 SUM(gen_ai.usage.input_tokens) GROUP BY gen_ai.provider.name, interlingua.dialect
 ```
 
+![One Honeycomb query summing token usage across five different instrumentation libraries](docs/img/honeycomb-cross-dialect-query.jpg)
+
 **4120 tokens across five instrumentation libraries.** Ask the same question in
-OpenLLMetry's own vocabulary -- `gen_ai.usage.prompt_tokens` -- and you get 412
+OpenLLMetry's own vocabulary — `gen_ai.usage.prompt_tokens` — and you get 412
 from one service, because that is the only service that spells it that way.
-That difference is the whole argument, and it is why this belongs in the
-pipeline rather than in each application.
 
-Honeycomb turns out to annotate these columns with their semantic-convention
-definitions, which makes it an independent check on the mappings here: it
-describes `gen_ai.usage.reasoning.output_tokens` and leaves OpenLLMetry's
-`gen_ai.usage.reasoning_tokens` bare. Normalized spans arrive self-describing.
-The emitter's own attributes arrive as strings nobody has a definition for.
-
-Nothing in the repository is Honeycomb-specific. It is an OTLP exporter and a
-set of queries; the same spans work anywhere.
+[`docs/honeycomb.md`](docs/honeycomb.md) has the rest, including which library
+is costing you the most data, how Honeycomb stores an array attribute (as a
+JSON string, which is why `interlingua.lossy.count` exists), and a query that
+came back wrong the first time. Every number in it was measured, not reasoned
+about.
 
 ## What it recognizes
 

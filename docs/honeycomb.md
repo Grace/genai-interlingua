@@ -117,6 +117,34 @@ This is not a Honeycomb quirk to work around. Most columnar backends treat an
 array attribute the same way, and the fix — emit the scalar you intend to
 aggregate — is right everywhere.
 
+## The Gen AI panel is a pass/fail test for conformance
+
+Honeycomb renders a **Gen AI** tab on model-call spans, built entirely from the
+conventions. That makes it the shortest available check on whether a span is
+actually conformant, because it either appears or it does not.
+
+Normalized, from the OpenLLMetry capture:
+
+![Honeycomb's Gen AI span panel, fully populated](img/honeycomb-genai-panel-normalized.jpg)
+
+The same span, sent without the processor in the pipeline:
+
+![The same span un-normalized, with no Gen AI tab](img/honeycomb-genai-panel-raw.jpg)
+
+The tab is not empty. It is **absent** — nothing on the span is in a vocabulary
+the panel recognizes, so there is nothing for it to render. Every value is still
+present, spelled `gen_ai.completion.0.tool_calls.0.arguments` and
+`gen_ai.usage.prompt_tokens`, in a flat list that no aggregate can reach.
+
+`demo/send-to-honeycomb.py --raw` sends the untouched fixtures alongside the
+normalized ones so this comparison can be reproduced rather than taken on trust.
+
+A second, smaller version of the same evidence: querying
+`gen_ai.usage.input_tokens` on the un-normalized dataset fails outright, because
+the column does not exist there. Honeycomb's error helpfully suggests
+`gen_ai.usage.prompt_tokens` instead — which is the whole problem in one
+sentence.
+
 ## Honeycomb knows the conventions, and it shows
 
 Honeycomb annotates columns with their semantic-convention definitions, and the
