@@ -49,6 +49,24 @@ services:
       jaeger:
         condition: service_healthy
 
+  # Same collector, also exporting to Honeycomb. Started instead of `collector`
+  # by `--profile honeycomb`, and needs HONEYCOMB_API_KEY in the environment or
+  # in demo/.env (which is gitignored).
+  collector-honeycomb:
+    profiles: [honeycomb]
+    build:
+      context: ..
+      dockerfile: demo/Dockerfile
+    volumes:
+      - ./otelcol-honeycomb.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4318:4318"
+    environment:
+      HONEYCOMB_API_KEY: ${HONEYCOMB_API_KEY:?set HONEYCOMB_API_KEY or put it in demo/.env}
+    depends_on:
+      jaeger:
+        condition: service_healthy
+
   agent:
     build:
       context: ./agent

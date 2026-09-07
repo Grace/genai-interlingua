@@ -1,0 +1,49 @@
+# The demo pipeline, exporting to Honeycomb as well as Jaeger.
+#
+#   HONEYCOMB_API_KEY=... docker compose -f demo/compose.yaml --profile honeycomb up --build
+#
+# This is a separate file rather than a conditional inside otelcol-demo.yaml
+# because the Collector has no way to make an exporter optional: an unset
+# ${HONEYCOMB_API_KEY} is a startup failure, and the default path has to work
+# with no account and no key.
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  genaiinterlingua:
+    target: v1.41.0
+    preserve_original: true
+  batch:
+
+exporters:
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  # Honeycomb ingests OTLP directly; no vendor exporter is involved. Current
+  # environments route by the key alone -- x-honeycomb-dataset is Honeycomb
+  # Classic only. Use api.eu1.honeycomb.io:443 on the EU instance.
+  otlp/honeycomb:
+    endpoint: api.honeycomb.io:443
+    headers:
+      x-honeycomb-team: ${env:HONEYCOMB_API_KEY}
+
+  debug:
+    verbosity: detailed
+
+service:
+  telemetry:
+    logs:
+      level: info
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [genaiinterlingua, batch]
+      exporters: [otlp/jaeger, otlp/honeycomb, debug]
