@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    name: core module
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          # The core module has no go.sum because it has no dependencies.
+          # Leaving the cache on would look for one and fail.
+          cache: false
+
+      # gofmt over tracked files rather than the tree: demo/build/ is generated
+      # by ocb and gitignored, and its formatting is not this repository's
+      # business.
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l $(git ls-files '*.go'))
+          if [ -n "$unformatted" ]; then
+            echo "::error::not gofmt'd:"
+            echo "$unformatted"
+            gofmt -d $(git ls-files '*.go')
+            exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test -race ./...
+
+      # Drift itself is already caught by the step above: TestConformanceTable
+      # and the golden tests compare the committed bytes against freshly
+      # generated ones and fail at the offending line. This step asserts the
+      # weaker but separate property that regeneration is *idempotent* — that
+      # -update writes back exactly what is committed. A generator with
+      # unstable ordering would make the comparison tests flaky rather than
+      # red, and flaky is the harder failure to read.
+      #
+      # It runs last because it mutates the tree.
+      - name: regenerating is a no-op
+        run: |
+          go test ./internal/normalize -update
+          if ! git diff --exit-code -- testdata/ docs/conformance.md; then
+            echo "::error::-update was not idempotent; generated output is unstable"
+            exit 1
+          fi
+
+  processor:
+    name: processor module
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: processor/genaiinterlingua
+    steps:
+      - uses: actions/checkout@v4
+
+      # Its own go.mod, because the processor needs the Collector's Go floor
+      # (1.26) and the core module deliberately does not.
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: processor/genaiinterlingua/go.mod
+          cache-dependency-path: processor/genaiinterlingua/go.sum
+
+      - name: go vet
+        run: go vet ./...
+
+      # TestMatchesTheCLIGoldens runs every fixture through pdata and compares
+      # against the goldens the CLI committed, so this job is what keeps the two
+      # entry points from drifting into two different normalizers.
+      - name: go test
+        run: go test -race ./...
+
+  collector:
+    name: collector builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: processor/genaiinterlingua/go.mod
+          cache-dependency-path: processor/genaiinterlingua/go.sum
+
+      # Proves the processor is registerable in a real Collector, not just that
+      # it compiles as a library. A component that builds but cannot be wired
+      # into a distribution is not a component.
+      - name: build a collector with the processor in it
+        run: |
+          go install go.opentelemetry.io/collector/cmd/builder@v0.160.0
+          builder --config demo/builder-config.yaml
+          # `components` is the assertion that matters: it lists what the
+          # binary actually registered. A processor that links but never
+          # registers its factory would pass a plain build and fail here.
+          ./demo/build/interlingua-collector components | tee /tmp/components.yaml
+          grep -q 'name: genaiinterlingua' /tmp/components.yaml
