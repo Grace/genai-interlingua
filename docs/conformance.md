@@ -24,7 +24,7 @@ regenerates the captured ones.
 | Dialect | Inputs |
 | --- | --- |
 | `braintrust` | hand-built |
-| `litellm` | hand-built |
+| `litellm` | captured |
 | `openinference` | captured |
 | `openllmetry` | captured, hand-built |
 | `raw` | hand-built |
@@ -43,16 +43,16 @@ the dialect parsed it.
 | `gen_ai.request.model` | y | y | y | y | y | y | y | y |
 | `gen_ai.request.max_tokens` | y | y | - | y | y | y | y | y |
 | `gen_ai.request.temperature` | y | y | - | y | y | y | y | y |
-| `gen_ai.request.top_p` | y | y | - | - | y | y | - | - |
+| `gen_ai.request.top_p` | y | y | - | y | y | y | - | - |
 | `gen_ai.request.stop_sequences` | y | y | - | - | - | y | - | - |
-| `gen_ai.request.stream` | y | y | - | y | - | y | - | - |
+| `gen_ai.request.stream` | y | y | - | - | - | y | - | - |
 | `gen_ai.response.id` | y | y | - | - | - | y | y | y |
 | `gen_ai.response.model` | y | y | y | y | - | y | - | y |
 | `gen_ai.response.finish_reasons` | y | y | - | - | y | y | y | y |
 | `gen_ai.response.time_to_first_chunk` | y | y | - | - | - | - | - | y |
 | `gen_ai.usage.input_tokens` | y | y | y | y | y | y | y | y |
-| `gen_ai.usage.cache_read.input_tokens` | y | y | y | y | y | - | - | - |
-| `gen_ai.usage.cache_write.input_tokens` | y | y | - | y | - | y | - | - |
+| `gen_ai.usage.cache_read.input_tokens` | y | y | y | - | y | - | - | - |
+| `gen_ai.usage.cache_write.input_tokens` | y | y | - | - | - | y | - | - |
 | `gen_ai.usage.audio.input_tokens` | - | y | - | - | y | - | - | - |
 | `gen_ai.usage.output_tokens` | y | y | y | y | y | y | y | y |
 | `gen_ai.usage.reasoning.output_tokens` | y | y | - | - | y | y | - | - |
@@ -63,7 +63,6 @@ the dialect parsed it.
 | `gen_ai.tool.call.result` | y | y | - | - | - | - | - | y |
 | `gen_ai.tool.definitions` | y | y | - | y | y | y | - | y |
 | `gen_ai.operation.name` | y | y | y | y | y | y | - | y |
-| `gen_ai.system_instructions` | y | y | - | y | - | - | - | - |
 | `gen_ai.input.messages` | y | y | y | y | y | y | - | y |
 | `gen_ai.output.messages` | y | y | y | y | y | y | - | y |
 | `gen_ai.evaluation.name` | y | y | y | - | - | - | - | - |
@@ -88,7 +87,7 @@ reports on the span itself.
 
 ### litellm
 
-- **no_field** — `gen_ai.usage.total_tokens`, `litellm.model_group`, `litellm.preprocessing.duration_ms`, `litellm.provider.model`, `llm.request.type`, `metadata.user_api_key_alias`, `metadata.user_api_key_team_id`
+- **no_field** — `gen_ai.cost.cache_read_cost`, `gen_ai.cost.discount_amount`, `gen_ai.cost.discount_percent`, `gen_ai.cost.input_cost`, `gen_ai.cost.margin_fixed_amount`, `gen_ai.cost.margin_percent`, `gen_ai.cost.margin_total_amount`, `gen_ai.cost.original_cost`, `gen_ai.cost.output_cost`, `gen_ai.cost.reasoning_cost`, `gen_ai.cost.tool_usage_cost`, `gen_ai.cost.total_cost`, `gen_ai.usage.total_tokens`, `litellm.provider.model`, `llm.request.type`, `metadata.applied_guardrails`, `metadata.cold_storage_object_key`, `metadata.mcp_tool_call_metadata`, `metadata.prompt_management_metadata`, `metadata.requester_custom_headers`, `metadata.requester_ip_address`, `metadata.requester_metadata`, `metadata.routing_decision`, `metadata.spend_logs_metadata`, `metadata.team_alias`, `metadata.team_id`, `metadata.usage_object`, `metadata.user_agent`, `metadata.user_api_key_alias`, `metadata.user_api_key_auth_metadata`, `metadata.user_api_key_budget_reset_at`, `metadata.user_api_key_end_user_id`, `metadata.user_api_key_hash`, `metadata.user_api_key_max_budget`, `metadata.user_api_key_org_alias`, `metadata.user_api_key_org_id`, `metadata.user_api_key_project_alias`, `metadata.user_api_key_project_id`, `metadata.user_api_key_request_route`, `metadata.user_api_key_spend`, `metadata.user_api_key_team_alias`, `metadata.user_api_key_team_id`, `metadata.user_api_key_team_max_budget`, `metadata.user_api_key_team_spend`, `metadata.user_api_key_user_email`, `metadata.user_api_key_user_id`, `metadata.user_api_key_user_max_budget`, `metadata.user_api_key_user_spend`, `metadata.vector_store_request_metadata`
 
 ### openinference
 

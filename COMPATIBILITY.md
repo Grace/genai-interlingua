@@ -155,5 +155,21 @@ same backend.
 
 Vercel's `ai.request.headers.*` are enumerated as losses rather than mapped. The
 conventions carry no request header attribute, and a provider's request headers
-are where its API key lives. This is the one exclusion made on grounds other than
-"the conventions have no field for it".
+are where its API key lives.
+
+The same reasoning covers part of LiteLLM's `metadata.*` namespace, and a capture
+of a real LiteLLM span is worth reading before you decide how to route these.
+Out of the box it writes `metadata.user_api_key_hash`,
+`metadata.user_api_key_user_email` and `metadata.requester_ip_address` onto every
+span, alongside about thirty other tenancy dimensions. All of it is recorded as
+`no_field` and none of it is mapped, so nothing here promotes a hashed key or an
+end user's email address into a `gen_ai.*` attribute that a backend is likely to
+index.
+
+Note what this does and does not do. These attributes are on the span because
+LiteLLM put them there, and `preserve_original` leaves them exactly where they
+were. Normalizing is not redaction, and this repository does not pretend to be a
+privacy control: if you do not want a key hash leaving your cluster, drop it in
+the pipeline with an attributes processor. What `interlingua.lossy` gives you is
+the list of what is present and unmapped, which is at least the input to that
+decision.

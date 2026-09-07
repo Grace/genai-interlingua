@@ -87,6 +87,17 @@ func (liteLLM) Score(s Span) int {
 	if s.HasPrefix("metadata.user_api_key") {
 		n++
 	}
+	// gen_ai.cost.* is LiteLLM's own invention -- the conventions price nothing
+	// at any version -- so it is as distinctive as the litellm. namespace.
+	//
+	// It is here because a capture of a real LiteLLM span scored 3, exactly
+	// tying OpenLLMetry, which recognizes the same span by its llm.request.type,
+	// its gen_ai.completion.N prefix and its total token count. LiteLLM won that
+	// tie only by being registered first, and a detector whose answer depends on
+	// registry order is a detector that will change its mind for no reason.
+	if s.HasPrefix("gen_ai.cost.") {
+		n += 2
+	}
 	return n
 }
 
@@ -235,6 +246,14 @@ func (liteLLM) losses(s Span, p *Parsed) {
 	}
 
 	for _, k := range s.Keys() {
+		// LiteLLM prices every call and puts the result on the span. The
+		// conventions model no cost at any version, and this is exactly the
+		// kind of attribute worth naming rather than dropping quietly: it is
+		// the reason a lot of people run a proxy in the first place.
+		if strings.HasPrefix(k, "gen_ai.cost.") {
+			p.Lose(k, ReasonNoField, "the conventions price nothing at any version")
+			continue
+		}
 		if strings.HasPrefix(k, "metadata.") {
 			p.Lose(k, ReasonNoField, "proxy tenancy dimensions the conventions do not model")
 		}

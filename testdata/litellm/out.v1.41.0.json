@@ -4,15 +4,45 @@
       "resource": {
         "attributes": [
           {
-            "key": "service.name",
-            "value": {
-              "stringValue": "litellm-proxy"
-            }
-          },
-          {
             "key": "telemetry.sdk.language",
             "value": {
               "stringValue": "python"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "opentelemetry"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "1.44.0"
+            }
+          },
+          {
+            "key": "service.instance.id",
+            "value": {
+              "stringValue": "49c81373-6da1-4eac-b149-186b3743c972"
+            }
+          },
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "capture"
+            }
+          },
+          {
+            "key": "deployment.environment",
+            "value": {
+              "stringValue": "production"
+            }
+          },
+          {
+            "key": "model_id",
+            "value": {
+              "stringValue": "capture"
             }
           }
         ]
@@ -20,34 +50,340 @@
       "scopeSpans": [
         {
           "scope": {
-            "name": "litellm",
-            "version": "1.79.3"
+            "name": "litellm"
           },
           "spans": [
             {
-              "traceId": "7f3e2d1c0b9a8877665544332211aabb",
-              "spanId": "1122334455667788",
+              "traceId": "b1d8ae1b3fb8f0217735e4f3496c3bdf",
+              "spanId": "a5f632a15409374f",
+              "flags": 256,
               "name": "litellm_request",
-              "kind": 3,
-              "startTimeUnixNano": "1749834000000000000",
-              "endTimeUnixNano": "1749834002640000000",
+              "kind": "SPAN_KIND_INTERNAL",
+              "startTimeUnixNano": "1788787663735867904",
+              "endTimeUnixNano": "1788787664472495104",
               "attributes": [
                 {
-                  "key": "gen_ai.framework",
+                  "key": "metadata.user_api_key_hash",
                   "value": {
-                    "stringValue": "litellm"
+                    "stringValue": ""
                   }
                 },
                 {
-                  "key": "gen_ai.system",
+                  "key": "metadata.user_api_key_alias",
                   "value": {
-                    "stringValue": "bedrock"
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_spend",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_max_budget",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_budget_reset_at",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_user_spend",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_user_max_budget",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_team_spend",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_team_max_budget",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_team_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_org_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_org_alias",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_project_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_project_alias",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_user_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_team_alias",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_user_email",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_end_user_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_request_route",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.spend_logs_metadata",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.requester_ip_address",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_agent",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.requester_metadata",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.prompt_management_metadata",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.applied_guardrails",
+                  "value": {
+                    "stringValue": "[]"
+                  }
+                },
+                {
+                  "key": "metadata.mcp_tool_call_metadata",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.vector_store_request_metadata",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.routing_decision",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.usage_object",
+                  "value": {
+                    "stringValue": "{'completion_tokens': 27, 'prompt_tokens': 412, 'total_tokens': 439, 'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 8, 'rejected_prediction_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 256}}"
+                  }
+                },
+                {
+                  "key": "metadata.requester_custom_headers",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.cold_storage_object_key",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.user_api_key_auth_metadata",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.team_alias",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "metadata.team_id",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "hidden_params",
+                  "value": {
+                    "stringValue": "{\"model_id\": null, \"cache_key\": null, \"api_base\": null, \"response_cost\": 5.88e-05, \"additional_headers\": {\"llm_provider-server\": \"BaseHTTP/0.6 Python/3.13.15\", \"llm_provider-date\": \"Mon, 07 Sep 2026 13:27:44 GMT\", \"llm_provider-content-type\": \"application/json\", \"llm_provider-content-length\": \"722\"}, \"litellm_overhead_time_ms\": null, \"batch_models\": null, \"batch_successful_requests\": null, \"batch_failed_requests\": null, \"litellm_model_name\": null, \"usage_object\": null}"
+                  }
+                },
+                {
+                  "key": "litellm.provider.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.cost.input_cost",
+                  "value": {
+                    "doubleValue": 0.0000426
+                  }
+                },
+                {
+                  "key": "gen_ai.cost.output_cost",
+                  "value": {
+                    "doubleValue": 0.0000162
+                  }
+                },
+                {
+                  "key": "gen_ai.cost.total_cost",
+                  "value": {
+                    "doubleValue": 0.0000588
+                  }
+                },
+                {
+                  "key": "gen_ai.cost.tool_usage_cost",
+                  "value": {
+                    "doubleValue": 0
+                  }
+                },
+                {
+                  "key": "gen_ai.cost.cache_read_cost",
+                  "value": {
+                    "doubleValue": 0.0000192
+                  }
+                },
+                {
+                  "key": "gen_ai.cost.reasoning_cost",
+                  "value": {
+                    "doubleValue": 0.0000048
+                  }
+                },
+                {
+                  "key": "gen_ai.cost.original_cost",
+                  "value": {
+                    "doubleValue": 0.0000588
+                  }
+                },
+                {
+                  "key": "gen_ai.cost.discount_percent",
+                  "value": {
+                    "doubleValue": 0
+                  }
+                },
+                {
+                  "key": "gen_ai.cost.discount_amount",
+                  "value": {
+                    "doubleValue": 0
+                  }
+                },
+                {
+                  "key": "gen_ai.cost.margin_percent",
+                  "value": {
+                    "doubleValue": 0
+                  }
+                },
+                {
+                  "key": "gen_ai.cost.margin_fixed_amount",
+                  "value": {
+                    "doubleValue": 0
+                  }
+                },
+                {
+                  "key": "gen_ai.cost.margin_total_amount",
+                  "value": {
+                    "doubleValue": 0
                   }
                 },
                 {
                   "key": "llm.request.type",
                   "value": {
-                    "stringValue": "acompletion"
+                    "stringValue": "completion"
+                  }
+                },
+                {
+                  "key": "gen_ai.system",
+                  "value": {
+                    "stringValue": "openai"
+                  }
+                },
+                {
+                  "key": "llm.is_streaming",
+                  "value": {
+                    "stringValue": "False"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.id",
+                  "value": {
+                    "stringValue": "chatcmpl-CD8yqQ2y3kZs1o0Wm7bT"
+                  }
+                },
+                {
+                  "key": "litellm.call_id",
+                  "value": {
+                    "stringValue": "8fb16125-26e9-4f40-b42c-ec10ebf3274b"
+                  }
+                },
+                {
+                  "key": "gen_ai.usage.total_tokens",
+                  "value": {
+                    "intValue": "439"
                   }
                 },
                 {
@@ -69,51 +405,27 @@
                   }
                 },
                 {
-                  "key": "gen_ai.usage.total_tokens",
+                  "key": "gen_ai.response.finish_reasons",
                   "value": {
-                    "intValue": "1292"
+                    "stringValue": "[\"tool_calls\"]"
                   }
                 },
                 {
-                  "key": "litellm.model_group",
+                  "key": "gen_ai.completion.0.function_call.arguments",
                   "value": {
-                    "stringValue": "support-pool"
+                    "stringValue": "{\"order_id\": \"A-1187\"}"
                   }
                 },
                 {
-                  "key": "litellm.provider.model",
+                  "key": "gen_ai.completion.0.function_call.name",
                   "value": {
-                    "stringValue": "bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0"
-                  }
-                },
-                {
-                  "key": "litellm.preprocessing.duration_ms",
-                  "value": {
-                    "doubleValue": 4.2
-                  }
-                },
-                {
-                  "key": "metadata.user_api_key_team_id",
-                  "value": {
-                    "stringValue": "team-42"
-                  }
-                },
-                {
-                  "key": "metadata.user_api_key_alias",
-                  "value": {
-                    "stringValue": "support-bot"
-                  }
-                },
-                {
-                  "key": "http.response.status_code",
-                  "value": {
-                    "intValue": "200"
+                    "stringValue": "lookup_order"
                   }
                 },
                 {
                   "key": "gen_ai.input.messages",
                   "value": {
-                    "stringValue": "[{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"content\":\"Where is order A-1187?\"}]}]"
+                    "stringValue": "[{\"role\": \"system\", \"parts\": [{\"type\": \"text\", \"content\": \"You are a support agent. Use the tools you are given.\"}]}, {\"role\": \"user\", \"parts\": [{\"type\": \"text\", \"content\": \"Where is order A-1187?\"}]}]"
                   }
                 },
                 {
@@ -125,49 +437,43 @@
                 {
                   "key": "gen_ai.output.messages",
                   "value": {
-                    "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"tool_call\",\"id\":\"toolu_01Wx\",\"name\":\"lookup_order\",\"arguments\":{\"order_id\":\"A-1187\"}}],\"finish_reason\":\"tool_use\"}]"
+                    "stringValue": "[{\"role\": \"assistant\", \"parts\": [], \"finish_reason\": \"tool_calls\"}]"
                   }
                 },
                 {
                   "key": "gen_ai.provider.name",
                   "value": {
-                    "stringValue": "aws.bedrock"
+                    "stringValue": "openai"
                   }
                 },
                 {
                   "key": "gen_ai.request.max_tokens",
                   "value": {
-                    "intValue": "2048"
+                    "intValue": "1024"
                   }
                 },
                 {
                   "key": "gen_ai.request.model",
                   "value": {
-                    "stringValue": "anthropic.claude-3-5-sonnet-20241022-v2:0"
-                  }
-                },
-                {
-                  "key": "gen_ai.request.stream",
-                  "value": {
-                    "boolValue": true
+                    "stringValue": "gpt-4o-mini"
                   }
                 },
                 {
                   "key": "gen_ai.request.temperature",
                   "value": {
-                    "doubleValue": 0.3
+                    "doubleValue": 0.7
+                  }
+                },
+                {
+                  "key": "gen_ai.request.top_p",
+                  "value": {
+                    "doubleValue": 0.95
                   }
                 },
                 {
                   "key": "gen_ai.response.model",
                   "value": {
-                    "stringValue": "anthropic.claude-3-5-sonnet-20241022-v2:0"
-                  }
-                },
-                {
-                  "key": "gen_ai.system_instructions",
-                  "value": {
-                    "stringValue": "You are a support agent. Use the tools you are given."
+                    "stringValue": "gpt-4o-mini-2024-07-18"
                   }
                 },
                 {
@@ -177,27 +483,15 @@
                   }
                 },
                 {
-                  "key": "gen_ai.usage.cache_creation.input_tokens",
-                  "value": {
-                    "intValue": "180"
-                  }
-                },
-                {
-                  "key": "gen_ai.usage.cache_read.input_tokens",
-                  "value": {
-                    "intValue": "1024"
-                  }
-                },
-                {
                   "key": "gen_ai.usage.input_tokens",
                   "value": {
-                    "intValue": "1204"
+                    "intValue": "412"
                   }
                 },
                 {
                   "key": "gen_ai.usage.output_tokens",
                   "value": {
-                    "intValue": "88"
+                    "intValue": "27"
                   }
                 },
                 {
@@ -209,7 +503,7 @@
                 {
                   "key": "interlingua.dialect.confidence",
                   "value": {
-                    "intValue": "4"
+                    "intValue": "2"
                   }
                 },
                 {
@@ -218,13 +512,43 @@
                     "arrayValue": {
                       "values": [
                         {
+                          "stringValue": "gen_ai.cost.cache_read_cost"
+                        },
+                        {
+                          "stringValue": "gen_ai.cost.discount_amount"
+                        },
+                        {
+                          "stringValue": "gen_ai.cost.discount_percent"
+                        },
+                        {
+                          "stringValue": "gen_ai.cost.input_cost"
+                        },
+                        {
+                          "stringValue": "gen_ai.cost.margin_fixed_amount"
+                        },
+                        {
+                          "stringValue": "gen_ai.cost.margin_percent"
+                        },
+                        {
+                          "stringValue": "gen_ai.cost.margin_total_amount"
+                        },
+                        {
+                          "stringValue": "gen_ai.cost.original_cost"
+                        },
+                        {
+                          "stringValue": "gen_ai.cost.output_cost"
+                        },
+                        {
+                          "stringValue": "gen_ai.cost.reasoning_cost"
+                        },
+                        {
+                          "stringValue": "gen_ai.cost.tool_usage_cost"
+                        },
+                        {
+                          "stringValue": "gen_ai.cost.total_cost"
+                        },
+                        {
                           "stringValue": "gen_ai.usage.total_tokens"
-                        },
-                        {
-                          "stringValue": "litellm.model_group"
-                        },
-                        {
-                          "stringValue": "litellm.preprocessing.duration_ms"
                         },
                         {
                           "stringValue": "litellm.provider.model"
@@ -233,10 +557,106 @@
                           "stringValue": "llm.request.type"
                         },
                         {
+                          "stringValue": "metadata.applied_guardrails"
+                        },
+                        {
+                          "stringValue": "metadata.cold_storage_object_key"
+                        },
+                        {
+                          "stringValue": "metadata.mcp_tool_call_metadata"
+                        },
+                        {
+                          "stringValue": "metadata.prompt_management_metadata"
+                        },
+                        {
+                          "stringValue": "metadata.requester_custom_headers"
+                        },
+                        {
+                          "stringValue": "metadata.requester_ip_address"
+                        },
+                        {
+                          "stringValue": "metadata.requester_metadata"
+                        },
+                        {
+                          "stringValue": "metadata.routing_decision"
+                        },
+                        {
+                          "stringValue": "metadata.spend_logs_metadata"
+                        },
+                        {
+                          "stringValue": "metadata.team_alias"
+                        },
+                        {
+                          "stringValue": "metadata.team_id"
+                        },
+                        {
+                          "stringValue": "metadata.usage_object"
+                        },
+                        {
+                          "stringValue": "metadata.user_agent"
+                        },
+                        {
                           "stringValue": "metadata.user_api_key_alias"
                         },
                         {
+                          "stringValue": "metadata.user_api_key_auth_metadata"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_budget_reset_at"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_end_user_id"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_hash"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_max_budget"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_org_alias"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_org_id"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_project_alias"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_project_id"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_request_route"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_spend"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_team_alias"
+                        },
+                        {
                           "stringValue": "metadata.user_api_key_team_id"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_team_max_budget"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_team_spend"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_user_email"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_user_id"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_user_max_budget"
+                        },
+                        {
+                          "stringValue": "metadata.user_api_key_user_spend"
+                        },
+                        {
+                          "stringValue": "metadata.vector_store_request_metadata"
                         }
                       ]
                     }
@@ -249,7 +669,114 @@
                   }
                 }
               ],
-              "status": {}
+              "status": {
+                "code": "STATUS_CODE_OK"
+              }
+            },
+            {
+              "traceId": "b1d8ae1b3fb8f0217735e4f3496c3bdf",
+              "spanId": "6987f0201482f19b",
+              "parentSpanId": "a5f632a15409374f",
+              "flags": 256,
+              "name": "raw_gen_ai_request",
+              "kind": "SPAN_KIND_INTERNAL",
+              "startTimeUnixNano": "1788787663735867904",
+              "endTimeUnixNano": "1788787664472495104",
+              "attributes": [
+                {
+                  "key": "llm.openai.messages",
+                  "value": {
+                    "stringValue": "[{'role': 'system', 'content': 'You are a support agent. Use the tools you are given.'}, {'role': 'user', 'content': 'Where is order A-1187?'}]"
+                  }
+                },
+                {
+                  "key": "llm.openai.temperature",
+                  "value": {
+                    "doubleValue": 0.7
+                  }
+                },
+                {
+                  "key": "llm.openai.top_p",
+                  "value": {
+                    "doubleValue": 0.95
+                  }
+                },
+                {
+                  "key": "llm.openai.max_tokens",
+                  "value": {
+                    "intValue": "1024"
+                  }
+                },
+                {
+                  "key": "llm.openai.tools",
+                  "value": {
+                    "stringValue": "[{'type': 'function', 'function': {'name': 'lookup_order', 'description': 'Look up an order by its identifier.', 'parameters': {'type': 'object', 'properties': {'order_id': {'type': 'string'}}, 'required': ['order_id']}}}]"
+                  }
+                },
+                {
+                  "key": "llm.openai.extra_body",
+                  "value": {
+                    "stringValue": "{}"
+                  }
+                },
+                {
+                  "key": "llm.openai.id",
+                  "value": {
+                    "stringValue": "chatcmpl-CD8yqQ2y3kZs1o0Wm7bT"
+                  }
+                },
+                {
+                  "key": "llm.openai.choices",
+                  "value": {
+                    "stringValue": "[{'finish_reason': 'tool_calls', 'index': 0, 'logprobs': None, 'message': {'content': None, 'refusal': None, 'role': 'assistant', 'annotations': None, 'audio': None, 'function_call': None, 'tool_calls': [{'id': 'call_9RtYbK2mXqLp', 'function': {'arguments': '{\"order_id\": \"A-1187\"}', 'name': 'lookup_order'}, 'type': 'function'}]}}]"
+                  }
+                },
+                {
+                  "key": "llm.openai.created",
+                  "value": {
+                    "intValue": "1789000000"
+                  }
+                },
+                {
+                  "key": "llm.openai.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini-2024-07-18"
+                  }
+                },
+                {
+                  "key": "llm.openai.object",
+                  "value": {
+                    "stringValue": "chat.completion"
+                  }
+                },
+                {
+                  "key": "llm.openai.moderation",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "llm.openai.service_tier",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "llm.openai.system_fingerprint",
+                  "value": {
+                    "stringValue": "fp_capture0"
+                  }
+                },
+                {
+                  "key": "llm.openai.usage",
+                  "value": {
+                    "stringValue": "{'completion_tokens': 27, 'prompt_tokens': 412, 'total_tokens': 439, 'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 8, 'rejected_prediction_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 'cache_write_tokens': None, 'cached_tokens': 256}}"
+                  }
+                }
+              ],
+              "status": {
+                "code": "STATUS_CODE_OK"
+              }
             }
           ]
         }

@@ -157,3 +157,57 @@ func TestLiteLLMRecordsProxyTenancyAsLoss(t *testing.T) {
 		}
 	}
 }
+
+// This span is the shape a real LiteLLM capture has (testdata/capture/capture.sh
+// litellm). Before gen_ai.cost.* counted as evidence it scored 3, exactly tying
+// OpenLLMetry, which reads the same span as its own on llm.request.type, the
+// gen_ai.completion.N prefix and the total token count. LiteLLM won that tie
+// only by being registered first.
+func TestLiteLLMOutscoresOpenLLMetryOnItsOwnCapturedSpan(t *testing.T) {
+	s := Span{Name: "litellm_request", Attributes: map[string]Value{
+		"litellm.call_id":                        String("c1"),
+		"litellm.provider.model":                 String("gpt-4o-mini"),
+		"metadata.user_api_key_hash":             String("sk-hash"),
+		"llm.request.type":                       String("chat"),
+		"gen_ai.usage.total_tokens":              Int(439),
+		"gen_ai.completion.0.function_call.name": String("lookup_order"),
+		"gen_ai.cost.total_cost":                 Float(0.0004),
+		"gen_ai.system":                          String("openai"),
+	}}
+
+	litellm, other := (liteLLM{}).Score(s), (openLLMetry{}).Score(s)
+	if litellm <= other {
+		t.Errorf("litellm scored %d and openllmetry %d; the winner must not depend on registry order",
+			litellm, other)
+	}
+
+	got, margin, ok := Detect(s)
+	if !ok || got.Name() != LiteLLM {
+		t.Fatalf("Detect = %v, want litellm", got)
+	}
+	if margin == 0 {
+		t.Errorf("margin = 0, which reports a coin flip on a span that is unambiguously LiteLLM")
+	}
+}
+
+// LiteLLM prices every call. The conventions price nothing, at any version, so
+// these are named rather than dropped quietly: costing is a large part of why
+// anyone puts a proxy in front of a model in the first place.
+func TestLiteLLMRecordsTheCostsItCannotCarry(t *testing.T) {
+	p := (liteLLM{}).Parse(Span{Attributes: map[string]Value{
+		"gen_ai.cost.total_cost":      Float(0.0004),
+		"gen_ai.cost.input_cost":      Float(0.0003),
+		"gen_ai.cost.cache_read_cost": Float(0),
+	}})
+	for _, key := range []string{"gen_ai.cost.total_cost", "gen_ai.cost.input_cost", "gen_ai.cost.cache_read_cost"} {
+		var found bool
+		for _, l := range p.Loss {
+			if l.Key == key && l.Reason == ReasonNoField {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("%s was not recorded as a loss; losses = %+v", key, p.Loss)
+		}
+	}
+}
