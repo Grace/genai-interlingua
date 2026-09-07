@@ -189,6 +189,32 @@ host — `testdata/litellm/in.json` comes back with 49 entries in
 `interlingua.lossy`, because LiteLLM writes a great deal the conventions have no
 words for.
 
+## With Honeycomb
+
+[`docs/honeycomb.md`](docs/honeycomb.md) is the worked example, and every number
+in it came back from a real query rather than being reasoned about.
+
+One query, every service, whatever instrumented it:
+
+```
+SUM(gen_ai.usage.input_tokens) GROUP BY gen_ai.provider.name, interlingua.dialect
+```
+
+**4120 tokens across five instrumentation libraries.** Ask the same question in
+OpenLLMetry's own vocabulary -- `gen_ai.usage.prompt_tokens` -- and you get 412
+from one service, because that is the only service that spells it that way.
+That difference is the whole argument, and it is why this belongs in the
+pipeline rather than in each application.
+
+Honeycomb turns out to annotate these columns with their semantic-convention
+definitions, which makes it an independent check on the mappings here: it
+describes `gen_ai.usage.reasoning.output_tokens` and leaves OpenLLMetry's
+`gen_ai.usage.reasoning_tokens` bare. Normalized spans arrive self-describing.
+The emitter's own attributes arrive as strings nobody has a definition for.
+
+Nothing in the repository is Honeycomb-specific. It is an OTLP exporter and a
+set of queries; the same spans work anywhere.
+
 ## What it recognizes
 
 | Dialect | What it is |
