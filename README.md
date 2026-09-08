@@ -119,7 +119,7 @@ Flags:
 | --- | --- |
 | `-target` | `v1.41.0` (default) or `genai-main` |
 | `-strip-original` | drop the source attributes the dialect consumed. Off by default. |
-| `-emit` | print the mapping instead of applying it. Currently `ottl`. |
+| `-emit` | print the mapping instead of applying it: `ottl` or `schema-file` |
 | `-dialect` | with `-emit`, which emitter to export the mapping for |
 | `-version` | print version and default target |
 
@@ -184,6 +184,58 @@ the line falls, and `TestUnstatedIsAccurate` holds every migrated dialect to it
 against the captured corpus: a field the parser produces that is neither stated
 by a rule nor admitted as unstateable fails the build, because an export would
 otherwise drop it while advertising that it did not.
+
+### `-emit schema-file`, and why it carries less
+
+The same rules also render as an [OpenTelemetry Telemetry Schema
+File](https://opentelemetry.io/docs/specs/otel/schemas/file_format_v1.1.0/) —
+the artifact OpenTelemetry already has for "these attributes used to be called
+something else". It carries much less, and the shape of the shortfall is the
+interesting part rather than a disclaimer:
+
+```console
+$ interlingua -emit schema-file -dialect litellm -target genai-main
+#     1 written here as rename_attributes
+#    17 need no rename: litellm already writes the target's own attribute name
+#     6 cannot be expressed in this format at all
+```
+
+Every transformation a schema file supports is a change of *name*. `gen_ai.system
+→ gen_ai.provider.name` fits. `bedrock → aws.bedrock` does not — same attribute,
+different value, and there is no transformation for a value. Neither does
+milliseconds → seconds, or dropping a value the target's closed set does not
+admit. Applying such a file alone produces spans with the right attribute names
+carrying values the target schema does not define, which is arguably worse than
+leaving them alone, because they now look conformant.
+
+[`docs/export-gap.md`](docs/export-gap.md) measures all of this from the rule
+tables — what the processor, an OTTL config, and a schema file each carry, and
+every gap grouped by the specific missing capability. It is generated and CI
+fails if it drifts.
+
+## The provenance attributes are a published registry
+
+[`registry/`](registry/) is a Weaver semantic convention registry defining the
+seven `interlingua.*` attributes — which vocabulary a span arrived in, which one
+it left in, how confident the identification was, and what the trip cost.
+
+```console
+$ weaver registry check -r registry/
+```
+
+It is published as a registry rather than described in a README so that it can be
+resolved and depended on without adopting any of this code.
+`TestRegistryDefinesEveryAttributeWeWrite` holds it to the implementation in
+both directions: an attribute written but not defined is a promise quietly
+broken, and one defined but not written is documentation of a feature that does
+not exist.
+
+The namespace is deliberately this repository's own. A namespace named after one
+tool has no business in a shared convention; what might belong there is the
+*shape*, and [`docs/oteps/`](docs/oteps/) drafts that proposal under a neutral
+name — along with a second, weaker one for adding value transforms to the schema
+file format. Both are drafts. Neither is filed, and the README there says what
+would have to happen first.
 
 ## Use it: the Collector processor
 

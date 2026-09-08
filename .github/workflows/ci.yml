@@ -75,11 +75,11 @@ jobs:
       # Collector, so they are committed and reviewed as a diff. Same idempotency
       # property as above, and the same reason: a generator with unstable output
       # makes the comparison flaky rather than red.
-      - name: emitted OTTL configs are current
+      - name: emitted configs and the export gap table are current
         run: |
           go test ./internal/emit/... -update
-          if ! git diff --exit-code -- internal/emit/; then
-            echo "::error::the emitted OTTL configs changed; commit them"
+          if ! git diff --exit-code -- internal/emit/ docs/export-gap.md; then
+            echo "::error::emitted configs or docs/export-gap.md changed; commit them"
             exit 1
           fi
 

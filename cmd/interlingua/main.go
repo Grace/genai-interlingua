@@ -28,6 +28,7 @@ import (
 
 	"github.com/Grace/genai-interlingua/internal/dialect"
 	"github.com/Grace/genai-interlingua/internal/emit/ottl"
+	"github.com/Grace/genai-interlingua/internal/emit/schemafile"
 	"github.com/Grace/genai-interlingua/internal/normalize"
 	"github.com/Grace/genai-interlingua/internal/semconv"
 )
@@ -69,7 +70,7 @@ func run() error {
 	// -emit turns the tool inside out: instead of normalizing spans, it prints
 	// the mapping in a form something else can run. There is no detection in an
 	// exported config -- see internal/emit/ottl -- so a dialect has to be named.
-	emit := flag.String("emit", "", "print the mapping instead of normalizing; one of: ottl")
+	emit := flag.String("emit", "", "print the mapping instead of normalizing; one of: ottl, schema-file")
 	dialectName := flag.String("dialect", "", "with -emit, the emitter to export the mapping for")
 	showVersion := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
@@ -113,8 +114,8 @@ func run() error {
 
 // emitMapping prints the mapping rather than applying it.
 func emitMapping(format, name string, t semconv.Target) error {
-	if format != "ottl" {
-		return fmt.Errorf("unknown -emit format %q, want one of: ottl", format)
+	if format != "ottl" && format != "schema-file" {
+		return fmt.Errorf("unknown -emit format %q, want one of: ottl, schema-file", format)
 	}
 	if name == "" {
 		return fmt.Errorf("-emit needs -dialect: an exported config cannot detect, so it is pinned to one emitter (exportable: %s)",
@@ -134,11 +135,22 @@ func emitMapping(format, name string, t semconv.Target) error {
 			return fmt.Errorf("%s does not declare its mappings as data yet, so it cannot be exported (exportable: %s)",
 				name, strings.Join(exportable(), ", "))
 		}
-		res, err := ottl.Config(ottl.Options{Dialect: ruled, Target: t})
-		if err != nil {
-			return err
+		var out []byte
+		switch format {
+		case "ottl":
+			res, err := ottl.Config(ottl.Options{Dialect: ruled, Target: t})
+			if err != nil {
+				return err
+			}
+			out = res.YAML
+		case "schema-file":
+			res, err := schemafile.Render(schemafile.Options{Dialect: ruled, Target: t})
+			if err != nil {
+				return err
+			}
+			out = res.YAML
 		}
-		_, err = os.Stdout.Write(res.YAML)
+		_, err := os.Stdout.Write(out)
 		return err
 	}
 	return fmt.Errorf("unknown dialect %q (exportable: %s)", name, strings.Join(exportable(), ", "))

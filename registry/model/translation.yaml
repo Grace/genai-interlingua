@@ -1,0 +1,109 @@
+file_format: definition/2
+
+# The attributes this repository writes onto every span it rewrites.
+#
+# The naming here is deliberately this repository's own -- interlingua.* -- and
+# deliberately not proposed as-is. A namespace named after one tool has no
+# business in a shared convention; what belongs there is the *shape*, and
+# docs/oteps/0001-translation-provenance.md proposes it under a neutral name.
+# This file is the running implementation that proposal points at.
+#
+# Every one of these exists because of the same failure. A translation layer
+# that drops data silently is worse than no translation layer, because you will
+# trust the result. Each attribute below is one thing you would otherwise have
+# to take on faith.
+
+attributes:
+  - key: interlingua.dialect
+    type: string
+    stability: development
+    brief: The instrumentation vocabulary the span was recognized as being written in.
+    note: >
+      This is an inference, not a declaration. The span did not say which library
+      produced it -- almost none do -- so it was identified by scoring the
+      evidence its attributes carry. Read it together with
+      `interlingua.dialect.confidence`, which says how clear-cut that was.
+    examples: ["openllmetry", "openinference", "vercel", "litellm", "braintrust", "raw"]
+
+  - key: interlingua.dialect.confidence
+    type: int
+    stability: development
+    brief: The winning dialect's margin over the runner-up during detection.
+    note: >
+      Zero means two dialects tied, or that the span was claimed by a fallback
+      that recognizes shape rather than signature. It does not mean the parse is
+      wrong; it means the identification was not decisive, and a misdetection is
+      therefore something you can query for rather than something you discover
+      later from a dashboard that has been quietly wrong for a month.
+    examples: [7, 3, 0]
+
+  - key: interlingua.target
+    type: string
+    stability: development
+    brief: The schema version the span was normalized into.
+    note: >
+      This attribute exists because `schema_url` cannot currently do its job for
+      GenAI telemetry. The `gen_ai.*` attributes were deprecated out of
+      `open-telemetry/semantic-conventions` at v1.42.0 and moved to
+      `open-telemetry/semantic-conventions-genai`, which has no tags and no
+      releases, so there is no schema URL to point at. When there is one, this
+      attribute should be replaced by it rather than carried alongside it.
+      See docs/moving-target.md.
+    examples: ["v1.41.0", "genai-main"]
+
+  - key: interlingua.lossy
+    type: string[]
+    stability: development
+    brief: >
+      The attribute keys this span is not a faithful carrier of, after
+      translation.
+    note: >
+      A key appears here when the source said something the target schema cannot
+      express: a fact with no attribute at this version, a value outside a closed
+      value set, several facts flattened into one document, or an ambiguity the
+      translator declined to resolve by guessing. The source attributes
+      themselves are preserved on the span by default, so this list is a pointer
+      to what to go and read, not an epitaph.
+    examples:
+      - ["gen_ai.usage.total_tokens", "gen_ai.prompt.version"]
+
+  - key: interlingua.lossy.count
+    type: int
+    stability: development
+    brief: How many keys are in `interlingua.lossy`.
+    note: >
+      Written even when it is zero, which is the whole reason it is a separate
+      attribute. "This translation lost nothing" and "nobody checked" are
+      different claims, and an absent array cannot tell them apart -- but a
+      backend that will not aggregate over an array will happily aggregate over
+      this.
+    examples: [0, 5]
+
+  - key: interlingua.export
+    type: string
+    stability: development
+    brief: >
+      Which implementation performed the translation, when it was not the full
+      normalizer.
+    note: >
+      Absent on a span rewritten by the processor, which carries every mapping.
+      Present when the translation was done by an exported subset -- an OTTL
+      config generated from the same rules, which cannot detect a dialect,
+      reassemble indexed attributes, or compute `interlingua.lossy` per span.
+      Anything reading `interlingua.dialect` downstream needs to know which of
+      the two produced it.
+    examples: ["ottl"]
+
+  - key: interlingua.export.unsupported
+    type: string[]
+    stability: development
+    brief: >
+      Attribute keys the exporting implementation is structurally incapable of
+      producing.
+    note: >
+      This is a statement about the translator, not about the span, and that is
+      the distinction it exists to preserve. `interlingua.lossy` says what this
+      particular span lost. This says what any span through this pipeline will
+      lose, whether or not it happened to carry the source attributes at all.
+    examples:
+      - ["gen_ai.input.messages", "gen_ai.output.messages"]

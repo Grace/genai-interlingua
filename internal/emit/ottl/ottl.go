@@ -50,6 +50,21 @@ import (
 // which makes each test see the original value, the way the Go code does.
 const scratch = "interlingua.__scratch"
 
+// The provenance attributes an exported config writes that the processor does
+// not. They are exported so internal/emit can hold registry/ to them: an
+// attribute this code writes and the published registry does not define is an
+// attribute nobody downstream can look up.
+const (
+	// AttrExport names the implementation that did the translation. Absent on
+	// a span the processor handled, which carries every mapping.
+	AttrExport = "interlingua.export"
+
+	// AttrExportUnsupported is what the exporting implementation is
+	// structurally incapable of producing -- a statement about the pipeline
+	// rather than about the span.
+	AttrExportUnsupported = "interlingua.export.unsupported"
+)
+
 // Options selects what to emit.
 type Options struct {
 	// Dialect is the emitter to translate from. It must declare rules; a
@@ -125,11 +140,11 @@ func Config(opts Options) (Result, error) {
 	stmts = append(stmts,
 		fmt.Sprintf(`set(attributes["interlingua.dialect"], %s)`, quote(name)),
 		fmt.Sprintf(`set(attributes["interlingua.target"], %s)`, quote(string(opts.Target))),
-		`set(attributes["interlingua.export"], "ottl")`,
+		fmt.Sprintf(`set(attributes[%s], "ottl")`, quote(AttrExport)),
 	)
 	if len(unsupported) > 0 {
 		stmts = append(stmts,
-			fmt.Sprintf(`set(attributes["interlingua.export.unsupported"], [%s])`, quoteList(unsupported)))
+			fmt.Sprintf(`set(attributes[%s], [%s])`, quote(AttrExportUnsupported), quoteList(unsupported)))
 	}
 
 	return Result{

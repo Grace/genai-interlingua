@@ -1,0 +1,25 @@
+# A third-party semantic convention registry, in the shape OpenTelemetry Weaver
+# reads: https://github.com/open-telemetry/weaver
+#
+# It defines one namespace, and the namespace is not about GenAI. It is about
+# translation itself -- which vocabulary a span arrived in, which one it left
+# in, and what the trip cost. Those questions have the same answer shape for a
+# GenAI dialect, an HTTP attribute rename, and a vendor's ingest pipeline, which
+# is the argument docs/oteps/0001-translation-provenance.md makes at length.
+#
+# Publishing it as a registry rather than a README is the point. A registry can
+# be resolved, checked and depended on by `weaver registry check` without anyone
+# adopting this repository's code, and a proposal that already exists as a
+# working artifact is a different conversation from one that does not.
+#
+#   weaver registry check -r registry/
+name: genai-interlingua
+description: Attributes recording that telemetry was translated, and what the translation cost.
+schema_url: https://github.com/Grace/genai-interlingua/registry/0.1.0
+
+# No dependencies, deliberately. Nothing here `ref`s an upstream attribute:
+# these attributes describe the act of translating between vocabularies, so
+# they are orthogonal to whichever vocabularies are involved. Declaring a
+# dependency on semantic-conventions-genai would be honest about where this
+# repository's other half points and dishonest about this file, which would
+# resolve and check identically without it.
