@@ -52,6 +52,10 @@ Two issue comments, on questions that asked for them, is a far lower bar than an
 OTEP and a much better fit. It is also the "file small useful patches first" step
 below — except the patches turn out to be the main contribution.
 
+Both are drafted in [`comments/`](comments/) and neither is posted, for the reason
+in step 3 below: watch a Tooling WG recording first, in case either was already
+settled in a meeting whose notes exist.
+
 ## Why 0001 still waits
 
 It is cheap, self-contained and already implemented, and none of that makes it
