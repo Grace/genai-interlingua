@@ -71,10 +71,15 @@ type Result struct {
 	// Set is the attributes to write, normalized keys and interlingua.* alike.
 	Set map[string]dialect.Value
 
-	// Remove is the source attribute keys to delete, empty unless the caller
-	// asked not to preserve originals. Keys the emitter wrote that the dialect
-	// never read are never in here: nothing is deleted on the grounds that
-	// nobody looked at it.
+	// Remove is the attribute keys to delete. Mostly source keys the dialect
+	// consumed, which is empty unless the caller asked not to preserve
+	// originals -- keys the emitter wrote that the dialect never read are never
+	// in here, because nothing is deleted on the grounds that nobody looked at
+	// it.
+	//
+	// It also carries interlingua.* keys this normalization is deliberately not
+	// writing, so that a second pass over an already-normalized span does not
+	// leave the first pass's answer sitting next to its own.
 	Remove []string
 
 	// DialectLoss is what the emitter said that the IR could not carry.
@@ -191,6 +196,25 @@ func Span(s dialect.Span, opts Options) (Result, bool) {
 
 	if !opts.PreserveOriginal {
 		r.Remove = removals(p.Consumed, r.Set)
+	}
+
+	// A span can reach this function twice -- a collector normalizes at the
+	// edge and a backend normalizes again at ingest, or a spooled payload is
+	// replayed after a restart. When that happens this normalization must own
+	// its own attributes completely, and that means clearing the ones it is not
+	// writing rather than leaving a previous run's behind.
+	//
+	// The count and the list are the pair that breaks. The count is written on
+	// every pass, including when it is zero; the list only when it is not
+	// empty. So a second pass that loses nothing used to overwrite the count
+	// with 0 and leave the first pass's list untouched, producing a span that
+	// simultaneously reported losing nothing and named three things it lost.
+	//
+	// A span that contradicts itself is worse than one that is merely
+	// incomplete, and it is a poor advertisement for a tool whose entire
+	// argument is honest loss accounting.
+	if len(lossy) == 0 {
+		r.Remove = append(r.Remove, AttrLossy)
 	}
 
 	return r, true

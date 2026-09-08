@@ -2,6 +2,7 @@ package normalize
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/Grace/genai-interlingua/internal/dialect"
@@ -161,9 +162,18 @@ func TestStrippingOriginalsRemovesOnlyWhatWasReadAndNotRewritten(t *testing.T) {
 	}
 }
 
+// The default normalization must not destroy anything the emitter wrote. It may
+// clear its own interlingua.* attributes -- a second pass over an
+// already-normalized span has to own those completely rather than leave the
+// previous pass's answer beside its own -- and that is a different thing from
+// removing an original, so the invariant is stated as "no source key" rather
+// than "nothing at all".
 func TestOriginalsAreKeptByDefault(t *testing.T) {
-	if r := mustNormalize(t, chatSpan(nil), semconv.TargetV1_41_0); len(r.Remove) != 0 {
-		t.Errorf("the default normalization removed %v", r.Remove)
+	r := mustNormalize(t, chatSpan(nil), semconv.TargetV1_41_0)
+	for _, k := range r.Remove {
+		if !strings.HasPrefix(k, "interlingua.") {
+			t.Errorf("the default normalization removed the source attribute %q", k)
+		}
 	}
 }
 
