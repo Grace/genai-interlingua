@@ -74,78 +74,127 @@ func (openInference) Score(s Span) int {
 	return n
 }
 
+// Rules are the OpenInference mappings that can be stated.
+//
+// Two of them repay a close look, because they are the two places where a
+// precedence written in Go as "whichever line runs last wins" becomes, in a
+// table, "whichever key is listed first wins" -- and the order therefore
+// reverses on the page while the behaviour stays put.
+func (openInference) Rules() []Rule {
+	return []Rule{
+		// A span kind this table does not name is not a kind spelled unusually,
+		// it is a concept the conventions have no word for, so it loses rather
+		// than passing through. UnmatchedLose's detail is byte-identical to the
+		// one this dialect used to write by hand.
+		{
+			Field:     semconv.OperationName,
+			Keys:      []string{"openinference.span.kind"},
+			Transform: Transform{Map: openInferenceOperations, MapUnmatched: UnmatchedLose},
+		},
+		// llm.provider names the hosting provider and llm.system the API
+		// surface, which differ for a model served through Bedrock or Azure.
+		// Where both are present, provider is the one gen_ai.provider.name
+		// means. Where only system is -- which a capture of the real OpenAI
+		// instrumentation does -- reading it is a better answer than discarding
+		// the provider because a better-named attribute usually exists.
+		{
+			Field:     semconv.ProviderName,
+			Keys:      []string{"llm.provider", "llm.system"},
+			Transform: Transform{Lower: true, Map: openInferenceProviders},
+		},
+
+		{Field: semconv.RequestModel, Keys: []string{"llm.model_name", "embedding.model_name"}},
+
+		// The conventions make this a list because a request for several choices
+		// has one reason per choice; OpenInference carries a single value, so
+		// the list has one element rather than being synthesised from
+		// per-message reasons.
+		{Field: semconv.ResponseFinishReasons, Keys: []string{"llm.finish_reason"},
+			Transform: Transform{ToList: true}},
+
+		{Field: semconv.UsageInputTokens, Keys: []string{"llm.token_count.prompt"}},
+		{Field: semconv.UsageOutputTokens, Keys: []string{"llm.token_count.completion"}},
+		{Field: semconv.UsageCacheReadInputTokens, Keys: []string{"llm.token_count.prompt_details.cache_read"}},
+		{Field: semconv.UsageCacheWriteInputTokens, Keys: []string{"llm.token_count.prompt_details.cache_write"}},
+		{Field: semconv.UsageAudioInputTokens, Keys: []string{"llm.token_count.prompt_details.audio"}},
+		{Field: semconv.UsageReasoningOutputTokens, Keys: []string{"llm.token_count.completion_details.reasoning"}},
+		{Field: semconv.UsageAudioOutputTokens, Keys: []string{"llm.token_count.completion_details.audio"}},
+
+		{Field: semconv.ConversationID, Keys: []string{"session.id"}},
+
+		// tool_call.function.name is the call actually made and tool.name the
+		// definition it was made against; on a span carrying both, the call is
+		// the more specific and wins. In the imperative version it won by being
+		// assigned second. Here it wins by being listed first, which is the same
+		// decision written the other way up.
+		{Field: semconv.ToolName, Keys: []string{"tool_call.function.name", "tool.name"}},
+		{Field: semconv.ToolDescription, Keys: []string{"tool.description"}},
+		{Field: semconv.ToolCallID, Keys: []string{"tool_call.id"}},
+		{Field: semconv.ToolCallArguments, Keys: []string{"tool_call.function.arguments"}},
+	}
+}
+
+// Unstated is unusually long here, and the reason is one attribute.
+//
+// OpenInference packs every sampling setting into llm.invocation_parameters as
+// a JSON string. Temperature, max tokens, top_p, top_k, the penalties, the seed,
+// the choice count, streaming, stop sequences -- ten fields, none of which is a
+// transformation of an attribute, all of which require parsing a blob and
+// lifting named members out of it. So an exported config for this dialect
+// carries the model, the provider, the operation, the token counts and the
+// session, and not one request parameter. That is a real hole and it is better
+// stated than averaged.
+//
+// ToolCallArguments is here as well as in the rules above: on a span whose kind
+// is TOOL, input.value is the arguments, and which attribute means what depends
+// on a sibling. The export carries the tool_call.function.arguments half only.
+func (openInference) Unstated() []semconv.Field {
+	return []semconv.Field{
+		semconv.RequestTemperature,
+		semconv.RequestMaxTokens,
+		semconv.RequestTopP,
+		semconv.RequestTopK,
+		semconv.RequestFrequencyPenalty,
+		semconv.RequestPresencePenalty,
+		semconv.RequestSeed,
+		semconv.RequestChoiceCount,
+		semconv.RequestStream,
+		semconv.RequestStopSequences,
+		semconv.InputMessages,
+		semconv.OutputMessages,
+		semconv.ToolDefinitions,
+		semconv.ToolCallArguments,
+		semconv.ToolCallResult,
+		semconv.RetrievalDocuments,
+	}
+}
+
 func (d openInference) Parse(s Span) Parsed {
 	var p Parsed
 
+	p.applyRules(s, d.Rules())
+
+	// The span kind is read again rather than kept from the rules, because two
+	// mappings below turn on what it says rather than on what it is worth.
 	kind := ""
 	if v, ok := s.Attr("openinference.span.kind"); ok {
 		kind = v.Str
-		p.Consumed = append(p.Consumed, "openinference.span.kind")
-		if op, ok := openInferenceOperations[kind]; ok {
-			p.Set(semconv.OperationName, String(op))
-		} else {
-			p.Loss = append(p.Loss, Loss{Key: "openinference.span.kind", Reason: ReasonNoField,
-				Detail: "no gen_ai.operation.name value for " + kind})
-		}
 	}
 
-	// llm.provider names the hosting provider and llm.system the API surface,
-	// which differ for a model served through Bedrock or Azure. Where both are
-	// present, provider is the one gen_ai.provider.name means and system is
-	// genuinely redundant.
-	//
-	// A capture of the OpenAI instrumentation sets only llm.system, though, and
-	// treating it as redundant then loses the provider entirely. So it is the
-	// fallback rather than always a loss: the information is on the span, and
-	// discarding it because a better-named attribute usually exists is a worse
-	// answer than reading the one that does.
-	provider := ""
-	switch {
-	case s.Has("llm.provider"):
-		v, _ := s.Attr("llm.provider")
-		provider = v.Str
-		p.Consumed = append(p.Consumed, "llm.provider")
-		if s.Has("llm.system") {
-			p.Lose("llm.system", ReasonNoField,
-				"llm.system names the API surface, which gen_ai.provider.name already carries")
-		}
-	case s.Has("llm.system"):
-		v, _ := s.Attr("llm.system")
-		provider = v.Str
-		p.Consumed = append(p.Consumed, "llm.system")
-	}
-	if provider != "" {
-		name := strings.ToLower(provider)
-		if alias, ok := openInferenceProviders[name]; ok {
-			name = alias
-		}
-		p.Set(semconv.ProviderName, String(name))
+	// llm.system is redundant only when llm.provider actually won. The rule
+	// above consumes whichever it used and says nothing about the other, so the
+	// runner-up is reported here -- the same shape LiteLLM uses for
+	// llm.request.type.
+	if s.Has("llm.provider") && s.Has("llm.system") {
+		p.Lose("llm.system", ReasonNoField,
+			"llm.system names the API surface, which gen_ai.provider.name already carries")
 	}
 
-	p.TakeFirst(s, semconv.RequestModel, "llm.model_name", "embedding.model_name")
-
-	// Captured from the real instrumentation, which sets it on the LLM span
-	// alongside the output messages. The conventions make this a list because a
-	// request for several choices has one reason per choice; OpenInference
-	// carries a single value, so the list has one element rather than being
-	// synthesised from the per-message reasons.
-	if v, ok := s.Attr("llm.finish_reason"); ok && v.Str != "" {
-		p.Set(semconv.ResponseFinishReasons, StrSeq([]string{v.Str}))
-		p.Consumed = append(p.Consumed, "llm.finish_reason")
-	}
-	p.Take(s, "llm.token_count.prompt", semconv.UsageInputTokens)
-	p.Take(s, "llm.token_count.completion", semconv.UsageOutputTokens)
-	p.Take(s, "llm.token_count.prompt_details.cache_read", semconv.UsageCacheReadInputTokens)
-	p.Take(s, "llm.token_count.prompt_details.cache_write", semconv.UsageCacheWriteInputTokens)
-	p.Take(s, "llm.token_count.prompt_details.audio", semconv.UsageAudioInputTokens)
-	p.Take(s, "llm.token_count.completion_details.reasoning", semconv.UsageReasoningOutputTokens)
-	p.Take(s, "llm.token_count.completion_details.audio", semconv.UsageAudioOutputTokens)
 	if s.Has("llm.token_count.total") {
 		p.Lose("llm.token_count.total", ReasonNoField,
 			"the conventions carry input and output counts only")
 	}
 
-	p.Take(s, "session.id", semconv.ConversationID)
 	for _, k := range []string{"user.id", "metadata", "tag.tags"} {
 		if s.Has(k) {
 			p.Lose(k, ReasonNoField, "the conventions name no equivalent")
@@ -156,11 +205,6 @@ func (d openInference) Parse(s Span) Parsed {
 		d.invocationParameters(v.Str, &p)
 	}
 
-	p.Take(s, "tool.name", semconv.ToolName)
-	p.Take(s, "tool.description", semconv.ToolDescription)
-	p.Take(s, "tool_call.id", semconv.ToolCallID)
-	p.Take(s, "tool_call.function.name", semconv.ToolName)
-	p.Take(s, "tool_call.function.arguments", semconv.ToolCallArguments)
 	if s.Has("tool.parameters") {
 		p.Lose("tool.parameters", ReasonNoField,
 			"gen_ai.tool.definitions describes the tools offered to the model, not the schema of the tool being executed")

@@ -237,6 +237,15 @@ func (p *Parsed) applyRules(s Span, rules []Rule) {
 			if !ok {
 				continue
 			}
+			if v.Kind == KindStr && v.Str == "" {
+				// Present but empty. Span.Attr only rejects a value with no
+				// kind at all, so an emitter that writes "" reaches here, and
+				// carrying it would put an empty string under a conventions
+				// attribute -- which reads downstream as a fact rather than as
+				// the absence of one. Treated as absent, and not consumed, so
+				// the original survives for anyone who wants to see it.
+				continue
+			}
 			// Consumed before the transform is judged: the attribute was read
 			// either way, and a key that was read and could not be carried is
 			// not also a key nothing looked at.

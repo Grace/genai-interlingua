@@ -347,3 +347,49 @@ func TestOpenInferenceReadsTheFinishReason(t *testing.T) {
 		t.Errorf("finish reasons = %v, want [tool_calls]", got)
 	}
 }
+
+// The two precedences in this dialect's rule table are the ones that reversed
+// direction on the page when it was migrated: the winning key moved from being
+// assigned last in Parse to being listed first in Keys. Neither is exercised by
+// a captured fixture -- no real span in the corpus carries both spellings -- so
+// without these they are precedences nothing checks.
+
+func TestToolCallNameBeatsToolDefinitionName(t *testing.T) {
+	// tool.name is the tool as defined; tool_call.function.name is the call
+	// actually made. A span carrying both is describing one invocation of a
+	// known tool, and gen_ai.tool.name means the thing that ran.
+	s := spanOf(map[string]string{
+		"openinference.span.kind": "TOOL",
+		"tool.name":               "get_weather_v1",
+		"tool_call.function.name": "get_weather",
+	})
+	p := openInference{}.Parse(s)
+	if got, want := p.Fields[semconv.ToolName].Str, "get_weather"; got != want {
+		t.Errorf("gen_ai.tool.name = %q, want %q (the call, not the definition)", got, want)
+	}
+}
+
+func TestProviderBeatsSystemAndSystemIsReportedLost(t *testing.T) {
+	// llm.provider names the host and llm.system the API surface. Where both
+	// are present provider wins -- and system has to be reported rather than
+	// left looking unread, because a key that was passed over is not a key
+	// nothing looked at.
+	s := spanOf(map[string]string{
+		"openinference.span.kind": "LLM",
+		"llm.provider":            "aws",
+		"llm.system":              "openai",
+	})
+	p := openInference{}.Parse(s)
+	if got, want := p.Fields[semconv.ProviderName].Str, "aws.bedrock"; got != want {
+		t.Errorf("gen_ai.provider.name = %q, want %q", got, want)
+	}
+	var found bool
+	for _, l := range p.Loss {
+		if l.Key == "llm.system" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("llm.system was passed over and not reported as a loss; losses = %+v", p.Loss)
+	}
+}
