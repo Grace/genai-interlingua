@@ -4,10 +4,12 @@
 it changes a file format other people's parsers read, where 0001 adds attributes.
 See [README.md](README.md).
 
-Its evidence has moved twice and the draft shows both moves rather than only the
+Its evidence has moved twice and the draft shows every move rather than only the
 latest. Written against one migrated dialect it concluded, against itself, that
-the gaps it fixes were a minority of the shortfall. A second dialect inverted
-that. Both readings are below, in the order they happened.
+the gaps it fixes are a minority of the shortfall. A second dialect inverted
+that. Three more restored it. All three readings are below, in the order they
+happened, because how much a measurement moves when you look again is the thing
+a reviewer most needs to know about it.
 
 ## Motivation
 
@@ -83,7 +85,7 @@ versions:
 ```
 
 `coalesce_attributes` was added to this draft *after* the measurement below, and
-is the largest single fixable gap by count. `rename_attributes` can already map
+at 22 of the 44 fixable gaps it is the largest single one by count. `rename_attributes` can already map
 two old names onto one new name, but `attribute_map` is a map: it says nothing
 about what to do when a payload carries both, so the result depends on iteration
 order. That is not a hypothetical. The Vercel AI SDK emits `ai.usage.promptTokens`
@@ -134,46 +136,65 @@ already happened in the conventions it serves.
 
 That is a narrower claim and it is the one the evidence supports.
 
-### What the second dialect did to those numbers
+### What the sample did to those numbers, twice
 
-Everything above this heading was written against a sample of one migrated
-dialect, and closed by saying: *if the `value_transform` count does not grow with
-the sample, this proposal does not have a case.*
+Everything above this heading was written against one migrated dialect, and
+closed by saying: *if the `value_transform` count does not grow with the sample,
+this proposal does not have a case.* The sample has grown twice since, and the
+answer changed both times.
 
-A second dialect was migrated. It grew, and two categories appeared that the
-first dialect never produced:
+| | 1 dialect | 2 dialects | 5 dialects |
+| --- | ---: | ---: | ---: |
+| `value_transform` | 4 | 10 | 16 |
+| `scalar_to_list` | — | 2 | 4 |
+| `ambiguous_precedence` | — | 12 | 22 |
+| `closed_value_set` | — | — | 2 |
+| **fixable by a format change** | **4** | **24** | **44** |
+| `not_a_name` | 8 | 16 | 76 |
+| fixable share of the shortfall | 33% | 60% | 37% |
 
-| reason | one dialect | two dialects |
-| --- | ---: | ---: |
-| `value_transform` | 4 | 10 |
-| `scalar_to_list` | — | 2 |
-| `ambiguous_precedence` | — | 12 |
-| **fixable by a format change** | **4** | **24** |
-| `not_a_name` | 8 | 16 |
+At one dialect the fixable gaps were a minority. At two they were a clear
+majority, and this section previously said so, and said that the fixable share
+*grows with the sample*. At five they are a minority again.
 
-The prediction held, and the paragraph beginning "**The second:**" is now wrong
-on its own evidence. The fixable gaps are no longer a minority of the shortfall;
-at two dialects they are 24 against 16. It is left standing above rather than
-quietly corrected, because a proposal that shows its own claim being overturned
-by the next measurement is making a different and better argument than one that
-only ever shows the number that suited it.
+**That second reading was wrong, and it was wrong in the most ordinary way: n=2.**
+The dialect that produced it, the Vercel AI SDK, is unusually multi-key —
+it emits the same fact under an `ai.*` name on the span a user's code creates and
+a `gen_ai.*` name on the span its provider adapter creates, so almost every rule
+it has carries two spellings. Twelve of the twenty-four fixable gaps at that
+point were `ambiguous_precedence` from that one emitter. Sampling a second
+emitter with an unusual shape moved the ratio; sampling three more moved it back.
 
-The honest restatement: **the fixable share of the shortfall grows as the sample
-grows.** One dialect that happened to be almost entirely conformant made the
-format look adequate. It is not, and the direction of travel is the evidence,
-not the level.
+So the first conclusion was right and the correction to it was not. The fixable
+gaps are a minority of the shortfall, they sit somewhere around a third of it,
+and the honest summary is the one this section started with rather than the one
+it reached in the middle.
 
-Two of the three fixable categories are also *new*, which is the part that should
-worry a reviewer more than the counts. `scalar_to_list` and
-`ambiguous_precedence` did not exist as categories when the proposal below was
-written, and `ambiguous_precedence` is now the single largest fixable gap. A
-proposal that only offers `transform_values` and `change_unit` would leave half
-the fixable shortfall untouched, which is why `coalesce_attributes` is in the
-proposal above — it was added *after* this measurement, not before it.
+Both readings are left standing, in order. A proposal whose evidence section
+shows its own conclusion being overturned and then restored is worth more than
+one that shows a single number, because the thing a reviewer most needs to know
+about a measurement like this is how much it moves when you look again.
 
-The sample is still two of six. This section should be regenerated and re-read
-before anything is filed, and if a third dialect moves the ratio back the other
-way, that belongs here too.
+**What survives.** 44 real mappings across five real instrumentation libraries
+fail only because the format has no transformation for them, and the four
+categories they fall into are specific rather than vague. That is the case, and
+it does not depend on the share. A format that cannot say `bedrock` and
+`aws.bedrock` are the same provider cannot describe a migration the conventions
+have already made, whether that is a third of the shortfall or all of it.
+
+**What does not.** Any claim that this proposal makes schema files sufficient for
+normalizing GenAI telemetry. It does not, by a wider margin than was apparent at
+two dialects. `not_a_name` is 76 of 120 — reassembly, blob lifting,
+disambiguation by sibling — and none of it should ever be expressible in a
+declarative schema format. The largest single contributor is OpenInference,
+which packs ten request parameters into one JSON string, and no transformation
+type proposed here or plausibly anywhere would reach them.
+
+The sample is now five of six. The sixth, `raw`, is a fallback for spans nobody
+designed and is deliberately not migratable: its mapping resolves keys against
+the entire semantic-convention registry at runtime, so stating it as data would
+either duplicate the registry or admit it carries nothing. It will not move these
+numbers.
 
 ## What this would cost
 

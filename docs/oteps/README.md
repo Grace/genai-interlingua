@@ -8,9 +8,10 @@ They are drafted in the open for two reasons. Writing a proposal is the fastest
 way to find out whether you actually have one, and generating its evidence is the
 fastest way to find out whether it survives. [0002](0002-schema-file-value-transforms.md)
 first got weaker under its own evidence, then recovered when a second dialect was
-measured and two entirely new gap categories appeared. Both readings are in the
-draft, in the order they happened. Better to learn that here than in a pull
-request. And a proposal that already exists as a working
+measured, then got weaker again when three more were — the middle reading turned
+out to be one unusually-shaped emitter at n=2. All three are in the draft, in the
+order they happened. Far better to learn that here than in a pull request, and
+the sequence is worth more to a reviewer than the number would have been. And a proposal that already exists as a working
 artifact is a different conversation from one that does not: everything
 [0001](0001-translation-provenance.md) describes is running, in
 [`registry/`](../../registry/), which `weaver registry check` validates today.
