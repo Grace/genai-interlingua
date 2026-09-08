@@ -101,6 +101,79 @@ func (liteLLM) Score(s Span) int {
 	return n
 }
 
+// Rules are the LiteLLM mappings that can be stated rather than performed.
+// Almost all of this dialect fits, because LiteLLM writes the conventions'
+// own attribute names for everything except the provider, the operation and
+// the traceloop-shaped halves it inherited.
+//
+// The two rules with more than one key are the interesting ones, and they are
+// the same fact twice: LiteLLM implemented a rename without dropping the old
+// spelling, so a span can carry either. The newer key wins, and a build that
+// writes both is not ambiguous, it is just current.
+func (liteLLM) Rules() []Rule {
+	return []Rule{
+		// gen_ai.provider.name when configured for the newer conventions,
+		// gen_ai.system otherwise. LiteLLM names a provider after its own
+		// routing prefix, which is shorter than the conventions' name wherever
+		// one company fronts several API surfaces.
+		{
+			Field:     semconv.ProviderName,
+			Keys:      []string{"gen_ai.provider.name", "gen_ai.system"},
+			Transform: Transform{Lower: true, Map: liteLLMProviders},
+		},
+		// llm.request.type is the traceloop attribute LiteLLM inherited and
+		// still writes. A call type the table does not mention passes through
+		// for the renderer to check against the target's value set: LiteLLM
+		// routes calls the conventions have no operation for, and that is a
+		// loss to report at render time rather than a value to drop here.
+		{
+			Field:     semconv.OperationName,
+			Keys:      []string{"gen_ai.operation.name", "llm.request.type"},
+			Transform: Transform{Map: liteLLMOperations},
+		},
+
+		{Field: semconv.RequestModel, Keys: []string{"gen_ai.request.model"}},
+		{Field: semconv.ResponseModel, Keys: []string{"gen_ai.response.model"}},
+		{Field: semconv.RequestMaxTokens, Keys: []string{"gen_ai.request.max_tokens"}},
+		{Field: semconv.RequestTemperature, Keys: []string{"gen_ai.request.temperature"}},
+		{Field: semconv.RequestTopP, Keys: []string{"gen_ai.request.top_p"}},
+		{Field: semconv.RequestTopK, Keys: []string{"gen_ai.request.top_k"}},
+		{Field: semconv.RequestSeed, Keys: []string{"gen_ai.request.seed"}},
+		{Field: semconv.RequestFrequencyPenalty, Keys: []string{"gen_ai.request.frequency_penalty"}},
+		{Field: semconv.RequestPresencePenalty, Keys: []string{"gen_ai.request.presence_penalty"}},
+		{Field: semconv.RequestStopSequences, Keys: []string{"gen_ai.request.stop_sequences"}},
+		{Field: semconv.RequestStream, Keys: []string{"gen_ai.request.stream"}},
+		{Field: semconv.RequestChoiceCount, Keys: []string{"gen_ai.request.choice.count"}},
+
+		{Field: semconv.UsageInputTokens, Keys: []string{"gen_ai.usage.input_tokens"}},
+		{Field: semconv.UsageOutputTokens, Keys: []string{"gen_ai.usage.output_tokens"}},
+		// LiteLLM already writes these two under the keys the conventions use.
+		{Field: semconv.UsageCacheWriteInputTokens, Keys: []string{"gen_ai.usage.cache_creation.input_tokens"}},
+		{Field: semconv.UsageCacheReadInputTokens, Keys: []string{"gen_ai.usage.cache_read.input_tokens"}},
+
+		{Field: semconv.SystemInstructions, Keys: []string{"gen_ai.system_instructions"}},
+		{Field: semconv.ConversationID, Keys: []string{"gen_ai.conversation.id"}},
+	}
+}
+
+// Unstated is what is left after the rules: the messages, and the finish
+// reasons derived from them.
+//
+// Both come from reassembly rather than translation. The messages are either
+// the conventions' own JSON attribute or an indexed traceloop pile --
+// gen_ai.prompt.{i}.role and its neighbours -- and which one a span carries is
+// not knowable until the span is in hand. The finish reasons are then read back
+// out of the reassembled completions, so they cannot be stated either: their
+// source is not an attribute, it is the result of the previous step.
+func (liteLLM) Unstated() []semconv.Field {
+	return []semconv.Field{
+		semconv.InputMessages,
+		semconv.OutputMessages,
+		semconv.ResponseFinishReasons,
+		semconv.ToolDefinitions,
+	}
+}
+
 func (d liteLLM) Parse(s Span) Parsed {
 	var p Parsed
 
@@ -112,36 +185,17 @@ func (d liteLLM) Parse(s Span) Parsed {
 		p.Consumed = append(p.Consumed, "gen_ai.framework")
 	}
 
-	d.provider(s, &p)
+	p.applyRules(s, d.Rules())
 
-	p.Take(s, "gen_ai.request.model", semconv.RequestModel)
-	p.Take(s, "gen_ai.response.model", semconv.ResponseModel)
-	p.Take(s, "gen_ai.request.max_tokens", semconv.RequestMaxTokens)
-	p.Take(s, "gen_ai.request.temperature", semconv.RequestTemperature)
-	p.Take(s, "gen_ai.request.top_p", semconv.RequestTopP)
-	p.Take(s, "gen_ai.request.top_k", semconv.RequestTopK)
-	p.Take(s, "gen_ai.request.seed", semconv.RequestSeed)
-	p.Take(s, "gen_ai.request.frequency_penalty", semconv.RequestFrequencyPenalty)
-	p.Take(s, "gen_ai.request.presence_penalty", semconv.RequestPresencePenalty)
-	p.Take(s, "gen_ai.request.stop_sequences", semconv.RequestStopSequences)
-	p.Take(s, "gen_ai.request.stream", semconv.RequestStream)
-	p.Take(s, "gen_ai.request.choice.count", semconv.RequestChoiceCount)
-
-	p.Take(s, "gen_ai.usage.input_tokens", semconv.UsageInputTokens)
-	p.Take(s, "gen_ai.usage.output_tokens", semconv.UsageOutputTokens)
-	// LiteLLM already writes these two under the keys the conventions use.
-	p.Take(s, "gen_ai.usage.cache_creation.input_tokens", semconv.UsageCacheWriteInputTokens)
-	p.Take(s, "gen_ai.usage.cache_read.input_tokens", semconv.UsageCacheReadInputTokens)
 	if s.Has("gen_ai.usage.total_tokens") {
 		p.Lose("gen_ai.usage.total_tokens", ReasonNoField,
 			"the conventions carry input and output counts only")
 	}
 
-	d.operation(s, &p)
+	// What is left is the part no rule table can state: the messages are
+	// either the conventions' own JSON or an indexed traceloop reassembly, and
+	// which one it is depends on what the span turns out to carry.
 	d.messages(s, &p)
-
-	p.Take(s, "gen_ai.system_instructions", semconv.SystemInstructions)
-	p.Take(s, "gen_ai.conversation.id", semconv.ConversationID)
 
 	// The tool definitions are traceloop-shaped, so they are read by the
 	// OpenLLMetry dialect's own reassembly rather than by a second copy of it.
@@ -153,48 +207,6 @@ func (d liteLLM) Parse(s Span) Parsed {
 	d.losses(s, &p)
 
 	return p
-}
-
-// provider reads whichever spelling this LiteLLM build emits. The integration
-// writes gen_ai.provider.name when configured for the newer conventions and
-// gen_ai.system otherwise, so both are the same fact and the newer one wins.
-func (liteLLM) provider(s Span, p *Parsed) {
-	key := "gen_ai.provider.name"
-	v, ok := s.Attr(key)
-	if !ok {
-		key = "gen_ai.system"
-		if v, ok = s.Attr(key); !ok {
-			return
-		}
-	}
-	name := strings.ToLower(v.Str)
-	if alias, ok := liteLLMProviders[name]; ok {
-		name = alias
-	}
-	p.Set(semconv.ProviderName, String(name))
-	p.Consumed = append(p.Consumed, key)
-}
-
-// operation prefers gen_ai.operation.name and falls back to llm.request.type,
-// which is the traceloop attribute LiteLLM inherited and still writes.
-func (liteLLM) operation(s Span, p *Parsed) {
-	key := "gen_ai.operation.name"
-	v, ok := s.Attr(key)
-	if !ok {
-		key = "llm.request.type"
-		if v, ok = s.Attr(key); !ok {
-			return
-		}
-	}
-	p.Consumed = append(p.Consumed, key)
-	if op, ok := liteLLMOperations[v.Str]; ok {
-		p.Set(semconv.OperationName, String(op))
-		return
-	}
-	// Not mapped is not the same as not carried: LiteLLM routes calls the
-	// conventions have no operation for, and the renderer is where a value the
-	// target does not define gets dropped.
-	p.Set(semconv.OperationName, String(v.Str))
 }
 
 // messages prefers the conventions' own JSON attributes, which LiteLLM writes

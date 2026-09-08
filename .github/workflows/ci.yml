@@ -71,6 +71,35 @@ jobs:
             exit 1
           fi
 
+      # The emitted OTTL configs are the artifact somebody pastes into their own
+      # Collector, so they are committed and reviewed as a diff. Same idempotency
+      # property as above, and the same reason: a generator with unstable output
+      # makes the comparison flaky rather than red.
+      - name: emitted OTTL configs are current
+        run: |
+          go test ./internal/emit/... -update
+          if ! git diff --exit-code -- internal/emit/; then
+            echo "::error::the emitted OTTL configs changed; commit them"
+            exit 1
+          fi
+
+      # The semconv tables are generated from the vendored registries rather
+      # than transcribed, so a re-vendor that nobody regenerated against is a
+      # real and silent failure mode: the committed tables would describe an
+      # upstream that no longer exists.
+      #
+      # TestGeneratedTablesAreCurrent catches the common case from inside the
+      # suite. This catches the rest — a changed enum, a changed override, a
+      # generator edit that was never run — by doing the regeneration here and
+      # insisting nothing moved.
+      - name: semconv tables match the vendored registries
+        run: |
+          go generate ./internal/semconv/...
+          if ! git diff --exit-code -- internal/semconv/; then
+            echo "::error::targets_gen.go is stale; run go generate ./internal/semconv/..."
+            exit 1
+          fi
+
   processor:
     name: processor module
     runs-on: ubuntu-latest

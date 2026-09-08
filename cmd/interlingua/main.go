@@ -8,6 +8,14 @@
 // building a collector:
 //
 //	interlingua -target v1.41.0 < testdata/openllmetry/in.json
+//
+// It also exports the half of its mapping that can be stated as data, as an
+// OTTL config for the Collector's own transform processor:
+//
+//	interlingua -emit ottl -dialect litellm -target v1.41.0
+//
+// which is a normalization you can run without this binary at all. The emitted
+// config says in its header exactly which mappings it could not carry.
 package main
 
 import (
@@ -16,7 +24,10 @@ import (
 	"io"
 	"os"
 	"runtime/debug"
+	"strings"
 
+	"github.com/Grace/genai-interlingua/internal/dialect"
+	"github.com/Grace/genai-interlingua/internal/emit/ottl"
 	"github.com/Grace/genai-interlingua/internal/normalize"
 	"github.com/Grace/genai-interlingua/internal/semconv"
 )
@@ -55,6 +66,11 @@ func run() error {
 	// is a trade worth making only once you trust the mapping.
 	strip := flag.Bool("strip-original", false,
 		"remove the source attributes the dialect consumed")
+	// -emit turns the tool inside out: instead of normalizing spans, it prints
+	// the mapping in a form something else can run. There is no detection in an
+	// exported config -- see internal/emit/ottl -- so a dialect has to be named.
+	emit := flag.String("emit", "", "print the mapping instead of normalizing; one of: ottl")
+	dialectName := flag.String("dialect", "", "with -emit, the emitter to export the mapping for")
 	showVersion := flag.Bool("version", false, "print the version and exit")
 	flag.Parse()
 
@@ -69,6 +85,13 @@ func run() error {
 	t, err := semconv.ParseTarget(*target)
 	if err != nil {
 		return err
+	}
+
+	if *emit != "" {
+		return emitMapping(*emit, *dialectName, t)
+	}
+	if *dialectName != "" {
+		return fmt.Errorf("-dialect only applies with -emit; normalization detects the dialect per span")
 	}
 
 	in, err := io.ReadAll(os.Stdin)
@@ -86,4 +109,53 @@ func run() error {
 	}
 	_, err = os.Stdout.Write(out)
 	return err
+}
+
+// emitMapping prints the mapping rather than applying it.
+func emitMapping(format, name string, t semconv.Target) error {
+	if format != "ottl" {
+		return fmt.Errorf("unknown -emit format %q, want one of: ottl", format)
+	}
+	if name == "" {
+		return fmt.Errorf("-emit needs -dialect: an exported config cannot detect, so it is pinned to one emitter (exportable: %s)",
+			strings.Join(exportable(), ", "))
+	}
+
+	for _, d := range dialect.Dialects() {
+		if string(d.Name()) != name {
+			continue
+		}
+		ruled, ok := d.(dialect.Ruled)
+		if !ok {
+			// A real distinction, not a missing feature. This dialect's
+			// mappings are performed rather than declared, so there is nothing
+			// to export yet; emitting a partial config that looked complete
+			// would be the failure this repository is about.
+			return fmt.Errorf("%s does not declare its mappings as data yet, so it cannot be exported (exportable: %s)",
+				name, strings.Join(exportable(), ", "))
+		}
+		res, err := ottl.Config(ottl.Options{Dialect: ruled, Target: t})
+		if err != nil {
+			return err
+		}
+		_, err = os.Stdout.Write(res.YAML)
+		return err
+	}
+	return fmt.Errorf("unknown dialect %q (exportable: %s)", name, strings.Join(exportable(), ", "))
+}
+
+// exportable lists the dialects that declare their mappings as data. It is in
+// every error above because "which ones can I export" is the question the user
+// is actually asking whenever one of them fires.
+func exportable() []string {
+	var out []string
+	for _, d := range dialect.Dialects() {
+		if _, ok := d.(dialect.Ruled); ok {
+			out = append(out, string(d.Name()))
+		}
+	}
+	if len(out) == 0 {
+		return []string{"none yet"}
+	}
+	return out
 }

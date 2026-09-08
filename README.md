@@ -119,7 +119,71 @@ Flags:
 | --- | --- |
 | `-target` | `v1.41.0` (default) or `genai-main` |
 | `-strip-original` | drop the source attributes the dialect consumed. Off by default. |
+| `-emit` | print the mapping instead of applying it. Currently `ottl`. |
+| `-dialect` | with `-emit`, which emitter to export the mapping for |
 | `-version` | print version and default target |
+
+## Use it without this binary: `-emit ottl`
+
+You should not need a bespoke processor to rename an attribute. OTTL is a
+transformation language OpenTelemetry already governs and already ships in every
+Collector distribution, so the half of this mapping that can be *stated as data*
+can be handed over in a language somebody else maintains:
+
+```console
+$ interlingua -emit ottl -dialect litellm -target v1.41.0 > interlingua.yaml
+```
+
+That prints a `transform` processor you can paste into your own Collector. No
+Go, no custom build, no dependency on this repository continuing to exist.
+
+The catch is that it is a **subset**, and the emitted config says which subset in
+its own header rather than leaving you to find out:
+
+```yaml
+# WHAT THIS CANNOT CARRY (4 attributes)
+#
+#   gen_ai.input.messages
+#   gen_ai.output.messages
+#   gen_ai.response.finish_reasons
+#   gen_ai.tool.definitions
+```
+
+Three things do not survive the trip, and all three are in the header:
+
+**Detection does not.** `Detect` scores every dialect across the whole span and
+takes the winner. OTTL has no loop and no maximum, so an exported config is
+pinned to one dialect and scoped by conditions over the spellings only that
+emitter uses. If two GenAI libraries report into one pipeline, route by service
+first — the conditions will not tell them apart.
+
+**The unstated mappings do not.** Reassembling `gen_ai.prompt.{i}.tool_calls.{j}.*`
+into one nested document is not a transformation of a value; it is a reading of a
+span. Nothing in OTTL expresses it.
+
+**Per-span loss accounting does not.** `interlingua.lossy` is computed from what
+a given span turned out to carry. What the config emits instead is
+`interlingua.export.unsupported` — the same statement made structurally, about
+the config rather than the span — plus `interlingua.export: ottl`, so a span
+normalized this way is distinguishable downstream from one the processor
+handled.
+
+Which dialects can be exported is a property of how their rules are written, not
+a feature flag. A dialect whose mappings are declared in a `Rules()` table can be
+exported; one whose mappings are still performed in Go cannot, and the CLI says
+so rather than emitting something that looks complete:
+
+```console
+$ interlingua -emit ottl -dialect vercel
+interlingua: vercel does not declare its mappings as data yet, so it cannot be
+exported (exportable: litellm)
+```
+
+Migration is deliberately incremental. `internal/dialect/rules.go` explains where
+the line falls, and `TestUnstatedIsAccurate` holds every migrated dialect to it
+against the captured corpus: a field the parser produces that is neither stated
+by a rule nor admitted as unstateable fails the build, because an export would
+otherwise drop it while advertising that it did not.
 
 ## Use it: the Collector processor
 
@@ -403,14 +467,24 @@ A repository arguing that `gen_ai.*` moves should not encode it as a snapshot
 nobody checks. Three things move independently here, and each has something
 watching it.
 
-**The schema.** `internal/semconv` was transcribed by hand from upstream YAML.
-Both registries — `semantic-conventions-genai` at a pinned commit, and
+**The schema.** `internal/semconv` is *generated* from upstream, not transcribed
+from it. Both registries — `semantic-conventions-genai` at a pinned commit, and
 `semantic-conventions` at the frozen `v1.41.0` tag — are vendored under
-`internal/semconv/testdata/upstream/`, and `TestSchemaMatchesUpstream` holds the
-tables to them: every key must exist upstream, every enum must have the same
-members, and attributes upstream defines that this repository does not model are
-reported rather than failed, because choosing not to model one is editorial and
-not knowing about it is a bug. All 50 and all 72 currently match.
+`internal/semconv/testdata/upstream/`, and `internal/semconv/gen` reads them to
+write `targets_gen.go`. What stays hand-authored is the editorial half and only
+that: which concepts are modelled at all (`AllFields`), plus the one field whose
+key is not derivable, `gen_ai.usage.cache_write.input_tokens`, which v1.41.0
+spells `cache_creation`. Whether a target defines a field, what it spells it, and
+what values it accepts are upstream's to say and are read from upstream.
+
+Three checks hold it there. `TestSchemaMatchesUpstream` walks the tables and asks
+whether upstream agrees. `TestGeneratedTablesAreCurrent` walks upstream and asks
+whether the tables are complete — the direction a stale generated file actually
+fails in, when somebody adds a field and forgets to regenerate. And CI reruns
+`go generate` and insists nothing moved. Attributes upstream defines that this
+repository does not model are reported rather than failed, because choosing not
+to model one is editorial and not knowing about it is a bug. All 50 and all 72
+currently match.
 
 They are vendored as JSON rather than YAML so the core module keeps having no
 dependencies; a Go YAML parser would show up in `go.mod` even as a test import.
