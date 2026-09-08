@@ -5,9 +5,12 @@ first thing to say, because a directory called `oteps/` invites the assumption
 that something is in flight and nothing is.
 
 They are drafted in the open for two reasons. Writing a proposal is the fastest
-way to find out whether you actually have one — [0002](0002-schema-file-value-transforms.md)
-got noticeably weaker under its own evidence section, and it was better to learn
-that here than in a pull request. And a proposal that already exists as a working
+way to find out whether you actually have one, and generating its evidence is the
+fastest way to find out whether it survives. [0002](0002-schema-file-value-transforms.md)
+first got weaker under its own evidence, then recovered when a second dialect was
+measured and two entirely new gap categories appeared. Both readings are in the
+draft, in the order they happened. Better to learn that here than in a pull
+request. And a proposal that already exists as a working
 artifact is a different conversation from one that does not: everything
 [0001](0001-translation-provenance.md) describes is running, in
 [`registry/`](../../registry/), which `weaver registry check` validates today.

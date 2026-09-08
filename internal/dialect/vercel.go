@@ -101,43 +101,132 @@ func (vercel) Score(s Span) int {
 	return n
 }
 
+// vercelFinishReasons maps the SDK's hyphenated finish reasons onto the
+// spelling every other emitter here uses.
+var vercelFinishReasons = map[string]string{
+	"tool-calls":     "tool_calls",
+	"content-filter": "content_filter",
+}
+
+// Rules are the Vercel mappings that can be stated rather than performed.
+//
+// This dialect is where the rule table earned its keep and also where it turned
+// out to be under-built. LiteLLM needed two of Transform's fields; this needs
+// six, including three that did not exist until it was migrated: CutAfter for
+// the provider id, MapUnmatched for the operation, and mapping over a list for
+// the finish reasons. A shape derived from one example was wrong in several
+// ways, which is an argument for migrating the rest rather than against.
+//
+// Almost every rule here has more than one key, which is this emitter's whole
+// character: the outer span a user's code creates speaks ai.*, the inner span
+// the provider adapter creates already speaks gen_ai.*, and the same fact can
+// arrive under either. gen_ai.* is listed first everywhere it appears, because
+// it is the adapter's own reading of what it sent and the ai.* copy on the
+// parent is a summary of it.
+func (vercel) Rules() []Rule {
+	return []Rule{
+		// ai.model.provider is <provider id>.<api surface> -- openai.chat,
+		// amazon-bedrock.messages -- so only the first segment names the
+		// provider. gen_ai.system is the inner span's spelling of the same
+		// thing, which the conventions renamed to gen_ai.provider.name.
+		//
+		// An unmapped provider passes through as the SDK spelled it: several
+		// SDK providers (togetherai, fireworks, cerebras) have no name in the
+		// conventions at all, and inventing one here would hide that behind a
+		// value the registry does not define. The renderer drops it against the
+		// registry and records the drop, which is the better error message.
+		{
+			Field:     semconv.ProviderName,
+			Keys:      []string{"ai.model.provider", "gen_ai.system"},
+			Transform: Transform{Lower: true, CutAfter: ".", Map: vercelProviders},
+		},
+		// The .do* suffix is stripped first: the inner span is the same
+		// operation as its parent seen from one layer down, not a different
+		// one. Unmatched loses rather than passing through, because an
+		// operation id this table does not name is not an operation spelled
+		// unusually -- it is something the conventions have no concept of.
+		{
+			Field: semconv.OperationName,
+			Keys:  []string{"ai.operationId"},
+			Transform: Transform{
+				TrimSuffix:   []string{".doGenerate", ".doStream", ".doEmbed"},
+				Map:          vercelOperations,
+				MapUnmatched: UnmatchedLose,
+			},
+		},
+
+		{Field: semconv.RequestModel, Keys: []string{"gen_ai.request.model", "ai.model.id"}},
+		{Field: semconv.RequestMaxTokens, Keys: []string{"gen_ai.request.max_tokens", "ai.settings.maxOutputTokens"}},
+		{Field: semconv.RequestTemperature, Keys: []string{"gen_ai.request.temperature"}},
+		{Field: semconv.RequestTopP, Keys: []string{"gen_ai.request.top_p"}},
+		{Field: semconv.RequestTopK, Keys: []string{"gen_ai.request.top_k"}},
+		{Field: semconv.RequestFrequencyPenalty, Keys: []string{"gen_ai.request.frequency_penalty"}},
+		{Field: semconv.RequestPresencePenalty, Keys: []string{"gen_ai.request.presence_penalty"}},
+		{Field: semconv.RequestStopSequences, Keys: []string{"gen_ai.request.stop_sequences"}},
+
+		{Field: semconv.ResponseID, Keys: []string{"gen_ai.response.id", "ai.response.id"}},
+		{Field: semconv.ResponseModel, Keys: []string{"gen_ai.response.model", "ai.response.model"}},
+
+		{Field: semconv.UsageInputTokens, Keys: []string{
+			"gen_ai.usage.input_tokens", "ai.usage.promptTokens", "ai.usage.tokens"}},
+		{Field: semconv.UsageOutputTokens, Keys: []string{
+			"gen_ai.usage.output_tokens", "ai.usage.completionTokens"}},
+
+		// The inner span's gen_ai.response.finish_reasons is already the list
+		// the conventions define; the outer span's ai.response.finishReason is
+		// one string. Map runs over either shape and ToList only wraps the
+		// scalar, so one rule covers both.
+		//
+		// The table respells the SDK's hyphenated reasons. That attribute has
+		// no closed value set in the registry, so nothing downstream would
+		// reject tool-calls -- it would sit in a backend beside OpenLLMetry's
+		// tool_calls as a second spelling of one concept, which is the exact
+		// thing a span normalizer exists to prevent. error, other and unknown
+		// are the SDK's own and have no counterpart, so they pass through.
+		{
+			Field:     semconv.ResponseFinishReasons,
+			Keys:      []string{"gen_ai.response.finish_reasons", "ai.response.finishReason"},
+			Transform: Transform{Map: vercelFinishReasons, ToList: true},
+		},
+
+		// Milliseconds to the seconds the conventions specify. Not a loss: every
+		// millisecond value in int64 range is exact in a float64 after dividing
+		// by 1000, so nothing is rounded away and interlingua.lossy would be
+		// crying wolf if it named this.
+		{
+			Field:     semconv.ResponseTimeToFirstChunk,
+			Keys:      []string{"ai.response.msToFirstChunk"},
+			Transform: Transform{Divide: 1000},
+		},
+
+		{Field: semconv.WorkflowName, Keys: []string{"ai.telemetry.functionId"}},
+
+		// The tool-call span is a different shape from the model spans: four
+		// attributes, no messages, no usage.
+		{Field: semconv.ToolName, Keys: []string{"ai.toolCall.name"}},
+		{Field: semconv.ToolCallID, Keys: []string{"ai.toolCall.id"}},
+		{Field: semconv.ToolCallArguments, Keys: []string{"ai.toolCall.args"}},
+		{Field: semconv.ToolCallResult, Keys: []string{"ai.toolCall.result"}},
+	}
+}
+
+// Unstated is the messages and the tool definitions, all four of which are
+// reassembly rather than translation: ai.prompt.messages is a JSON array whose
+// content is either a bare string or a list of typed parts, and both spellings
+// appear in the same array depending on how the caller built the prompt.
+func (vercel) Unstated() []semconv.Field {
+	return []semconv.Field{
+		semconv.InputMessages,
+		semconv.OutputMessages,
+		semconv.ToolDefinitions,
+		semconv.SystemInstructions,
+	}
+}
+
 func (d vercel) Parse(s Span) Parsed {
 	var p Parsed
 
-	d.provider(s, &p)
-	d.operation(s, &p)
-
-	// gen_ai.* wins where the inner span carries both spellings: it is the
-	// adapter's own reading of what it sent, and the ai.* copy on the parent is
-	// a summary of it.
-	p.TakeFirst(s, semconv.RequestModel, "gen_ai.request.model", "ai.model.id")
-	p.TakeFirst(s, semconv.RequestMaxTokens, "gen_ai.request.max_tokens", "ai.settings.maxOutputTokens")
-	p.Take(s, "gen_ai.request.temperature", semconv.RequestTemperature)
-	p.Take(s, "gen_ai.request.top_p", semconv.RequestTopP)
-	p.Take(s, "gen_ai.request.top_k", semconv.RequestTopK)
-	p.Take(s, "gen_ai.request.frequency_penalty", semconv.RequestFrequencyPenalty)
-	p.Take(s, "gen_ai.request.presence_penalty", semconv.RequestPresencePenalty)
-	p.Take(s, "gen_ai.request.stop_sequences", semconv.RequestStopSequences)
-
-	p.TakeFirst(s, semconv.ResponseID, "gen_ai.response.id", "ai.response.id")
-	p.TakeFirst(s, semconv.ResponseModel, "gen_ai.response.model", "ai.response.model")
-
-	p.TakeFirst(s, semconv.UsageInputTokens,
-		"gen_ai.usage.input_tokens", "ai.usage.promptTokens", "ai.usage.tokens")
-	p.TakeFirst(s, semconv.UsageOutputTokens,
-		"gen_ai.usage.output_tokens", "ai.usage.completionTokens")
-
-	d.finishReasons(s, &p)
-	d.timeToFirstChunk(s, &p)
-
-	p.Take(s, "ai.telemetry.functionId", semconv.WorkflowName)
-
-	// The tool-call span is a different shape from the model spans: four
-	// attributes, no messages, no usage.
-	p.Take(s, "ai.toolCall.name", semconv.ToolName)
-	p.Take(s, "ai.toolCall.id", semconv.ToolCallID)
-	p.Take(s, "ai.toolCall.args", semconv.ToolCallArguments)
-	p.Take(s, "ai.toolCall.result", semconv.ToolCallResult)
+	p.applyRules(s, d.Rules())
 
 	d.toolDefinitions(s, &p)
 	d.inputMessages(s, &p)
@@ -146,108 +235,6 @@ func (d vercel) Parse(s Span) Parsed {
 	d.losses(s, &p)
 
 	return p
-}
-
-// provider reads whichever of the two provider attributes the span carries and
-// normalizes the value. gen_ai.system is the inner span's spelling: the
-// conventions renamed that attribute to gen_ai.provider.name, and the SDK still
-// writes the old one, so the rename is applied here rather than being mistaken
-// for a provider the registry does not know.
-func (vercel) provider(s Span, p *Parsed) {
-	key := "ai.model.provider"
-	v, ok := s.Attr(key)
-	if !ok {
-		key = "gen_ai.system"
-		if v, ok = s.Attr(key); !ok {
-			return
-		}
-	}
-	id, _, _ := strings.Cut(strings.ToLower(v.Str), ".")
-	if name, ok := vercelProviders[id]; ok {
-		p.Set(semconv.ProviderName, String(name))
-	} else {
-		p.Set(semconv.ProviderName, String(id))
-	}
-	p.Consumed = append(p.Consumed, key)
-}
-
-// operation maps ai.operationId, stripping the adapter-level suffix first.
-func (vercel) operation(s Span, p *Parsed) {
-	v, ok := s.Attr("ai.operationId")
-	if !ok {
-		return
-	}
-	p.Consumed = append(p.Consumed, "ai.operationId")
-	base := v.Str
-	for _, suffix := range []string{".doGenerate", ".doStream", ".doEmbed"} {
-		base = strings.TrimSuffix(base, suffix)
-	}
-	if op, ok := vercelOperations[base]; ok {
-		p.Set(semconv.OperationName, String(op))
-		return
-	}
-	p.Loss = append(p.Loss, Loss{Key: "ai.operationId", Reason: ReasonNoField,
-		Detail: "no gen_ai.operation.name value for " + v.Str})
-}
-
-// vercelFinishReasons maps the SDK's hyphenated finish reasons onto the
-// spelling every other emitter here uses. gen_ai.response.finish_reasons has no
-// closed value set in the registry, so nothing downstream would reject
-// tool-calls -- it would simply sit in a backend beside OpenLLMetry's
-// tool_calls as a second spelling of one concept, which is the exact thing a
-// span normalizer exists to prevent. A reason absent from this map passes
-// through unchanged; error, other and unknown are the SDK's own and have no
-// counterpart to be renamed to.
-var vercelFinishReasons = map[string]string{
-	"tool-calls":     "tool_calls",
-	"content-filter": "content_filter",
-}
-
-// finishReasons lifts the SDK's single finish reason into the list the
-// conventions define. gen_ai.response.finish_reasons on the inner span is
-// already that list; ai.response.finishReason on the outer one is one string.
-func (vercel) finishReasons(s Span, p *Parsed) {
-	if v, ok := s.Attr("gen_ai.response.finish_reasons"); ok {
-		p.Consumed = append(p.Consumed, "gen_ai.response.finish_reasons")
-		reasons := make([]string, 0, len(v.StrSeq))
-		for _, r := range v.StrSeq {
-			reasons = append(reasons, vercelFinishReason(r))
-		}
-		if v.Kind == KindStr {
-			reasons = append(reasons, vercelFinishReason(v.Str))
-		}
-		p.Set(semconv.ResponseFinishReasons, strSeq(reasons))
-		return
-	}
-	if v, ok := s.Attr("ai.response.finishReason"); ok {
-		p.Set(semconv.ResponseFinishReasons, strSeq([]string{vercelFinishReason(v.Str)}))
-		p.Consumed = append(p.Consumed, "ai.response.finishReason")
-	}
-}
-
-func vercelFinishReason(r string) string {
-	if mapped, ok := vercelFinishReasons[r]; ok {
-		return mapped
-	}
-	return r
-}
-
-// timeToFirstChunk converts the SDK's milliseconds into the seconds the
-// conventions specify. This is a unit change and not a loss: every millisecond
-// value in int64 range is exact in a float64 after dividing by 1000, so nothing
-// is rounded away and interlingua.lossy would be crying wolf if it named this.
-func (vercel) timeToFirstChunk(s Span, p *Parsed) {
-	v, ok := s.Attr("ai.response.msToFirstChunk")
-	if !ok {
-		return
-	}
-	ms, ok := v.Float64()
-	if !ok {
-		p.Lose("ai.response.msToFirstChunk", ReasonCoerced, "value is not a number")
-		return
-	}
-	p.Set(semconv.ResponseTimeToFirstChunk, Float(ms/1000))
-	p.Consumed = append(p.Consumed, "ai.response.msToFirstChunk")
 }
 
 // vercelMessage is one entry of ai.prompt.messages. The SDK's content is either

@@ -184,7 +184,7 @@ func table() ([]byte, error) {
 	}
 	if len(fixable) > 0 {
 		p("%s %s what a format change could fix: %d mappings that fail only because",
-			strings.Join(fixable, " and "), plural(len(fixable), "is", "are"), fixableTotal)
+			join(fixable), plural(len(fixable), "is", "are"), fixableTotal)
 		p("the format has no transformation for them. That is the room")
 		p("[OTEP 0152](https://github.com/open-telemetry/opentelemetry-specification/blob/main/oteps/0152-telemetry-schemas.md)")
 		p("left when it held the transformation set to \"the bare minimum ... with more")
@@ -205,6 +205,20 @@ func table() ([]byte, error) {
 	p("unmigrated dialect is unmeasured, not unexportable-in-principle, and the")
 	p("difference matters to anything that cites these counts.")
 	return []byte(b.String()), nil
+}
+
+// join renders a list as prose. Strings.Join with " and " reads badly past two
+// items, and this list grows every time a dialect is migrated.
+func join(in []string) string {
+	switch len(in) {
+	case 0:
+		return ""
+	case 1:
+		return in[0]
+	case 2:
+		return in[0] + " and " + in[1]
+	}
+	return strings.Join(in[:len(in)-1], ", ") + " and " + in[len(in)-1]
 }
 
 func plural(n int, one, many string) string {

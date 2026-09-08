@@ -20,6 +20,8 @@ that count comes from.
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
 | `litellm` | `v1.41.0` | 24 | 24 | 24 | 20 | 18 |
 | `litellm` | `genai-main` | 24 | 24 | 24 | 20 | 18 |
+| `vercel` | `v1.41.0` | 25 | 25 | 25 | 21 | 11 |
+| `vercel` | `genai-main` | 25 | 25 | 25 | 21 | 11 |
 
 **mappings** is every field the dialect can produce. **representable** is how
 many of those the target schema has an attribute for at all — a field the
@@ -33,6 +35,8 @@ format succeeding:
 | --- | --- | ---: | ---: | ---: |
 | `litellm` | `v1.41.0` | 0 | 18 | 6 |
 | `litellm` | `genai-main` | 1 | 17 | 6 |
+| `vercel` | `v1.41.0` | 5 | 6 | 14 |
+| `vercel` | `genai-main` | 5 | 6 | 14 |
 
 "Needed no rename" is the emitter already writing the target's own attribute
 name. It is a property of the emitter, not of the format; counting it as
@@ -47,10 +51,12 @@ cannot rewrite a value" is.
 
 | reason | what it means | count |
 | --- | --- | ---: |
-| `value_transform` | the value changes, not the name: provider aliases, operation aliases, case folding, unit conversion | 4 |
-| `not_a_name` | a reading of the span rather than a transformation of an attribute | 8 |
+| `value_transform` | the value changes, not the name: provider aliases, operation aliases, case folding, unit conversion | 10 |
+| `scalar_to_list` | the target types the attribute as an array and the emitter writes a scalar; a rename cannot change a type | 2 |
+| `ambiguous_precedence` | two source spellings for one field where the newer wins; `attribute_map` carries both entries but not the ordering | 12 |
+| `not_a_name` | a reading of the span rather than a transformation of an attribute | 16 |
 
-`value_transform` is what a format change could fix: 4 mappings that fail only because
+`value_transform`, `scalar_to_list` and `ambiguous_precedence` are what a format change could fix: 24 mappings that fail only because
 the format has no transformation for them. That is the room
 [OTEP 0152](https://github.com/open-telemetry/opentelemetry-specification/blob/main/oteps/0152-telemetry-schemas.md)
 left when it held the transformation set to "the bare minimum ... with more
@@ -63,7 +69,7 @@ about it is what this repository does: say so on the span.
 
 ## The sample
 
-1 of 6 dialects declare their mappings as data so far, so that is what can be
+2 of 6 dialects declare their mappings as data so far, so that is what can be
 measured. The rest are migrating incrementally, and until one is migrated it
 contributes nothing to this table rather than contributing a zero — an
 unmigrated dialect is unmeasured, not unexportable-in-principle, and the

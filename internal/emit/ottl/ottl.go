@@ -182,6 +182,12 @@ func statements(r dialect.Rule, key string, target semconv.Target) ([]string, er
 		out = append(out, fmt.Sprintf(`set(attributes[%s], ToLowerCase(attributes[%s])) where %s`,
 			quote(key), quote(key), present))
 	}
+	if t.CutAfter != "" {
+		// Keep the segment before the first separator. OTTL has no Cut, so it
+		// is a regex: everything from the first separator to the end, removed.
+		out = append(out, fmt.Sprintf(`replace_pattern(attributes[%s], %s, "") where %s`,
+			quote(key), quote(regexp.QuoteMeta(t.CutAfter)+".*$"), present))
+	}
 	for _, suffix := range t.TrimSuffix {
 		out = append(out, fmt.Sprintf(`replace_pattern(attributes[%s], %s, "") where %s`,
 			quote(key), quote(regexp.QuoteMeta(suffix)+"$"), present))
@@ -194,14 +200,35 @@ func statements(r dialect.Rule, key string, target semconv.Target) ([]string, er
 			out = append(out, fmt.Sprintf(`set(attributes[%s], %s) where attributes[%s] == %s`,
 				quote(scratch), quote(t.Map[in]), quote(key), quote(in)))
 		}
+		if t.MapUnmatched == dialect.UnmatchedLose {
+			// Nothing landed in scratch, so the table did not mention this
+			// value, so it goes. This has to run before the move back, while
+			// an empty scratch still means "unmatched" -- and it is harmless
+			// on a span that never carried the attribute, where deleting an
+			// absent key is a no-op.
+			out = append(out, fmt.Sprintf(`delete_key(attributes, %s) where %s and attributes[%s] == nil`,
+				quote(key), present, quote(scratch)))
+		}
 		out = append(out,
 			fmt.Sprintf(`set(attributes[%s], attributes[%s]) where attributes[%s] != nil`,
 				quote(key), quote(scratch), quote(scratch)),
 			fmt.Sprintf(`delete_key(attributes, %s)`, quote(scratch)))
 	}
-	if t.Scale != 0 {
-		out = append(out, fmt.Sprintf(`set(attributes[%s], Double(attributes[%s]) * %s) where %s`,
-			quote(key), quote(key), strconv.FormatFloat(t.Scale, 'g', -1, 64), present))
+	if t.Divide != 0 {
+		// Guarded on the value actually being a number, and the unguarded case
+		// deleted rather than left alone. A millisecond count sitting under an
+		// attribute the conventions define in seconds is wrong by exactly a
+		// thousand and looks fine, which is the worst way for it to be wrong.
+		//
+		// The order is load-bearing: after the first statement a numeric value
+		// is a double, so the second statement's condition is false for it. A
+		// value that was never numeric is untouched by the first and deleted by
+		// the second.
+		numeric := fmt.Sprintf(`(IsDouble(attributes[%s]) or IsInt(attributes[%s]))`, quote(key), quote(key))
+		out = append(out,
+			fmt.Sprintf(`set(attributes[%s], Double(attributes[%s]) / %s) where %s and %s`,
+				quote(key), quote(key), strconv.FormatFloat(t.Divide, 'g', -1, 64), present, numeric),
+			fmt.Sprintf(`delete_key(attributes, %s) where %s and not %s`, quote(key), present, numeric))
 	}
 	if t.ToList {
 		out = append(out, fmt.Sprintf(`set(attributes[%s], [attributes[%s]]) where %s`,

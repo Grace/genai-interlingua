@@ -215,7 +215,7 @@ func describeTransform(t dialect.Transform) string {
 	if len(t.Map) > 0 {
 		parts = append(parts, fmt.Sprintf("translates %d values through a lookup table", len(t.Map)))
 	}
-	if t.Scale != 0 {
+	if t.Divide != 0 {
 		parts = append(parts, "converts units")
 	}
 	if t.ToList {
