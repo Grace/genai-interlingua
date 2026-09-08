@@ -74,8 +74,11 @@ Not "write the document better". The sequence, roughly in order:
    about the missing schema URL — their README still reads `Schema URL: TODO` —
    describing the problem rather than this solution.
 3. Attend the GenAI SIG call twice before proposing anything.
-4. File small useful patches first. One is verified and available now:
-   <https://opentelemetry.io/docs/specs/otel/schemas/> still presents file format
+4. File small useful patches first. One is verified and drafted in
+   [`comments/spec-schemas-readme.md`](comments/spec-schemas-readme.md):
+   `specification/schemas/README.md` in `opentelemetry-specification` — rendered
+   as <https://opentelemetry.io/docs/specs/otel/schemas/>, and note the source is
+   the spec repository rather than the website one — still presents file format
    1.1.0 as Stable with no notice that 4815 discontinued it. The drift detector in
    [`.github/workflows/upstream.yml`](../../.github/workflows/upstream.yml) also
    knows things upstream would want, such as which reference-implementation

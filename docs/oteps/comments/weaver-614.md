@@ -47,8 +47,19 @@ options:**
   should attempt. Also has precedent for exactly this shape of problem: Honeycomb's HTTP
   semantic convention migration guidance used OTTL, which I believe this WG discussed in
   December 2024.
-- *CEL* — I have measured nothing about it and will not pretend the numbers above bear on it.
-  Prototyping it was already on this group's agenda in March 2025.
+- *CEL* — I have not run it, so I have no coverage figure to offer, and I would rather say
+  that than imply an OTTL measurement settles a three-way choice. But two things above do
+  bear on it. The taxonomy in #613 is language-agnostic: value rewriting, precedence between
+  spellings, scalar-to-array and conditional drop is a requirements list any candidate has to
+  meet. And the one case where OTTL failed is one CEL handles natively — `map` and `filter`
+  are standard comprehension macros, so applying a lookup across the elements of a list is a
+  one-liner there. That is a real discriminator on this axis rather than a preference.
+
+  With a caveat that belongs next to it, from CEL's own spec: macros "can lead to exponential
+  behavior when nested or chained", and implementations are advised to be able to limit or
+  disable them. A schema-transformation context is plausibly somewhere you would want them
+  off — at which point CEL is back where OTTL is. So "CEL has `map`" is not "CEL solves
+  this", and I do not think this measurement decides the issue in either direction.
 - *Custom definitions* — worth noting these are a different kind of artifact rather than a
   weaker version of the same one. A migration entry is a reviewable *claim* that two names
   mean the same fact; an OTTL config is an imperative program. Which one the format wants to

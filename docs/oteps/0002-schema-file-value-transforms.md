@@ -294,10 +294,22 @@ the iteration limit above stated rather than discovered. Its decisive advantage
 is that it already exists, is governed, and ships everywhere; its decisive
 weakness is #29289.
 
-**CEL.** Prototyped in the Tooling WG in March 2025 for exactly this reason.
-Nothing measured here bears on CEL either way, which is worth saying plainly
-rather than implying the evidence favours the option the author happens to have
-built against.
+**CEL.** Prototyped in the Tooling WG in March 2025 for exactly this reason. Not
+run here, so there is no coverage figure for it — but two things above do bear on
+it, and an earlier draft of this document wrongly claimed otherwise.
+
+The transformation taxonomy is language-agnostic: it is a requirements list any
+candidate has to meet, CEL included. And the single case where OTTL failed on
+real data — applying a lookup across the elements of a list — is one CEL handles
+natively, since `map`, `filter`, `all`, `exists` and `exists_one` are standard
+comprehension macros. That is a discriminator between the two on a specific axis,
+established by measurement rather than by preference.
+
+It is not a decision, and the reason is in CEL's own specification: macros "can
+lead to exponential behavior when nested or chained", and implementations are
+advised to be able to limit or disable them. A schema-transformation context is
+plausibly one where you would. Reporting only the first half of that would repeat
+the original error with the sign flipped.
 
 **Scalar-to-list.** Two mappings need an attribute the conventions type as an
 array where the emitter writes a scalar. A `wrap_in_list` transformation would be
