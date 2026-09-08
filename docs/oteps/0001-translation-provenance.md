@@ -33,9 +33,13 @@ confidence-shaped:
 question. It says which version of a schema the telemetry claims to conform to.
 It does not say that a conversion happened, which direction, what the source
 vocabulary was when the source was not a schema version at all, or what the
-conversion could not carry. And it is absent precisely when it is most needed:
-the GenAI conventions have no released version to point at, which is the
-situation that motivated the implementation behind this draft.
+conversion could not carry. And it is absent precisely when it is most needed: the GenAI conventions still
+have no released version to point at, which is the situation that motivated the
+implementation behind this draft. OTEP 4815 has since defined the scheme those
+URLs will use, and onboarding GenAI to it is queued rather than done — which
+fixes the missing URL eventually and does not touch the question this draft is
+about, since a schema URL says what telemetry claims to be and not what was done
+to it.
 
 ## Proposal
 
@@ -80,14 +84,17 @@ something you discover months later from a dashboard that has been quietly wrong
 
 ### What this deliberately does not do
 
-It does not describe the mapping. It does not propose a format for expressing
-*how* to translate — that is [0002](0002-schema-file-value-transforms.md), and it
-is a much larger ask. This proposal is only that telemetry which has been
-translated should be able to say so.
+It does not describe the mapping. Expressing *how* to translate is a separate and
+much larger question, and an open one upstream —
+[weaver#613](https://github.com/open-telemetry/weaver/issues/613) and
+[weaver#614](https://github.com/open-telemetry/weaver/issues/614) are still
+deciding which transformations a format should permit and which language should
+express them. [0002](0002-schema-file-value-transforms.md) is this repository's
+evidence for those, and is not a proposal.
 
-The two are independent. This one is worth doing even if no new transformation
-type is ever added to any format, because the translations are happening now, in
-Go and OTTL and vendor ingest pipelines, and none of them can currently leave a
+The two are independent, and this one does not wait on them. It is worth doing
+whatever those issues conclude, because the translations are happening now, in Go
+and OTTL and vendor ingest pipelines, and none of them can currently leave a
 trace.
 
 ## Prior art, and why it does not cover this
@@ -105,6 +112,16 @@ It is a diff of the registry, not a record of anything done to telemetry.
 **`otel.*` internal attributes** cover collector-internal bookkeeping such as
 dropped-count semantics. Adjacent, and about the pipeline's own health rather
 than about semantic fidelity.
+
+**Weaver's lineage and provenance work** is the closest thing by name and is a
+different layer, which is worth stating before someone mistakes one for the
+other. Weaver tracks, inside a *resolved schema*, which dependency registry each
+attribute came from -- a dictionary of `schema_url`s with the definitions
+indexing into it. That is provenance of the *schema*. This proposal is provenance
+of the *telemetry*: not where a definition came from, but that a span was
+rewritten, from what, into what, and what the rewrite could not carry. A payload
+can be translated by something that never consults a resolved schema at all, and
+frequently is.
 
 ## Open questions
 

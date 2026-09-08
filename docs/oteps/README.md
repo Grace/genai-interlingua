@@ -16,30 +16,48 @@ artifact is a different conversation from one that does not: everything
 [0001](0001-translation-provenance.md) describes is running, in
 [`registry/`](../../registry/), which `weaver registry check` validates today.
 
-## The two
+## The two, and what changed
 
 **[0001 — Translation provenance](0001-translation-provenance.md).** A convention
 for recording that telemetry was translated: from what, to what, and what did not
 survive. No file format changes, no SDK work, no new parser — a namespace and six
 attributes. It generalizes well past GenAI, because every semantic convention
 migration and every vendor ingest pipeline has the same unanswerable question
-under it.
+under it. Unaffected by anything below and now clearly the stronger of the two.
 
-**[0002 — Value transforms in schema files](0002-schema-file-value-transforms.md).**
-Telemetry Schema File format 1.2.0, adding transformations that change a value
-rather than a name. Expensive: an OTEP-gated `file_format` bump, parser changes
-in `go.opentelemetry.io/otel/schema`, and buy-in from the people who own the
-format. Its evidence is [`docs/export-gap.md`](../export-gap.md), which is
-generated from the rule tables rather than asserted.
+**[0002](0002-schema-file-value-transforms.md) is withdrawn as a proposal.** It
+proposed Telemetry Schema File Format 1.2.0.
+[OTEP 4815](https://github.com/open-telemetry/opentelemetry-specification/blob/main/oteps/4815-semantic-conventions-schema-v2.md)
+merged in May 2026 and discontinues publishing format 1.1.0 entirely, so the
+document was proposing to extend something that had already been retired. It has
+been reworked into evidence rather than a proposal.
 
-## Why they are in this order
+## Where the work actually goes
 
-0001 is cheap, self-contained, and already implemented. 0002 changes a file
-format that other people's parsers read.
+Not an OTEP. Two issues in the Weaver repository are open, unassigned, and
+explicitly asking for exactly what this repository spent a week measuring:
 
-If only one of these ever lands it should be 0001, and filing them together would
-make that outcome less likely rather than more: a reviewer reading two proposals
-from an unknown contributor reads them as one ambition.
+- [weaver#613](https://github.com/open-telemetry/weaver/issues/613) —
+  *Formalize allowed transformations for V2.0*. Which transformations should a
+  schema format permit? [`docs/export-gap.md`](../export-gap.md) answers that
+  from five real instrumentation libraries, categorized by the specific missing
+  capability, generated from the rule tables and checked by CI.
+- [weaver#614](https://github.com/open-telemetry/weaver/issues/614) —
+  *Decide on a transformation language for migrations*, between custom
+  definitions, OTTL, CEL and Lua. No decision has been made. This repository
+  exports OTTL and has verified against a real Collector exactly what that does
+  and does not carry.
+
+Two issue comments, on questions that asked for them, is a far lower bar than an
+OTEP and a much better fit. It is also the "file small useful patches first" step
+below — except the patches turn out to be the main contribution.
+
+## Why 0001 still waits
+
+It is cheap, self-contained and already implemented, and none of that makes it
+urgent. The two issue comments come first because they are answers to questions
+somebody asked; 0001 is an answer to a question nobody has asked yet, which is a
+different and slower conversation.
 
 ## What has to happen before either is filed
 
@@ -52,9 +70,11 @@ Not "write the document better". The sequence, roughly in order:
    about the missing schema URL — their README still reads `Schema URL: TODO` —
    describing the problem rather than this solution.
 3. Attend the GenAI SIG call twice before proposing anything.
-4. File small useful patches first. The drift detector in
-   [`.github/workflows/upstream.yml`](../../.github/workflows/upstream.yml)
-   already knows things upstream would want, such as which reference-implementation
+4. File small useful patches first. One is verified and available now:
+   <https://opentelemetry.io/docs/specs/otel/schemas/> still presents file format
+   1.1.0 as Stable with no notice that 4815 discontinued it. The drift detector in
+   [`.github/workflows/upstream.yml`](../../.github/workflows/upstream.yml) also
+   knows things upstream would want, such as which reference-implementation
    attributes no convention version models.
 5. Then, if there is appetite, 0001.
 
@@ -67,9 +87,9 @@ queued, and that is a reasonable thing for a project to do with it.
 - **0001** — `open-telemetry/semantic-conventions` (or `semantic-conventions-genai`
   if it stays scoped to GenAI, which would be the wrong scope), after discussion
   in the Semantic Conventions SIG.
-- **0002** — `open-telemetry/opentelemetry-specification`, in its `oteps/`
-  directory. Note the standalone `open-telemetry/oteps` repository was archived
-  on 2025-11-17; proposals moved.
+- **0002** — nowhere. It is a comment on weaver#613 and weaver#614, not a
+  proposal. If a spec change eventually follows from those discussions, it will
+  be somebody's to write with more standing than this.
 
 Not W3C, which owns trace *context* — the propagation format on the wire — and
 not attribute semantics. Not IETF. Not CNCF directly, which hosts OpenTelemetry

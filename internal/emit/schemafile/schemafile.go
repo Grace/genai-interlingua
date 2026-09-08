@@ -22,6 +22,19 @@
 //   - and the readings of a span -- reassembly, lifting, disambiguation by
 //     sibling -- are not expressible by any margin at all.
 //
+// One thing to know before reading the output: OpenTelemetry is retiring this
+// format. OTEP 4815, merged 2026-05-17, says "we will stop publishing current
+// schema file format 1.1.0" and "schema transformations (diffs) will not be
+// published", moving diffs to on-demand generation with weaver registry diff.
+//
+// Emitting it anyway is still the right demonstration, and not out of inertia.
+// The question this package answers -- which transformations does normalizing
+// real telemetry actually require -- is the question the replacement has to
+// answer too, and it is open: weaver#613 asks which transformations a v2.0
+// format should permit, and weaver#614 asks which language should express them.
+// The shortfall measured here is a property of "renames only", not of the file
+// extension it happens to be written in, so it outlives the format.
+//
 // So Render emits the renames and returns a Gap for each rule it had to leave
 // out, with the reason. Those gaps are the evidence for the argument in
 // docs/oteps: OTEP 0152 held the transformation set to "the bare minimum ...

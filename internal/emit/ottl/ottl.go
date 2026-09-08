@@ -413,6 +413,14 @@ func partialKeys(opts Options) []string {
 	// so the emitted statements compare the whole value against each table key
 	// and match nothing when it is an array. The scalar path is carried and the
 	// list path is not, which is exactly what partial means.
+	//
+	// This is not a local quirk to work around. It is
+	// open-telemetry/opentelemetry-collector-contrib#29289, "Determine approach
+	// to looping", which is open and whose candidate fixes are a for-each
+	// syntax, user-defined functions, or filter/map/reduce. Nothing here should
+	// try to route around it; the useful thing is that the equivalence check
+	// turned it up as a concrete case from a real emitter rather than as a
+	// language-design opinion.
 	for _, r := range opts.Dialect.Rules() {
 		if len(r.Transform.Map) == 0 || !r.Transform.ToList {
 			continue

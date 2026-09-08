@@ -1,20 +1,82 @@
-# Value transforms in Telemetry Schema Files
+# What a schema transformation format has to express
 
-**Status: draft, not filed, and still weaker than [0001](0001-translation-provenance.md)** —
-it changes a file format other people's parsers read, where 0001 adds attributes.
-See [README.md](README.md).
+**Status: withdrawn as a proposal. Retargeted as evidence for two open upstream
+questions.** See [README.md](README.md).
 
-Its evidence has moved twice and the draft shows every move rather than only the
-latest. Written against one migrated dialect it concluded, against itself, that
-the gaps it fixes are a minority of the shortfall. A second dialect inverted
-that. Three more restored it. All three readings are below, in the order they
-happened, because how much a measurement moves when you look again is the thing
-a reviewer most needs to know about it.
+## Withdrawn, and why
 
-## Motivation
+This document used to propose Telemetry Schema File Format **1.2.0**, adding
+transformations to the sections that already accept `rename_attributes`.
+
+That proposal is withdrawn.
+[OTEP 4815](https://github.com/open-telemetry/opentelemetry-specification/blob/main/oteps/4815-semantic-conventions-schema-v2.md)
+merged on 2026-05-17 and says:
+
+> We will stop publishing current schema file format 1.1.0 which has Development
+> status. This is a breaking change for components that do schema transformation
+> (such as Collector schemaprocessor).
+
+> Schema transformations (diffs) will not be published.
+
+Proposing a 1.2.0 increment to a format that was discontinued four months earlier
+is not a small error of framing. It would have announced, in one line, that its
+author had not read the merged OTEP governing the thing being proposed.
+
+## What it is now
+
+The measurements were never really about a format version. They answer the
+question "what would *any* transformation format need to express", and that
+question is open upstream in two places, both unassigned and both explicitly
+asking for input:
+
+- [weaver#613](https://github.com/open-telemetry/weaver/issues/613), *Formalize
+  allowed transformations for V2.0 based on what weaver diff currently supports*.
+- [weaver#614](https://github.com/open-telemetry/weaver/issues/614), *Decide on a
+  transformation language for migrations* — custom definitions, OTTL, CEL, Lua.
+  "No decision has been made yet."
+
+So this document is the working behind two issue comments rather than a proposal
+of its own. That is a better fit and a much lower bar, and it is what the
+sequencing in [README.md](README.md) was pointing at all along without knowing
+the issues existed.
+
+4815 also moves diffs from published artifacts to on-demand `weaver registry
+diff`. That does not affect anything below: the shortfall measured here is in the
+transformation *vocabulary*, not in when or where a diff is computed.
+
+## The answer to #614, and the limit that decides it
+
+OTTL. It is governed by OpenTelemetry, ships in every Collector distribution, and
+[`internal/emit/ottl`](../../internal/emit/ottl/) renders this repository's rules
+into it for five instrumentation libraries, verified against a real Collector by
+[`equivalence.sh`](../../internal/emit/ottl/testdata/equivalence.sh) rather than
+against a golden file.
+
+With one limit that a decision on #614 should turn on, because it is the only
+thing the export genuinely cannot do rather than merely does awkwardly:
+
+**OTTL cannot iterate.** A rule that translates values *and* can receive a list —
+`gen_ai.response.finish_reasons` arrives as an array from one span and a scalar
+from another — is only half expressible. The generated statements compare the
+whole value against each table key and match nothing when it is an array. Go maps
+over the elements; OTTL has no construct that does.
+
+That is
+[collector-contrib#29289](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29289),
+"Determine approach to looping", which is open and whose candidate fixes are a
+for-each syntax, user-defined functions, or filter/map/reduce. The contribution
+here is not the opinion — it is that the limitation turned up as a concrete case
+from a real emitter, found by running both implementations over the same spans
+and diffing, rather than by reading the grammar and speculating.
+
+Prior art worth naming: Honeycomb's HTTP semantic convention migration guidance
+already used OTTL for this shape of problem, which the Tooling WG discussed in
+December 2024 when weighing OTTL against CEL for downgrade paths.
+
+## The answer to #613: which transformations are actually needed
 
 [Schema File format 1.1.0](https://opentelemetry.io/docs/specs/otel/schemas/file_format_v1.1.0/)
-supports four transformations: `rename_attributes`, `rename_events`,
+supported four transformations: `rename_attributes`, `rename_events`,
 `rename_metrics`, and a metrics-only `split`. Every one of them changes a
 **name**.
 
@@ -44,13 +106,16 @@ transformations potentially proposed in the future", and specified that changing
 `file_format` must go through the OTEP process. This is a draft of that
 proposal.
 
-## Proposal
+## What the missing transformations look like
 
-Schema File format **1.2.0**, adding three transformations to the sections that
-already accept `rename_attributes`.
+Not proposed as a 1.2.0 increment any more — see above — but the shapes are what
+#613 is asking to enumerate, so they are written out concretely rather than
+described.
 
 ```yaml
-file_format: 1.2.0
+# Illustrative. The version marker is whatever the v2 format settles on; what
+# matters here is the shape of the four operations, not the header.
+file_format: <v2>
 versions:
   1.42.0:
     all:
@@ -117,7 +182,7 @@ fields out of a JSON blob, disambiguating by a sibling attribute.
 
 Two things follow, and the second is not in this proposal's favour.
 
-**The first:** the `value_transform` failures are exactly what 1.2.0 would fix,
+**The first:** the `value_transform` failures are exactly what a format change would fix,
 and they are the mappings that would otherwise produce falsely-conformant spans.
 That is the real case for this.
 
@@ -196,31 +261,43 @@ the entire semantic-convention registry at runtime, so stating it as data would
 either duplicate the registry or admit it carries nothing. It will not move these
 numbers.
 
-## What this would cost
+## What any of this costs, whoever specifies it
 
-Not free, and worth stating in the proposal rather than discovering in review:
+These do not become free by moving to a v2 format or to a general-purpose
+language, and they are the parts #613 and #614 will actually have to argue about:
 
-- An OTEP-gated `file_format` bump, which every schema file consumer must handle.
-- Parser work in `go.opentelemetry.io/otel/schema` and its equivalents.
+- Parser work in every consumer, whatever the format is.
 - A decision about whether `transform_values` applies before or after
   `rename_attributes` within a version. (It must be after, so the map is written
   against the new attribute name — but that is a decision, not an obvious fact.)
 - The same decision for `coalesce_attributes`, which must run *before*
   `transform_values` and interacts with `rename_attributes` in a way a spec has
   to pin down rather than leave to implementations.
-- Buy-in from the schema file maintainers, who have kept this format
-  deliberately minimal for five years and have good reasons for it.
+- Reversibility. `transform_values` is reversible when its map is injective;
+  `coalesce_attributes` is reversible only to its first entry. The Tooling WG has
+  wanted bidirectional migration since at least January 2025 -- "stable
+  conventions migration must have upgrade and downgrade path" -- so any answer to
+  #613 has to say which of these survive going backwards, and the honest answer
+  for a lookup table is "only sometimes".
 
 ## Alternatives
 
-**Do nothing; use OTTL.** Entirely reasonable, and the reason this draft is
-second. OTTL expresses all of this today, and this repository
-[exports it](../../internal/emit/ottl/). The difference is that an OTTL config is
-an imperative program that runs in a collector, and a schema file is a portable,
-reviewable, versioned *claim* about what two schema versions have to do with each
-other. Those are different artifacts for different purposes, and the argument for
-this proposal rests entirely on that distinction being worth something. If it is
-not, this should not be filed.
+**Custom definitions, as the format has today.** The four operations above are
+small, declarative and reversible in stated cases, which is what a *claim* about
+two schema versions should be. An OTTL config is an imperative program that runs
+in a collector; a schema entry is a reviewable assertion that two names mean the
+same fact. Those are different artifacts, and #614 is partly a question about
+which of the two the format is meant to be.
+
+**OTTL.** What this repository actually exports, and what it recommends -- with
+the iteration limit above stated rather than discovered. Its decisive advantage
+is that it already exists, is governed, and ships everywhere; its decisive
+weakness is #29289.
+
+**CEL.** Prototyped in the Tooling WG in March 2025 for exactly this reason.
+Nothing measured here bears on CEL either way, which is worth saying plainly
+rather than implying the evidence favours the option the author happens to have
+built against.
 
 **Scalar-to-list.** Two mappings need an attribute the conventions type as an
 array where the emitter writes a scalar. A `wrap_in_list` transformation would be
@@ -230,8 +307,8 @@ attributes, and the answer to those has to be no. Two mappings is not enough to
 justify standing at the top of that slope, so this draft does not propose it and
 says why.
 
-**Put it in Weaver instead.** Weaver is building multi-registry composition, and
-cross-registry value equivalence may fit better in a registry-level artifact than
-in a version-migration one. This deserves a real look before anything is filed;
-it may be that the correct proposal is a Weaver one and this draft is aimed at
-the wrong repository.
+**A registry-level artifact instead of a version-migration one.** Cross-registry
+value equivalence may belong with Weaver's multi-registry composition rather than
+in anything migration-shaped. Since #613 and #614 both live in the Weaver
+repository, this may already be the direction and is worth asking about before
+assuming otherwise.
