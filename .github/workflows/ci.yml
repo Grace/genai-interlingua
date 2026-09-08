@@ -39,6 +39,16 @@ jobs:
       - name: go vet
         run: go vet ./...
 
+      # wasm.go is the entry point behind the browser demo, and nothing else in
+      # this job can see it: the gofmt step runs over tracked files but the
+      # build tag excludes it from `go vet ./...` on linux. It calls the same
+      # normalize.Payload the CLI does, so a signature change would leave this
+      # whole suite green and the published demo unbuildable.
+      - name: the WebAssembly entry point still builds
+        run: |
+          GOOS=js GOARCH=wasm go build -o /dev/null .
+          GOOS=js GOARCH=wasm go vet ./...
+
       - name: go test
         run: go test -race ./...
 

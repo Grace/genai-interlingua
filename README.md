@@ -562,6 +562,8 @@ internal/semconv     what each target schema can express. no emitters.
 internal/dialect     what each emitter says. no schema versions.
 internal/normalize   the only place the two meet, plus the OTLP/JSON codec.
 cmd/interlingua      stdin to stdout.
+internal/emit        the same mappings as OTTL and as a schema file.
+wasm.go              the same mappings in a browser. builds with demos/build.sh.
 processor/…          the same, as a Collector processor. own module.
 testdata/            eight fixtures x two targets, plus the capture harness.
 ```
