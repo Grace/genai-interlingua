@@ -8,20 +8,28 @@ import (
 	"testing"
 )
 
-// The tables in this package were transcribed by hand from upstream YAML. That
-// is a reasonable way to build them and a terrible way to keep them, because
-// the whole argument this repository makes is that the target moves. A snapshot
-// with nothing watching it is the one place the argument and the implementation
-// disagree.
+// The tables in this package are generated from the registries vendored under
+// testdata/upstream, by internal/semconv/gen. They were transcribed by hand
+// first, which is a reasonable way to build them and a terrible way to keep
+// them, because the whole argument this repository makes is that the target
+// moves. A snapshot with nothing watching it is the one place the argument and
+// the implementation disagree.
 //
-// So upstream's own registries are vendored under testdata/upstream and checked
-// against. They are converted to JSON on the way in: the core module has no
+// Generating them does not make these checks redundant, it changes what they
+// ask. Not "was the transcription right" any more, but: is targets_gen.go
+// current with the registries sitting beside it, and does the generator's
+// derivation rule -- the key is "gen_ai." plus the field name, give or take a
+// declared override -- still hold against what upstream actually publishes.
+// A re-vendor can break either one silently.
+//
+// The registries are converted to JSON on the way in: the core module has no
 // dependencies, and a Go YAML parser would appear in go.mod even as a test-only
 // import.
 //
-// Refresh them with testdata/upstream/refresh.sh. genai-main is pinned to a
-// commit on purpose -- comparing against a floating fetch would agree with
-// upstream by construction and detect nothing.
+// Refresh them with testdata/upstream/refresh.sh, then re-run `go generate
+// ./internal/semconv/...`. genai-main is pinned to a commit on purpose --
+// comparing against a floating fetch would agree with upstream by construction
+// and detect nothing.
 
 type upstreamRegistry struct {
 	Source struct {
@@ -52,8 +60,9 @@ func loadUpstream(t *testing.T, target Target) upstreamRegistry {
 }
 
 // TestSchemaMatchesUpstream holds this package's tables to the registries they
-// were transcribed from. For v1.41.0, which is frozen, it can only ever catch a
-// transcription error. For genai-main it also catches upstream moving.
+// were generated from. For v1.41.0, which is frozen, it can now only fail if
+// targets_gen.go was hand-edited or the generator is wrong. For genai-main it
+// also catches upstream moving under a stale generated file.
 func TestSchemaMatchesUpstream(t *testing.T) {
 	for _, target := range Targets {
 		t.Run(string(target), func(t *testing.T) {
@@ -125,6 +134,53 @@ func TestUpstreamAttributesNotModelled(t *testing.T) {
 		for _, key := range missing {
 			t.Logf("    %s", key)
 		}
+	}
+}
+
+// TestGeneratedTablesAreCurrent is the drift gate that TestSchemaMatchesUpstream
+// cannot be. That test walks the tables and asks whether upstream agrees; this
+// one walks upstream and asks whether the tables are complete, which is the
+// direction a stale targets_gen.go actually fails in.
+//
+// The failure it exists for: someone adds a Field constant and an AllFields
+// entry for an attribute upstream already defines, does not re-run go generate,
+// and the field silently never renders on any span. Nothing else in the suite
+// notices, because every table entry that does exist is still correct.
+func TestGeneratedTablesAreCurrent(t *testing.T) {
+	for _, target := range Targets {
+		t.Run(string(target), func(t *testing.T) {
+			up := loadUpstream(t, target)
+			for _, f := range AllFields {
+				if target.Represents(f) {
+					continue
+				}
+				// The field is not in this target's table. That is only
+				// correct if the target genuinely has no attribute for it.
+				// Fields carried under a different key at this target are
+				// represented, so they never reach here and the generator's
+				// override table does not need restating.
+				if _, defined := up.Attributes["gen_ai."+string(f)]; defined {
+					t.Errorf("%s defines gen_ai.%s and AllFields models it, but %s has no key for it"+
+						"\n    targets_gen.go is stale: run go generate ./internal/semconv/...",
+						up.Source.Ref, f, target)
+				}
+			}
+		})
+	}
+}
+
+// TestEveryTargetHasGeneratedTables catches the other half of a stale
+// generation: a target added to Targets whose tables were never emitted. Without
+// this, such a target silently represents nothing and normalizes every span to
+// an empty schema.
+func TestEveryTargetHasGeneratedTables(t *testing.T) {
+	for _, target := range Targets {
+		if len(keys[target]) == 0 {
+			t.Errorf("%s has no generated key table; add it to the targets list in internal/semconv/gen", target)
+		}
+	}
+	if got, want := len(keys), len(Targets); got != want {
+		t.Errorf("%d generated key tables, %d targets", got, want)
 	}
 }
 

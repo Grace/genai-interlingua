@@ -223,6 +223,13 @@ var AllFields = []Field{
 	WorkflowName,
 }
 
+// The per-target tables below are generated from the registries vendored under
+// testdata/upstream. Which concepts this package models is editorial and lives
+// above, in AllFields; what each target spells them and what values it accepts
+// is upstream's to say, and is read from upstream rather than transcribed.
+//
+//go:generate go run ./gen
+
 var keys = map[Target]map[Field]string{
 	TargetV1_41_0:   keysV1_41_0,
 	TargetGenAIMain: keysGenAIMain,
