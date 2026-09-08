@@ -86,6 +86,14 @@ type Result struct {
 	// the chosen target. It is the same list the header carries, returned
 	// separately so a caller can report it without parsing YAML back.
 	Unsupported []string
+
+	// Partial names the attribute keys a rule states *and* the dialect can also
+	// reach by reading the span. The config carries them when the emitter spells
+	// them the conventions' way and does not when the same fact only arrives in
+	// some private shape, so "carried" and "not carried" are both wrong about
+	// them and a reader deserves the third answer rather than the flattering
+	// half of it.
+	Partial []string
 }
 
 // Config renders the dialect's rules into a transform processor.
@@ -99,6 +107,7 @@ func Config(opts Options) (Result, error) {
 
 	name := string(opts.Dialect.Name())
 	rules := opts.Dialect.Rules()
+	partial := partialKeys(opts)
 
 	var stmts []string
 	var carried, conformant []string
@@ -148,8 +157,9 @@ func Config(opts Options) (Result, error) {
 	}
 
 	return Result{
-		YAML:        render(opts, carried, conformant, unsupported, conditions(rules, opts.Target), stmts),
+		YAML:        render(opts, carried, conformant, partial, unsupported, conditions(rules, opts.Target), stmts),
 		Unsupported: unsupported,
+		Partial:     partial,
 	}, nil
 }
 
@@ -331,7 +341,30 @@ func conditions(rules []dialect.Rule, target semconv.Target) []string {
 	return out
 }
 
-func render(opts Options, carried, conformant, unsupported, conds, stmts []string) []byte {
+// partialKeys is the intersection of what a rule states and what Unstated
+// admits: fields this dialect reaches by both routes. Braintrust is the reason
+// this exists -- it carries the same facts as conventions attributes and again
+// inside its own JSON blobs, and a config that reads only the first is right
+// about some spans and silently short on others.
+func partialKeys(opts Options) []string {
+	stated := make(map[semconv.Field]bool)
+	for _, r := range opts.Dialect.Rules() {
+		stated[r.Field] = true
+	}
+	var out []string
+	for _, f := range opts.Dialect.Unstated() {
+		if !stated[f] {
+			continue
+		}
+		if key, ok := opts.Target.Key(f); ok {
+			out = append(out, key)
+		}
+	}
+	sort.Strings(out)
+	return out
+}
+
+func render(opts Options, carried, conformant, partial, unsupported, conds, stmts []string) []byte {
 	name := string(opts.Dialect.Name())
 	var b strings.Builder
 
@@ -349,7 +382,18 @@ func render(opts Options, carried, conformant, unsupported, conds, stmts []strin
 	for _, k := range conformant {
 		conf[k] = true
 	}
+	part := make(map[string]bool, len(partial))
+	for _, k := range partial {
+		part[k] = true
+	}
 	for _, k := range carried {
+		if part[k] {
+			// Both stated and unstated. Saying "carries" would be a promise this
+			// config cannot keep on every span, and saying "cannot carry" would
+			// be wrong about the spans it does handle.
+			p("#   %-42s (PARTIAL; see below)", k)
+			continue
+		}
 		if conf[k] {
 			// Said explicitly rather than omitted: a reader auditing this
 			// config against the processor should be able to see that the
@@ -360,8 +404,35 @@ func render(opts Options, carried, conformant, unsupported, conds, stmts []strin
 		p("#   %s", k)
 	}
 	p("#")
-	if len(unsupported) > 0 {
-		p("# WHAT THIS CANNOT CARRY (%d attributes)", len(unsupported))
+	if len(partial) > 0 {
+		p("# WHAT THIS CARRIES ONLY SOMETIMES (%d attributes)", len(partial))
+		p("#")
+		p("#   This emitter writes these facts two ways: as the conventions' own")
+		p("#   attributes, which the statements below handle, and inside its own")
+		p("#   private structures, which they cannot. A span of the first kind comes")
+		p("#   out complete. A span of the second comes out missing the attribute")
+		p("#   entirely, with nothing on it to say so.")
+		p("#")
+		p("#   They are listed in interlingua.export.unsupported as well, because a")
+		p("#   consumer needs to treat them as absent-or-correct rather than trusted.")
+		p("#")
+		for _, k := range partial {
+			p("#   %s", k)
+		}
+		p("#")
+	}
+	// The partial keys stay in interlingua.export.unsupported on the span --
+	// a consumer must treat them as absent-or-correct -- but listing them here
+	// too, under a heading that says "cannot", would contradict the section
+	// immediately above.
+	var never []string
+	for _, k := range unsupported {
+		if !part[k] {
+			never = append(never, k)
+		}
+	}
+	if len(never) > 0 {
+		p("# WHAT THIS CANNOT CARRY (%d attributes)", len(never))
 		p("#")
 		p("#   These come from reading the span rather than transforming a value --")
 		p("#   reassembling indexed message attributes into one document, lifting")
@@ -370,7 +441,7 @@ func render(opts Options, carried, conformant, unsupported, conds, stmts []strin
 		p("#   Spans leaving this processor carry the same list in")
 		p("#   interlingua.export.unsupported, so it is queryable and not just documented.")
 		p("#")
-		for _, k := range unsupported {
+		for _, k := range never {
 			p("#   %s", k)
 		}
 		p("#")

@@ -119,7 +119,21 @@ func Render(opts Options) (Result, error) {
 	conformant := 0
 	var gaps []Gap
 
+	// A field can be both stated by a rule and admitted as unstated -- Braintrust
+	// carries several facts as conventions attributes and again inside its own
+	// JSON blobs. For a schema file that is not a partial success, it is a gap:
+	// the format has no way to say "this rename, and also go and read that blob
+	// when the attribute is missing", so a file built from the rename alone does
+	// not reproduce the mapping. Counted once, in the Unstated pass below.
+	alsoUnstated := make(map[semconv.Field]bool)
+	for _, f := range opts.Dialect.Unstated() {
+		alsoUnstated[f] = true
+	}
+
 	for _, r := range opts.Dialect.Rules() {
+		if alsoUnstated[r.Field] {
+			continue
+		}
 		key, represented := opts.Target.Key(r.Field)
 		if !represented {
 			gaps = append(gaps, Gap{
@@ -143,6 +157,22 @@ func Render(opts Options) (Result, error) {
 			continue
 		}
 
+		// A closed value set is checked before the rename, and replaces it
+		// rather than accompanying it. The rename on its own is expressible and
+		// that is exactly the trap: it produces the target's attribute name
+		// carrying a value the target does not define, which this package's
+		// whole argument says is worse than not carrying it. So the field
+		// counts as a gap, once.
+		if members, ok := opts.Target.EnumValues(r.Field); ok {
+			gaps = append(gaps, Gap{
+				Field: r.Field, Key: key,
+				Reason: ReasonClosedValueSet,
+				Detail: fmt.Sprintf("%s admits %d values; a schema file cannot drop one it does not",
+					key, len(members)),
+			})
+			continue
+		}
+
 		switch {
 		case len(r.Keys) > 1:
 			gaps = append(gaps, Gap{
@@ -156,18 +186,6 @@ func Render(opts Options) (Result, error) {
 			conformant++
 		default:
 			renames[r.Keys[0]] = key
-		}
-
-		// Independently of the above, a field with a closed value set is only
-		// safely renamed if the emitter cannot produce a value outside it.
-		// The rename itself is fine; what is missing is the drop.
-		if members, ok := opts.Target.EnumValues(r.Field); ok && r.Transform.Empty() {
-			gaps = append(gaps, Gap{
-				Field: r.Field, Key: key,
-				Reason: ReasonClosedValueSet,
-				Detail: fmt.Sprintf("%s admits %d values; a schema file cannot drop one it does not",
-					key, len(members)),
-			})
 		}
 	}
 

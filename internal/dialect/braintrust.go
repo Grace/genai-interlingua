@@ -52,20 +52,76 @@ func (braintrust) Score(s Span) int {
 	return 0
 }
 
+// Rules are the Braintrust mappings that can be stated. Every one of them is a
+// plain rename with no transform at all, which makes this the shortest table in
+// the package and says something about the emitter: Braintrust writes the
+// conventions' own attribute names wherever it has a value for them.
+//
+// One thing this table makes visible that the imperative version hid. Every
+// other dialect lowercases the provider before writing it -- litellm, vercel,
+// openllmetry and openinference all do -- and this one does not, because it
+// never did. Written out as a row next to the others, that reads like an
+// oversight rather than a decision. It is left as it was: changing it here
+// would be a behaviour change smuggled in with a refactor, and it belongs in
+// its own commit with its own fixture.
+func (braintrust) Rules() []Rule {
+	return []Rule{
+		{Field: semconv.ProviderName, Keys: []string{"gen_ai.provider.name", "gen_ai.system"}},
+		{Field: semconv.RequestModel, Keys: []string{"gen_ai.request.model"}},
+		{Field: semconv.ResponseModel, Keys: []string{"gen_ai.response.model"}},
+		{Field: semconv.UsageInputTokens, Keys: []string{
+			"gen_ai.usage.input_tokens", "gen_ai.usage.prompt_tokens"}},
+		{Field: semconv.UsageOutputTokens, Keys: []string{
+			"gen_ai.usage.output_tokens", "gen_ai.usage.completion_tokens"}},
+		{Field: semconv.InputMessages, Keys: []string{"gen_ai.input.messages"}},
+		{Field: semconv.OutputMessages, Keys: []string{"gen_ai.output.messages"}},
+		{Field: semconv.OperationName, Keys: []string{"gen_ai.operation.name"}},
+		{Field: semconv.ToolDefinitions, Keys: []string{"gen_ai.agent.tools"}},
+	}
+}
+
+// Unstated is where this dialect stops being like the others.
+//
+// Five of these seven fields are *also* produced by a rule above, which no
+// previous dialect needed. Braintrust carries the same facts twice: once as
+// conventions attributes, and once inside two JSON blobs -- braintrust.metrics
+// and braintrust.span_attributes -- that it writes for its own product. A span
+// can arrive with either, or both, and Parse reads the conventions half first
+// and lets the blobs fill only the gaps.
+//
+// So "can this be exported" has a third answer here, and it is neither yes nor
+// no. An exported config carries these fields when the span spells them the
+// conventions' way and silently does not when the span only has the blob. That
+// is a weaker guarantee than the other rows in the table and the emitted header
+// says so per field rather than averaging it away.
+//
+// EvaluationName is the sharpest thing in the package. Its value is a JSON
+// object *key*, promoted to an attribute value -- the score is named by what
+// the map calls it. No transformation of one value can produce that, in this
+// type or any plausible successor.
+func (braintrust) Unstated() []semconv.Field {
+	return []semconv.Field{
+		semconv.OperationName,
+		semconv.UsageInputTokens,
+		semconv.UsageOutputTokens,
+		semconv.UsageCacheReadInputTokens,
+		semconv.UsageReasoningOutputTokens,
+		semconv.EvaluationName,
+		semconv.EvaluationScoreValue,
+	}
+}
+
 func (d braintrust) Parse(s Span) Parsed {
 	var p Parsed
 
 	// Braintrust writes the conventions' own attributes where it has them, so
 	// the gen_ai half is read first and the braintrust half only fills gaps.
-	p.TakeFirst(s, semconv.ProviderName, "gen_ai.provider.name", "gen_ai.system")
-	p.Take(s, "gen_ai.request.model", semconv.RequestModel)
-	p.Take(s, "gen_ai.response.model", semconv.ResponseModel)
-	p.TakeFirst(s, semconv.UsageInputTokens, "gen_ai.usage.input_tokens", "gen_ai.usage.prompt_tokens")
-	p.TakeFirst(s, semconv.UsageOutputTokens, "gen_ai.usage.output_tokens", "gen_ai.usage.completion_tokens")
-	p.Take(s, "gen_ai.input.messages", semconv.InputMessages)
-	p.Take(s, "gen_ai.output.messages", semconv.OutputMessages)
-	p.Take(s, "gen_ai.operation.name", semconv.OperationName)
-	p.Take(s, "gen_ai.agent.tools", semconv.ToolDefinitions)
+	//
+	// The order is load-bearing rather than tidy: spanAttributes and metrics
+	// both guard on `p.Fields[...]` already being set, so running the rules
+	// after them would invert four precedences and let a JSON blob overwrite
+	// the emitter's own conventions attribute.
+	p.applyRules(s, d.Rules())
 
 	d.spanAttributes(s, &p)
 	d.metrics(s, &p)

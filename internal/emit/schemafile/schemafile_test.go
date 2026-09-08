@@ -75,7 +75,16 @@ func TestEveryRuleIsAccountedFor(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			want := len(d.Rules()) + len(d.Unstated())
+			// Distinct fields, not rules plus unstated: a field can be both,
+			// and is then accounted for once as a gap.
+			seen := map[semconv.Field]bool{}
+			for _, r := range d.Rules() {
+				seen[r.Field] = true
+			}
+			for _, f := range d.Unstated() {
+				seen[f] = true
+			}
+			want := len(seen)
 			got := res.Renames + res.Conformant + len(res.Gaps)
 			if got != want {
 				t.Errorf("%s/%s: %d rules and unstated fields, but %d renames + %d conformant + %d gaps = %d",
