@@ -63,6 +63,87 @@ func (openLLMetry) Score(s Span) int {
 	return n
 }
 
+// Rules are the OpenLLMetry mappings that can be stated. Most of this dialect
+// fits: it adopted the conventions' attribute names for the request parameters
+// and the token counts, and where it did not, it is a single rename.
+//
+// The provider rule deliberately has no lookup table, unlike every other
+// dialect here. OpenLLMetry is used through frameworks, and a LangChain span
+// says gen_ai.system: langchain -- which is not a provider, it is the thing
+// calling one. Passing it through unmapped lets the renderer drop it against
+// the registry and record the drop. Aliasing it to something would put a value
+// in gen_ai.provider.name that no target defines, and a query grouping by
+// provider would grow a bucket that is not a provider.
+func (openLLMetry) Rules() []Rule {
+	return []Rule{
+		{Field: semconv.ProviderName, Keys: []string{"gen_ai.provider.name", "gen_ai.system"},
+			Transform: Transform{Lower: true}},
+
+		{Field: semconv.RequestModel, Keys: []string{"gen_ai.request.model"}},
+		{Field: semconv.ResponseModel, Keys: []string{"gen_ai.response.model"}},
+		{Field: semconv.ResponseID, Keys: []string{"gen_ai.response.id"}},
+		{Field: semconv.RequestMaxTokens, Keys: []string{"gen_ai.request.max_tokens"}},
+		{Field: semconv.RequestTemperature, Keys: []string{"gen_ai.request.temperature"}},
+		{Field: semconv.RequestTopP, Keys: []string{"gen_ai.request.top_p"}},
+		{Field: semconv.RequestTopK, Keys: []string{"llm.top_k"}},
+		{Field: semconv.RequestFrequencyPenalty, Keys: []string{
+			"gen_ai.request.frequency_penalty", "llm.frequency_penalty"}},
+		{Field: semconv.RequestPresencePenalty, Keys: []string{
+			"gen_ai.request.presence_penalty", "llm.presence_penalty"}},
+		{Field: semconv.RequestStopSequences, Keys: []string{"llm.chat.stop_sequences"}},
+		// Current OpenLLMetry spells this gen_ai.is_streaming; releases before
+		// the migration spell it llm.is_streaming. Both are in the wild.
+		{Field: semconv.RequestStream, Keys: []string{"gen_ai.is_streaming", "llm.is_streaming"}},
+
+		{Field: semconv.UsageInputTokens, Keys: []string{"gen_ai.usage.prompt_tokens"}},
+		{Field: semconv.UsageOutputTokens, Keys: []string{"gen_ai.usage.completion_tokens"}},
+		{Field: semconv.UsageCacheWriteInputTokens, Keys: []string{"gen_ai.usage.cache_creation_input_tokens"}},
+		{Field: semconv.UsageCacheReadInputTokens, Keys: []string{"gen_ai.usage.cache_read_input_tokens"}},
+		// OpenLLMetry adopted most of the conventions' token names but spells
+		// the reasoning count without the .output segment. Same number.
+		{Field: semconv.UsageReasoningOutputTokens, Keys: []string{"gen_ai.usage.reasoning_tokens"}},
+
+		{Field: semconv.WorkflowName, Keys: []string{"traceloop.workflow.name"}},
+		{Field: semconv.PromptName, Keys: []string{"traceloop.prompt.key"}},
+		{Field: semconv.PromptVersion, Keys: []string{"traceloop.prompt.version"}},
+	}
+}
+
+// Unstated. Six of these are the usual reassembly work. gen_ai.operation.name
+// is the interesting one, and it is here for a reason worth being precise
+// about, because it is not the reason the other five are.
+//
+// It is not that the operation cannot be described. It is that this emitter
+// writes it two ways -- llm.request.type on spans that really called a model,
+// traceloop.span.kind on spans that describe a workflow, an agent or a tool --
+// and the two need *different lookup tables*. A Rule carries one Transform for
+// all of its keys, on purpose: that is what makes it renderable as a flat run
+// of conditional assignments in OTTL.
+//
+// Merging the two tables would work for every span either one appears on, since
+// their inputs are disjoint. It would also quietly widen the accepted
+// vocabulary in both directions -- llm.request.type: agent would start mapping
+// to invoke_agent rather than being reported as a loss -- and it breaks
+// outright on a span carrying an unmapped llm.request.type alongside a mapped
+// traceloop.span.kind, where the current code records the loss and still sets
+// the operation from the kind.
+//
+// So the choice was: add per-key transforms to Rule and complicate the one type
+// this whole argument rests on being simple, or lose one field of export
+// coverage for one dialect. The second is cheaper, and the first is the first
+// step toward the language this repository exists to argue against building.
+func (openLLMetry) Unstated() []semconv.Field {
+	return []semconv.Field{
+		semconv.OperationName,
+		semconv.AgentName,
+		semconv.ToolName,
+		semconv.InputMessages,
+		semconv.OutputMessages,
+		semconv.ResponseFinishReasons,
+		semconv.ToolDefinitions,
+	}
+}
+
 func (d openLLMetry) Parse(s Span) Parsed {
 	var p Parsed
 
@@ -73,41 +154,18 @@ func (d openLLMetry) Parse(s Span) Parsed {
 	//
 	// That check earns its keep here. Instrumenting LangChain through this
 	// library puts gen_ai.provider.name=langchain on the chain spans, and
-	// langchain is not a provider -- it is the framework calling one. No target
-	// defines it, so it is recorded as a loss instead of being taken at face
-	// value, and a query grouping by provider does not grow a bucket that is
-	// not a provider.
-	for _, k := range []string{"gen_ai.provider.name", "gen_ai.system"} {
-		v, ok := s.Attr(k)
-		if !ok {
-			continue
-		}
-		if _, already := p.Fields[semconv.ProviderName]; !already {
-			p.Set(semconv.ProviderName, String(strings.ToLower(v.Str)))
-		}
-		p.Consumed = append(p.Consumed, k)
+	p.applyRules(s, d.Rules())
+
+	// The two provider spellings are the same fact, so the runner-up is
+	// reported rather than passed over in silence. The old code consumed both
+	// and recorded neither, which left an attribute that had been read and
+	// discarded looking identical to one nothing had examined -- the exact
+	// thing this repository exists to complain about elsewhere.
+	if s.Has("gen_ai.provider.name") && s.Has("gen_ai.system") {
+		p.Lose("gen_ai.system", ReasonNoField,
+			"gen_ai.provider.name already carries the provider")
 	}
 
-	p.Take(s, "gen_ai.request.model", semconv.RequestModel)
-	p.Take(s, "gen_ai.response.model", semconv.ResponseModel)
-	p.Take(s, "gen_ai.response.id", semconv.ResponseID)
-	p.Take(s, "gen_ai.request.max_tokens", semconv.RequestMaxTokens)
-	p.Take(s, "gen_ai.request.temperature", semconv.RequestTemperature)
-	p.Take(s, "gen_ai.request.top_p", semconv.RequestTopP)
-	p.Take(s, "llm.top_k", semconv.RequestTopK)
-	p.TakeFirst(s, semconv.RequestFrequencyPenalty,
-		"gen_ai.request.frequency_penalty", "llm.frequency_penalty")
-	p.TakeFirst(s, semconv.RequestPresencePenalty,
-		"gen_ai.request.presence_penalty", "llm.presence_penalty")
-	p.Take(s, "llm.chat.stop_sequences", semconv.RequestStopSequences)
-	// Current OpenLLMetry spells this gen_ai.is_streaming; releases before the
-	// migration spell it llm.is_streaming. Both are in the wild.
-	p.TakeFirst(s, semconv.RequestStream, "gen_ai.is_streaming", "llm.is_streaming")
-
-	p.Take(s, "gen_ai.usage.prompt_tokens", semconv.UsageInputTokens)
-	p.Take(s, "gen_ai.usage.completion_tokens", semconv.UsageOutputTokens)
-	p.Take(s, "gen_ai.usage.cache_creation_input_tokens", semconv.UsageCacheWriteInputTokens)
-	p.Take(s, "gen_ai.usage.cache_read_input_tokens", semconv.UsageCacheReadInputTokens)
 	if s.Has("gen_ai.usage.total_tokens") {
 		p.Lose("gen_ai.usage.total_tokens", ReasonNoField,
 			"the conventions carry input and output counts only")
@@ -174,10 +232,6 @@ func (d openLLMetry) Parse(s Span) Parsed {
 			p.Lose("traceloop.entity.name", ReasonAmbiguous, detail)
 		}
 	}
-
-	p.Take(s, "traceloop.workflow.name", semconv.WorkflowName)
-	p.Take(s, "traceloop.prompt.key", semconv.PromptName)
-	p.Take(s, "traceloop.prompt.version", semconv.PromptVersion)
 
 	for _, k := range []string{"traceloop.entity.input", "traceloop.entity.output"} {
 		if s.Has(k) {
