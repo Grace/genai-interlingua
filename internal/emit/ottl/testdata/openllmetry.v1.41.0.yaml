@@ -85,7 +85,7 @@ processors:
         statements:
           - set(attributes["gen_ai.provider.name"], attributes["gen_ai.system"]) where attributes["gen_ai.provider.name"] == nil and attributes["gen_ai.system"] != nil
           - set(attributes["gen_ai.provider.name"], ToLowerCase(attributes["gen_ai.provider.name"])) where attributes["gen_ai.provider.name"] != nil
-          - delete_key(attributes, "gen_ai.provider.name") where attributes["gen_ai.provider.name"] != nil and not IsMatch(attributes["gen_ai.provider.name"], "^(anthropic|aws\\.bedrock|azure\\.ai\\.inference|azure\\.ai\\.openai|cohere|deepseek|gcp\\.gemini|gcp\\.gen_ai|gcp\\.vertex_ai|groq|ibm\\.watsonx\\.ai|mistral_ai|openai|perplexity|x_ai)$")
+          - delete_key(attributes, "gen_ai.provider.name") where attributes["gen_ai.system"] != nil and attributes["gen_ai.provider.name"] != nil and not IsMatch(attributes["gen_ai.provider.name"], "^(anthropic|aws\\.bedrock|azure\\.ai\\.inference|azure\\.ai\\.openai|cohere|deepseek|gcp\\.gemini|gcp\\.gen_ai|gcp\\.vertex_ai|groq|ibm\\.watsonx\\.ai|mistral_ai|openai|perplexity|x_ai)$")
           - set(attributes["gen_ai.request.top_k"], attributes["llm.top_k"]) where attributes["llm.top_k"] != nil
           - set(attributes["gen_ai.request.frequency_penalty"], attributes["llm.frequency_penalty"]) where attributes["gen_ai.request.frequency_penalty"] == nil and attributes["llm.frequency_penalty"] != nil
           - set(attributes["gen_ai.request.presence_penalty"], attributes["llm.presence_penalty"]) where attributes["gen_ai.request.presence_penalty"] == nil and attributes["llm.presence_penalty"] != nil

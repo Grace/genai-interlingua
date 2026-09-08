@@ -94,6 +94,24 @@ attributes:
       the two produced it.
     examples: ["ottl"]
 
+  - key: interlingua.export.partial
+    type: string[]
+    stability: development
+    brief: >
+      Attribute keys the exporting implementation produces on some spans and not
+      others.
+    note: >
+      A subset of `interlingua.export.unsupported`, naming the attributes the
+      export gets right on some spans and not others -- because the emitter
+      writes the same fact twice, once in the conventions' vocabulary and once
+      in a private structure the export cannot read, or because a value arrives
+      as a list and the exported language cannot iterate one. Being named here
+      is not a weaker warning than being named there. It is the same warning
+      with a reason attached, and the attribute may be absent, correct, or
+      whatever the emitter wrote, with nothing at read time to tell them apart.
+    examples:
+      - ["gen_ai.operation.name", "gen_ai.usage.input_tokens"]
+
   - key: interlingua.export.unsupported
     type: string[]
     stability: development

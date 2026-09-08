@@ -26,8 +26,8 @@ that count comes from.
 | `openinference` | `genai-main` | 31 | 31 | 31 | 15 | 10 |
 | `openllmetry` | `v1.41.0` | 27 | 26 | 26 | 18 | 15 |
 | `openllmetry` | `genai-main` | 27 | 27 | 27 | 20 | 16 |
-| `vercel` | `v1.41.0` | 25 | 25 | 25 | 21 | 11 |
-| `vercel` | `genai-main` | 25 | 25 | 25 | 21 | 11 |
+| `vercel` | `v1.41.0` | 25 | 25 | 25 | 20 | 11 |
+| `vercel` | `genai-main` | 25 | 25 | 25 | 20 | 11 |
 
 **mappings** is every field the dialect can produce. **representable** is how
 many of those the target schema has an attribute for at all — a field the

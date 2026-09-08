@@ -20,13 +20,27 @@
 #   gen_ai.response.model
 #   gen_ai.usage.input_tokens
 #   gen_ai.usage.output_tokens
-#   gen_ai.response.finish_reasons
+#   gen_ai.response.finish_reasons             (PARTIAL; see below)
 #   gen_ai.response.time_to_first_chunk
 #   gen_ai.workflow.name
 #   gen_ai.tool.name
 #   gen_ai.tool.call.id
 #   gen_ai.tool.call.arguments
 #   gen_ai.tool.call.result
+#
+# WHAT THIS CARRIES ONLY SOMETIMES (1 attributes)
+#
+#   This emitter writes these facts two ways: as the conventions' own
+#   attributes, which the statements below handle, and inside its own
+#   private structures, which they cannot. A span of the first kind comes
+#   out complete. A span of the second comes out missing the attribute
+#   entirely, with nothing on it to say so.
+#
+#   They are listed in interlingua.export.unsupported as well. Being
+#   named here is not a weaker warning than being named there -- it is
+#   the same warning with a reason attached. Do not trust these.
+#
+#   gen_ai.response.finish_reasons
 #
 # WHAT THIS CANNOT CARRY (4 attributes)
 #
@@ -95,7 +109,8 @@ processors:
           - set(attributes["interlingua.__scratch"], "x_ai") where attributes["gen_ai.provider.name"] == "xai"
           - set(attributes["gen_ai.provider.name"], attributes["interlingua.__scratch"]) where attributes["interlingua.__scratch"] != nil
           - delete_key(attributes, "interlingua.__scratch")
-          - delete_key(attributes, "gen_ai.provider.name") where attributes["gen_ai.provider.name"] != nil and not IsMatch(attributes["gen_ai.provider.name"], "^(anthropic|aws\\.bedrock|azure\\.ai\\.inference|azure\\.ai\\.openai|cohere|deepseek|gcp\\.gemini|gcp\\.gen_ai|gcp\\.vertex_ai|groq|ibm\\.watsonx\\.ai|mistral_ai|openai|perplexity|x_ai)$")
+          - delete_key(attributes, "gen_ai.provider.name") where attributes["ai.model.provider"] != nil and attributes["gen_ai.provider.name"] != nil and not IsMatch(attributes["gen_ai.provider.name"], "^(anthropic|aws\\.bedrock|azure\\.ai\\.inference|azure\\.ai\\.openai|cohere|deepseek|gcp\\.gemini|gcp\\.gen_ai|gcp\\.vertex_ai|groq|ibm\\.watsonx\\.ai|mistral_ai|openai|perplexity|x_ai)$")
+          - delete_key(attributes, "gen_ai.provider.name") where attributes["gen_ai.system"] != nil and attributes["gen_ai.provider.name"] != nil and not IsMatch(attributes["gen_ai.provider.name"], "^(anthropic|aws\\.bedrock|azure\\.ai\\.inference|azure\\.ai\\.openai|cohere|deepseek|gcp\\.gemini|gcp\\.gen_ai|gcp\\.vertex_ai|groq|ibm\\.watsonx\\.ai|mistral_ai|openai|perplexity|x_ai)$")
           - set(attributes["gen_ai.operation.name"], attributes["ai.operationId"]) where attributes["ai.operationId"] != nil
           - replace_pattern(attributes["gen_ai.operation.name"], "\\.doGenerate$", "") where attributes["gen_ai.operation.name"] != nil
           - replace_pattern(attributes["gen_ai.operation.name"], "\\.doStream$", "") where attributes["gen_ai.operation.name"] != nil
@@ -110,7 +125,7 @@ processors:
           - delete_key(attributes, "gen_ai.operation.name") where attributes["gen_ai.operation.name"] != nil and attributes["interlingua.__scratch"] == nil
           - set(attributes["gen_ai.operation.name"], attributes["interlingua.__scratch"]) where attributes["interlingua.__scratch"] != nil
           - delete_key(attributes, "interlingua.__scratch")
-          - delete_key(attributes, "gen_ai.operation.name") where attributes["gen_ai.operation.name"] != nil and not IsMatch(attributes["gen_ai.operation.name"], "^(chat|create_agent|embeddings|execute_tool|generate_content|invoke_agent|invoke_workflow|retrieval|text_completion)$")
+          - delete_key(attributes, "gen_ai.operation.name") where attributes["ai.operationId"] != nil and attributes["gen_ai.operation.name"] != nil and not IsMatch(attributes["gen_ai.operation.name"], "^(chat|create_agent|embeddings|execute_tool|generate_content|invoke_agent|invoke_workflow|retrieval|text_completion)$")
           - set(attributes["gen_ai.request.model"], attributes["ai.model.id"]) where attributes["gen_ai.request.model"] == nil and attributes["ai.model.id"] != nil
           - set(attributes["gen_ai.request.max_tokens"], attributes["ai.settings.maxOutputTokens"]) where attributes["gen_ai.request.max_tokens"] == nil and attributes["ai.settings.maxOutputTokens"] != nil
           - set(attributes["gen_ai.response.id"], attributes["ai.response.id"]) where attributes["gen_ai.response.id"] == nil and attributes["ai.response.id"] != nil
@@ -123,7 +138,7 @@ processors:
           - set(attributes["interlingua.__scratch"], "tool_calls") where attributes["gen_ai.response.finish_reasons"] == "tool-calls"
           - set(attributes["gen_ai.response.finish_reasons"], attributes["interlingua.__scratch"]) where attributes["interlingua.__scratch"] != nil
           - delete_key(attributes, "interlingua.__scratch")
-          - set(attributes["gen_ai.response.finish_reasons"], [attributes["gen_ai.response.finish_reasons"]]) where attributes["gen_ai.response.finish_reasons"] != nil
+          - set(attributes["gen_ai.response.finish_reasons"], [attributes["gen_ai.response.finish_reasons"]]) where attributes["gen_ai.response.finish_reasons"] != nil and IsString(attributes["gen_ai.response.finish_reasons"])
           - set(attributes["gen_ai.response.time_to_first_chunk"], attributes["ai.response.msToFirstChunk"]) where attributes["ai.response.msToFirstChunk"] != nil
           - set(attributes["gen_ai.response.time_to_first_chunk"], Double(attributes["gen_ai.response.time_to_first_chunk"]) / 1000) where attributes["gen_ai.response.time_to_first_chunk"] != nil and (IsDouble(attributes["gen_ai.response.time_to_first_chunk"]) or IsInt(attributes["gen_ai.response.time_to_first_chunk"]))
           - delete_key(attributes, "gen_ai.response.time_to_first_chunk") where attributes["gen_ai.response.time_to_first_chunk"] != nil and not (IsDouble(attributes["gen_ai.response.time_to_first_chunk"]) or IsInt(attributes["gen_ai.response.time_to_first_chunk"]))
@@ -135,4 +150,5 @@ processors:
           - set(attributes["interlingua.dialect"], "vercel")
           - set(attributes["interlingua.target"], "v1.41.0")
           - set(attributes["interlingua.export"], "ottl")
-          - set(attributes["interlingua.export.unsupported"], ["gen_ai.input.messages", "gen_ai.output.messages", "gen_ai.system_instructions", "gen_ai.tool.definitions"])
+          - set(attributes["interlingua.export.unsupported"], ["gen_ai.input.messages", "gen_ai.output.messages", "gen_ai.response.finish_reasons", "gen_ai.system_instructions", "gen_ai.tool.definitions"])
+          - set(attributes["interlingua.export.partial"], ["gen_ai.response.finish_reasons"])

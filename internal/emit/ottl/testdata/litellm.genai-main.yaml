@@ -81,7 +81,7 @@ processors:
           - set(attributes["interlingua.__scratch"], "x_ai") where attributes["gen_ai.provider.name"] == "xai"
           - set(attributes["gen_ai.provider.name"], attributes["interlingua.__scratch"]) where attributes["interlingua.__scratch"] != nil
           - delete_key(attributes, "interlingua.__scratch")
-          - delete_key(attributes, "gen_ai.provider.name") where attributes["gen_ai.provider.name"] != nil and not IsMatch(attributes["gen_ai.provider.name"], "^(anthropic|aws\\.bedrock|azure\\.ai\\.inference|azure\\.ai\\.openai|cohere|deepseek|gcp\\.gemini|gcp\\.gen_ai|gcp\\.vertex_ai|groq|ibm\\.watsonx\\.ai|mistral_ai|moonshot_ai|openai|perplexity|x_ai)$")
+          - delete_key(attributes, "gen_ai.provider.name") where attributes["gen_ai.system"] != nil and attributes["gen_ai.provider.name"] != nil and not IsMatch(attributes["gen_ai.provider.name"], "^(anthropic|aws\\.bedrock|azure\\.ai\\.inference|azure\\.ai\\.openai|cohere|deepseek|gcp\\.gemini|gcp\\.gen_ai|gcp\\.vertex_ai|groq|ibm\\.watsonx\\.ai|mistral_ai|moonshot_ai|openai|perplexity|x_ai)$")
           - set(attributes["gen_ai.operation.name"], attributes["llm.request.type"]) where attributes["gen_ai.operation.name"] == nil and attributes["llm.request.type"] != nil
           - set(attributes["interlingua.__scratch"], "chat") where attributes["gen_ai.operation.name"] == "acompletion"
           - set(attributes["interlingua.__scratch"], "embeddings") where attributes["gen_ai.operation.name"] == "aembedding"
@@ -90,7 +90,7 @@ processors:
           - set(attributes["interlingua.__scratch"], "embeddings") where attributes["gen_ai.operation.name"] == "embedding"
           - set(attributes["gen_ai.operation.name"], attributes["interlingua.__scratch"]) where attributes["interlingua.__scratch"] != nil
           - delete_key(attributes, "interlingua.__scratch")
-          - delete_key(attributes, "gen_ai.operation.name") where attributes["gen_ai.operation.name"] != nil and not IsMatch(attributes["gen_ai.operation.name"], "^(chat|create_agent|create_memory|create_memory_store|delete_memory|delete_memory_store|embeddings|execute_tool|fetch_response|generate_content|invoke_agent|invoke_workflow|plan|retrieval|search_memory|text_completion|update_memory|upsert_memory)$")
+          - delete_key(attributes, "gen_ai.operation.name") where attributes["llm.request.type"] != nil and attributes["gen_ai.operation.name"] != nil and not IsMatch(attributes["gen_ai.operation.name"], "^(chat|create_agent|create_memory|create_memory_store|delete_memory|delete_memory_store|embeddings|execute_tool|fetch_response|generate_content|invoke_agent|invoke_workflow|plan|retrieval|search_memory|text_completion|update_memory|upsert_memory)$")
           - set(attributes["gen_ai.usage.cache_write.input_tokens"], attributes["gen_ai.usage.cache_creation.input_tokens"]) where attributes["gen_ai.usage.cache_creation.input_tokens"] != nil
           - set(attributes["interlingua.dialect"], "litellm")
           - set(attributes["interlingua.target"], "genai-main")

@@ -24,8 +24,9 @@
 #   out complete. A span of the second comes out missing the attribute
 #   entirely, with nothing on it to say so.
 #
-#   They are listed in interlingua.export.unsupported as well, because a
-#   consumer needs to treat them as absent-or-correct rather than trusted.
+#   They are listed in interlingua.export.unsupported as well. Being
+#   named here is not a weaker warning than being named there -- it is
+#   the same warning with a reason attached. Do not trust these.
 #
 #   gen_ai.operation.name
 #   gen_ai.usage.input_tokens
@@ -74,12 +75,12 @@ processors:
           - attributes["gen_ai.usage.prompt_tokens"] != nil
         statements:
           - set(attributes["gen_ai.provider.name"], attributes["gen_ai.system"]) where attributes["gen_ai.provider.name"] == nil and attributes["gen_ai.system"] != nil
-          - delete_key(attributes, "gen_ai.provider.name") where attributes["gen_ai.provider.name"] != nil and not IsMatch(attributes["gen_ai.provider.name"], "^(anthropic|aws\\.bedrock|azure\\.ai\\.inference|azure\\.ai\\.openai|cohere|deepseek|gcp\\.gemini|gcp\\.gen_ai|gcp\\.vertex_ai|groq|ibm\\.watsonx\\.ai|mistral_ai|openai|perplexity|x_ai)$")
+          - delete_key(attributes, "gen_ai.provider.name") where attributes["gen_ai.system"] != nil and attributes["gen_ai.provider.name"] != nil and not IsMatch(attributes["gen_ai.provider.name"], "^(anthropic|aws\\.bedrock|azure\\.ai\\.inference|azure\\.ai\\.openai|cohere|deepseek|gcp\\.gemini|gcp\\.gen_ai|gcp\\.vertex_ai|groq|ibm\\.watsonx\\.ai|mistral_ai|openai|perplexity|x_ai)$")
           - set(attributes["gen_ai.usage.input_tokens"], attributes["gen_ai.usage.prompt_tokens"]) where attributes["gen_ai.usage.input_tokens"] == nil and attributes["gen_ai.usage.prompt_tokens"] != nil
           - set(attributes["gen_ai.usage.output_tokens"], attributes["gen_ai.usage.completion_tokens"]) where attributes["gen_ai.usage.output_tokens"] == nil and attributes["gen_ai.usage.completion_tokens"] != nil
-          - delete_key(attributes, "gen_ai.operation.name") where attributes["gen_ai.operation.name"] != nil and not IsMatch(attributes["gen_ai.operation.name"], "^(chat|create_agent|embeddings|execute_tool|generate_content|invoke_agent|invoke_workflow|retrieval|text_completion)$")
           - set(attributes["gen_ai.tool.definitions"], attributes["gen_ai.agent.tools"]) where attributes["gen_ai.agent.tools"] != nil
           - set(attributes["interlingua.dialect"], "braintrust")
           - set(attributes["interlingua.target"], "v1.41.0")
           - set(attributes["interlingua.export"], "ottl")
           - set(attributes["interlingua.export.unsupported"], ["gen_ai.evaluation.name", "gen_ai.evaluation.score.value", "gen_ai.operation.name", "gen_ai.usage.cache_read.input_tokens", "gen_ai.usage.input_tokens", "gen_ai.usage.output_tokens", "gen_ai.usage.reasoning.output_tokens"])
+          - set(attributes["interlingua.export.partial"], ["gen_ai.operation.name", "gen_ai.usage.input_tokens", "gen_ai.usage.output_tokens"])

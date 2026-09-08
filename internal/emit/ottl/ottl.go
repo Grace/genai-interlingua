@@ -63,6 +63,20 @@ const (
 	// structurally incapable of producing -- a statement about the pipeline
 	// rather than about the span.
 	AttrExportUnsupported = "interlingua.export.unsupported"
+
+	// AttrExportPartial is the subset of the above this implementation gets
+	// right on some spans and not others -- because the emitter writes the same
+	// fact both in the conventions' vocabulary and in a private shape the
+	// export cannot read, or because a value arrives as a list and OTTL cannot
+	// iterate one.
+	//
+	// It is a subset rather than a separate list on purpose, and it is not a
+	// stronger promise than unsupported. A consumer that only understands
+	// unsupported treats these correctly, as untrusted. One that understands
+	// both learns something more useful about *why* -- but the attribute is
+	// still absent, correct, or whatever the emitter happened to write, and
+	// nothing distinguishes the third case from the second at read time.
+	AttrExportPartial = "interlingua.export.partial"
 )
 
 // Options selects what to emit.
@@ -111,7 +125,11 @@ func Config(opts Options) (Result, error) {
 
 	var stmts []string
 	var carried, conformant []string
-	unsupported := unsupportedKeys(opts)
+	// Every partial key is also an unsupported key. Partial says why, and to a
+	// human that is worth saying; to anything reading the span it has to be the
+	// same warning, or a consumer that only knows about unsupported would treat
+	// a partial attribute as trustworthy.
+	unsupported := unsupportedKeys(opts, partial)
 
 	for _, r := range rules {
 		key, ok := opts.Target.Key(r.Field)
@@ -154,6 +172,10 @@ func Config(opts Options) (Result, error) {
 	if len(unsupported) > 0 {
 		stmts = append(stmts,
 			fmt.Sprintf(`set(attributes[%s], [%s])`, quote(AttrExportUnsupported), quoteList(unsupported)))
+	}
+	if len(partial) > 0 {
+		stmts = append(stmts,
+			fmt.Sprintf(`set(attributes[%s], [%s])`, quote(AttrExportPartial), quoteList(partial)))
 	}
 
 	return Result{
@@ -241,8 +263,12 @@ func statements(r dialect.Rule, key string, target semconv.Target) ([]string, er
 			fmt.Sprintf(`delete_key(attributes, %s) where %s and not %s`, quote(key), present, numeric))
 	}
 	if t.ToList {
-		out = append(out, fmt.Sprintf(`set(attributes[%s], [attributes[%s]]) where %s`,
-			quote(key), quote(key), present))
+		// Guarded on the value being a string, because that is the guard Go
+		// applies. Without it a source that is already an array -- which the
+		// Vercel adapter span is -- gets wrapped a second time and the
+		// attribute becomes a list containing a list.
+		out = append(out, fmt.Sprintf(`set(attributes[%s], [attributes[%s]]) where %s and IsString(attributes[%s])`,
+			quote(key), quote(key), present, quote(key)))
 	}
 
 	// The renderer drops a value the target's value set does not admit, and
@@ -255,8 +281,26 @@ func statements(r dialect.Rule, key string, target semconv.Target) ([]string, er
 			alts[i] = regexp.QuoteMeta(m)
 		}
 		sort.Strings(alts)
-		out = append(out, fmt.Sprintf(`delete_key(attributes, %s) where %s and not IsMatch(attributes[%s], %s)`,
-			quote(key), present, quote(key), quote("^("+strings.Join(alts, "|")+")$")))
+		pattern := quote("^(" + strings.Join(alts, "|") + ")$")
+
+		// Only a value this config copied in is deleted, and the guard is that
+		// the source key it was copied from is present.
+		//
+		// The processor does not delete a non-conformant value that was already
+		// sitting under the conventions attribute -- it records the loss and
+		// leaves the original alone, because preserve_original is on by
+		// default. A LangChain span carrying gen_ai.provider.name: langchain is
+		// exactly that case, and an unguarded delete here destroys an attribute
+		// the processor keeps, which makes the export more lossy than the thing
+		// it is exporting.
+		for _, src := range r.Keys {
+			if src == key {
+				continue
+			}
+			out = append(out, fmt.Sprintf(
+				`delete_key(attributes, %s) where attributes[%s] != nil and %s and not IsMatch(attributes[%s], %s)`,
+				quote(key), quote(src), present, quote(key), pattern))
+		}
 	}
 	return out, nil
 }
@@ -265,7 +309,7 @@ func statements(r dialect.Rule, key string, target semconv.Target) ([]string, er
 // the dialect only reaches by reading the span, plus any field the target has
 // no attribute for. Both are rendered as attribute keys rather than field
 // names, because the person reading the header is looking at spans.
-func unsupportedKeys(opts Options) []string {
+func unsupportedKeys(opts Options, partial []string) []string {
 	seen := make(map[string]bool)
 	var out []string
 	add := func(k string) {
@@ -287,6 +331,9 @@ func unsupportedKeys(opts Options) []string {
 		if !opts.Target.Represents(r.Field) {
 			add(semconv.CanonicalKey(r.Field))
 		}
+	}
+	for _, k := range partial {
+		add(k)
 	}
 	sort.Strings(out)
 	return out
@@ -360,6 +407,20 @@ func partialKeys(opts Options) []string {
 			out = append(out, key)
 		}
 	}
+
+	// A rule that translates values *and* accepts a list is only half
+	// renderable. Go maps over the elements of a list; OTTL has no iteration,
+	// so the emitted statements compare the whole value against each table key
+	// and match nothing when it is an array. The scalar path is carried and the
+	// list path is not, which is exactly what partial means.
+	for _, r := range opts.Dialect.Rules() {
+		if len(r.Transform.Map) == 0 || !r.Transform.ToList {
+			continue
+		}
+		if key, ok := opts.Target.Key(r.Field); ok {
+			out = append(out, key)
+		}
+	}
 	sort.Strings(out)
 	return out
 }
@@ -413,8 +474,9 @@ func render(opts Options, carried, conformant, partial, unsupported, conds, stmt
 		p("#   out complete. A span of the second comes out missing the attribute")
 		p("#   entirely, with nothing on it to say so.")
 		p("#")
-		p("#   They are listed in interlingua.export.unsupported as well, because a")
-		p("#   consumer needs to treat them as absent-or-correct rather than trusted.")
+		p("#   They are listed in interlingua.export.unsupported as well. Being")
+		p("#   named here is not a weaker warning than being named there -- it is")
+		p("#   the same warning with a reason attached. Do not trust these.")
 		p("#")
 		for _, k := range partial {
 			p("#   %s", k)

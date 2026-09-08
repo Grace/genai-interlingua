@@ -54,6 +54,7 @@ func TestRegistryDefinesEveryAttributeWeWrite(t *testing.T) {
 		normalize.AttrLossyCount,
 		ottl.AttrExport,
 		ottl.AttrExportUnsupported,
+		ottl.AttrExportPartial,
 	}
 
 	for _, key := range written {

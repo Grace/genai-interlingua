@@ -159,6 +159,24 @@ jobs:
           ./demo/build/interlingua-collector components | tee /tmp/components.yaml
           grep -q 'name: genaiinterlingua' /tmp/components.yaml
 
+      # The emitted OTTL is checked twice, for two different things.
+      #
+      # validate.sh asks whether it parses. A generated config that has only
+      # ever been compared against a golden file has not been tested, it has
+      # been photographed.
+      #
+      # equivalence.sh asks the question that actually matters: run every
+      # fixture through the processor and through a Collector configured with
+      # the exported config, and see whether they agree. On its first run it
+      # found four real bugs -- a list wrapped twice, a lookup table that never
+      # fired on array values, an enum guard deleting attributes the processor
+      # preserves, and a header claiming coverage it did not have.
+      - name: the emitted OTTL parses
+        run: bash internal/emit/ottl/testdata/validate.sh
+
+      - name: the emitted OTTL means what the processor means
+        run: bash internal/emit/ottl/testdata/equivalence.sh
+
   release:
     name: release
     if: startsWith(github.ref, 'refs/tags/v')
