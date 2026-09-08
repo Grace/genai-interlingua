@@ -52,9 +52,11 @@ Two issue comments, on questions that asked for them, is a far lower bar than an
 OTEP and a much better fit. It is also the "file small useful patches first" step
 below — except the patches turn out to be the main contribution.
 
-Both are drafted in [`comments/`](comments/) and neither is posted, for the reason
-in step 3 below: watch a Tooling WG recording first, in case either was already
-settled in a meeting whose notes exist.
+**Both were posted on 2026-09-08**, along with a third on
+[collector-contrib#29289](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29289),
+where the OTTL iteration limit that the equivalence check turned up is an open
+design question with no concrete cases attached to it. All three are kept in
+[`comments/`](comments/) with what a reply to each would mean.
 
 ## Why 0001 still waits
 

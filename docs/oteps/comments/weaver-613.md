@@ -1,7 +1,9 @@
-# Draft comment for weaver#613
+# Comment on weaver#613
 
 *Formalize allowed transformations for V2.0 based on what weaver diff currently supports.*
-Not posted. Paste-ready.
+
+**Posted 2026-09-08** to <https://github.com/open-telemetry/weaver/issues/613>.
+Kept verbatim; revisions go in a reply on the thread, not here.
 
 ---
 

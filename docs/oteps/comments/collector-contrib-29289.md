@@ -1,6 +1,17 @@
-# Draft comment for collector-contrib#29289
+# Comment on collector-contrib#29289
 
-*[pkg/ottl] Determine approach to looping.* Not posted. Paste-ready.
+*[pkg/ottl] Determine approach to looping.*
+
+**Posted 2026-09-08** to
+<https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29289>.
+
+Everything below the horizontal rule is what went out, kept verbatim. If the
+thread prompts a revision it belongs in a reply there, not in an edit here -- a
+local copy quietly diverging from what was actually said is the failure this
+repository is about.
+
+The notes immediately below are why the comment is shaped as it is, and were not
+posted.
 
 The issue is open, labelled *discussion needed*, with no assignees, no comments and no linked
 PRs. Its body proposes four options and closes on "awaiting community input" — so it is a

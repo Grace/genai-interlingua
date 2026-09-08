@@ -1,6 +1,13 @@
-# Draft comment for weaver#614
+# Comment on weaver#614
 
-*Decide on a transformation language for migrations.* Not posted. Paste-ready.
+*Decide on a transformation language for migrations.*
+
+**Posted 2026-09-08** to <https://github.com/open-telemetry/weaver/issues/614>.
+Kept verbatim; revisions go in a reply on the thread, not here.
+
+Note the CEL paragraph below is the corrected one. An earlier draft claimed
+nothing measured bore on CEL, which was false -- the taxonomy is language-agnostic
+and the iteration gap is a discriminator. That correction was made before posting.
 
 ---
 

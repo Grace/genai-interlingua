@@ -1,52 +1,75 @@
-# Draft comments
+# Comments
 
-Two comments, drafted here and **not posted**, on issues in
-[`open-telemetry/weaver`](https://github.com/open-telemetry/weaver) that are open,
-unassigned, and explicitly asking for the kind of input this repository happens to have
-generated.
+Three of these are posted. One is held.
 
-| draft | target | asks |
+| | target | status |
 | --- | --- | --- |
-| [collector-contrib-29289.md](collector-contrib-29289.md) | [#29289](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29289) | How should OTTL handle looping? Open with no comments, no assignees, awaiting input. |
-| [weaver-613.md](weaver-613.md) | [#613](https://github.com/open-telemetry/weaver/issues/613) | Which transformations should a v2.0 schema format permit? |
-| [weaver-614.md](weaver-614.md) | [#614](https://github.com/open-telemetry/weaver/issues/614) | Which language should express them — custom definitions, OTTL, CEL, Lua? |
-| [spec-schemas-readme.md](spec-schemas-readme.md) | `opentelemetry-specification` | A Stable spec page still describes a publishing model OTEP 4815 discontinued. |
+| [collector-contrib-29289.md](collector-contrib-29289.md) | [#29289](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29289) — how should OTTL handle looping? | **posted 2026-09-08** |
+| [weaver-613.md](weaver-613.md) | [#613](https://github.com/open-telemetry/weaver/issues/613) — which transformations should a v2.0 schema format permit? | **posted 2026-09-08** |
+| [weaver-614.md](weaver-614.md) | [#614](https://github.com/open-telemetry/weaver/issues/614) — which language should express them? | **posted 2026-09-08** |
+| [spec-schemas-readme.md](spec-schemas-readme.md) | `opentelemetry-specification` — a Stable spec page still describes a publishing model OTEP 4815 discontinued | held; the "ask first" step is not done |
 
-**Post #29289 first if you post only one.** It is the only one of the four that supplies
-something nobody else has: a concrete failure from a shipping SDK, on a design question that
-has been open for a long time collecting options rather than cases. The others are analysis;
-that one is evidence.
+Each file keeps the posted text verbatim. A revision prompted by a thread belongs in a reply
+there, not in an edit here: a local copy quietly diverging from what was actually said is the
+failure this whole repository is about.
 
-They are drafted rather than posted for one reason: **watch a Tooling WG recording first.**
-The group meets Wednesdays 07:00 PT, the sessions are recorded, and both of these may already
-have been discussed in a meeting whose notes exist. Posting a measurement into a question
-somebody already answered is worse than posting nothing.
+## How they were written
 
-## What they are careful about
+The reusable part, and it now describes something that happened rather than an intention.
 
-Both are extraction, not new argument — every number comes from
-[`../../export-gap.md`](../export-gap.md), which regenerates from the rule tables and is
-checked by CI. Neither asks for anything.
+**The number that argues against the author got the most weight.** 76 of 120 gaps are readings
+of a span that no declarative format should attempt. It is the largest category and it argues
+for scoping V2.0 *narrowly* — not the conclusion someone with a normalizer to promote would
+reach, which is exactly why it leads.
 
-Three deliberate choices worth preserving if these get edited:
-
-**The number that argues against the author is given the most weight.** 76 of 120 gaps are
-readings of a span that no declarative format should attempt. That is the largest category
-and it is an argument for scoping V2.0 *narrowly* — which is not the conclusion someone with
-a normalizer to promote would reach.
-
-**What was measured is separated from what follows from it.** 614 says there is no coverage
+**What was measured is separated from what follows from it.** #614 says there is no coverage
 figure for CEL, because CEL was not run — and then says what *does* transfer: the taxonomy is
 a requirements list for any candidate, and the one case OTTL failed is one CEL's `map` macro
-handles natively, which is a genuine discriminator. Both halves matter. An earlier draft said
-"nothing measured bears on CEL", which was over-correction rather than rigour: it threw away a
-real finding to avoid the appearance of advocacy. The caveat that CEL's own spec advises
-implementations be able to disable macros is what keeps the corrected version from being
-advocacy in the other direction.
+handles natively. An earlier draft said "nothing measured bears on CEL", which was
+over-correction rather than rigour — it discarded a real finding to avoid looking like
+advocacy. The caveat that CEL's own spec advises implementations be able to disable macros is
+what keeps the corrected version from being advocacy in the other direction.
 
-**Neither pitches the repository.** It appears as a source for the numbers and nowhere else.
+**The ask is the smallest sufficient one.** #29289 asks for option 1, an editor with no
+language change, because that covers the case — and the issue author had already flagged the
+more general option 4 as "potentially overcomplicated". Asking for the smallest thing that
+works is the difference between a report and a wish.
 
-## If the reply is "we have this covered"
+**Nothing pitches the repository.** It appears as a source for numbers and nowhere else.
 
-That is a good outcome and costs one comment. The measurement stays useful here regardless,
-and knowing the answer is worth more than having contributed it.
+## What a reply would mean
+
+Written down now, so it is not decided retrospectively.
+
+**#29289 — the highest-signal thread.** It had four options and no decision, and no comments
+at all before this one. If a maintainer picks an option, that answers whether the list-mapping
+gap ever closes; if it is option 2 or 4, the `Map`-over-a-slice rule becomes exportable and
+`interlingua.export.partial` loses an entry. If anyone asks about the diff harness rather than
+the bug, that is the larger opening — a general method for finding this class of gap is worth
+more to them than one instance of it.
+
+**#613 and #614.** Engagement here is the standing that makes filing
+[0001](../0001-translation-provenance.md) reasonable later. The sequencing in
+[`../README.md`](../README.md) — ship, get users, comment on the problem, show up, small
+patches, then a proposal — is now through step four. 0001 stays unfiled until someone upstream
+has reason to know who wrote it.
+
+**Silence is a real outcome and is not a verdict.** These are old, quiet issues. #29289 sat
+without a single comment before this one. No reply means the thread is as dormant as it was,
+which is information about the thread rather than about the work.
+
+## One thing worth having straight
+
+Someone may reasonably ask whether this duplicates Weaver. It does not, and the distinction is
+clean.
+
+Weaver describes itself as "a set of tools for working with schematized telemetry", and every
+command operates on registries: `check`, `resolve`, `diff`, `generate`, `live-check`, `emit`.
+The two that touch live telemetry do not transform it — `live-check` validates an OTLP stream
+against a registry, `emit` generates examples from one.
+
+So Weaver tells you whether telemetry *conforms*; this repository makes non-conforming
+telemetry conform and records what that cost. They are complementary, and `live-check` is the
+natural consumer of a normalizer's output — normalize first, then live-check passes. Even
+after 4815 moved diffs to on-demand generation, `weaver registry diff` *produces* a diff that
+something else applies: Weaver sits upstream of transformation and is never the transformer.
