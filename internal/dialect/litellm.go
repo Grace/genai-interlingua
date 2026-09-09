@@ -235,7 +235,9 @@ func (liteLLM) messages(s Span, p *Parsed) {
 // metadata.* namespace is the proxy's own tenancy dimensions -- team ids, key
 // aliases, budgets -- which is exactly the sort of thing an operator wants and
 // the conventions have no slot for.
-func (liteLLM) losses(s Span, p *Parsed) {
+func (d liteLLM) losses(s Span, p *Parsed) {
+	defer p.sweepResidue(s, d, "litellm.", "gen_ai.", "llm.", "metadata.")
+
 	for _, k := range []string{
 		"llm.request.type",
 		"gen_ai.request.id",

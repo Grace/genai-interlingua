@@ -272,6 +272,10 @@ func (d openLLMetry) Parse(s Span) Parsed {
 	}
 	p.Set(semconv.ResponseFinishReasons, strSeq(reasons))
 
+	// traceloop. and llm. are this emitter's own namespaces; gen_ai. and openai.
+	// are the conventions' and the vendor extension it writes into them.
+	p.sweepResidue(s, d, "traceloop.", "llm.", "gen_ai.", "openai.")
+
 	return p
 }
 

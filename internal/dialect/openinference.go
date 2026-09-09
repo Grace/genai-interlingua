@@ -244,6 +244,8 @@ func (d openInference) Parse(s Span) Parsed {
 		}
 	}
 
+	p.sweepResidue(s, d, "openinference.", "llm.", "embedding.", "tool.", "tool_call.", "gen_ai.")
+
 	return p
 }
 

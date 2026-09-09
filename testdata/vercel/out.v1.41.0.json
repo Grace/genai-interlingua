@@ -446,6 +446,12 @@
                         },
                         {
                           "stringValue": "ai.settings.maxRetries"
+                        },
+                        {
+                          "stringValue": "ai.settings.temperature"
+                        },
+                        {
+                          "stringValue": "ai.settings.topP"
                         }
                       ]
                     }
@@ -454,7 +460,7 @@
                 {
                   "key": "interlingua.lossy.count",
                   "value": {
-                    "intValue": "5"
+                    "intValue": "7"
                   }
                 },
                 {
@@ -691,6 +697,12 @@
                         },
                         {
                           "stringValue": "ai.settings.maxRetries"
+                        },
+                        {
+                          "stringValue": "ai.settings.temperature"
+                        },
+                        {
+                          "stringValue": "ai.settings.topP"
                         }
                       ]
                     }
@@ -699,7 +711,7 @@
                 {
                   "key": "interlingua.lossy.count",
                   "value": {
-                    "intValue": "4"
+                    "intValue": "6"
                   }
                 },
                 {

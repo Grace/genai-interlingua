@@ -411,7 +411,9 @@ func (vercel) toolDefinitions(s Span, p *Parsed) {
 // room for. ai.request.headers.* is listed rather than mapped on purpose: the
 // conventions carry no request header attribute, and a provider's headers are
 // where its API key lives.
-func (vercel) losses(s Span, p *Parsed) {
+func (d vercel) losses(s Span, p *Parsed) {
+	defer p.sweepResidue(s, d, "ai.", "gen_ai.")
+
 	for _, k := range []string{
 		"ai.settings.maxRetries",
 		"ai.response.timestamp",

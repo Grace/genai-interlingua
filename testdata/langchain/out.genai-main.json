@@ -163,6 +163,24 @@
                           "stringValue": "gen_ai.provider.name"
                         },
                         {
+                          "stringValue": "gen_ai.task.id"
+                        },
+                        {
+                          "stringValue": "gen_ai.task.input"
+                        },
+                        {
+                          "stringValue": "gen_ai.task.name"
+                        },
+                        {
+                          "stringValue": "gen_ai.task.output"
+                        },
+                        {
+                          "stringValue": "gen_ai.task.parent.id"
+                        },
+                        {
+                          "stringValue": "gen_ai.task.status"
+                        },
+                        {
                           "stringValue": "traceloop.entity.input"
                         },
                         {
@@ -184,7 +202,7 @@
                 {
                   "key": "interlingua.lossy.count",
                   "value": {
-                    "intValue": "6"
+                    "intValue": "12"
                   }
                 },
                 {
@@ -643,6 +661,15 @@
                           "stringValue": "gen_ai.provider.name"
                         },
                         {
+                          "stringValue": "gen_ai.task.input"
+                        },
+                        {
+                          "stringValue": "gen_ai.task.output"
+                        },
+                        {
+                          "stringValue": "gen_ai.task.status"
+                        },
+                        {
                           "stringValue": "traceloop.entity.input"
                         },
                         {
@@ -661,7 +688,7 @@
                 {
                   "key": "interlingua.lossy.count",
                   "value": {
-                    "intValue": "5"
+                    "intValue": "8"
                   }
                 },
                 {

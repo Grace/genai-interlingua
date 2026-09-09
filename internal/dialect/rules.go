@@ -260,3 +260,75 @@ func (p *Parsed) applyRules(s Span, rules []Rule) {
 		}
 	}
 }
+
+// sweepResidue names every attribute under a namespace this dialect claims that
+// it neither read nor already reported as a loss.
+//
+// It exists because of a gap an adversarial review found, and the gap is worse
+// than it sounds. Every dialect except the raw fallback reports losses from a
+// hand-written list of keys its author already knew about. That makes
+// interlingua.lossy a count of losses the translator has been *taught to name*,
+// not a count of what the span actually lost -- and interlingua.lossy.count = 0
+// therefore means "I recognized none of the things I know I drop", which is
+// exactly the "nobody checked" that writing the zero was supposed to be
+// distinguishable from.
+//
+// docs/findings.md records this happening: OpenLLMetry emitted four attributes
+// the parser walked past in silence, including a reasoning token count whose
+// name was one path segment short of the conventions'. Every span in that
+// window carried a loss list that understated the loss, and the attribute whose
+// whole job is to say "this span is not a faithful carrier of X" said it was
+// faithful.
+//
+// The fallback dialect had this right and the five purpose-built ones did not,
+// which is an embarrassing way round for it to be.
+//
+// A key found here is reported as ReasonNoField rather than something new. The
+// distinction between "the conventions have no word for this" and "this
+// implementation has not learned the word yet" is real and worth having, but it
+// is not one the span can carry honestly: from inside the translator the two
+// are indistinguishable, which is the whole point.
+func (p *Parsed) sweepResidue(s Span, d Ruled, namespaces ...string) {
+	known := make(map[string]bool)
+	for _, r := range d.Rules() {
+		for _, k := range r.Keys {
+			known[k] = true
+		}
+	}
+
+	for _, k := range s.Keys() {
+		claimed := false
+		for _, ns := range namespaces {
+			if strings.HasPrefix(k, ns) {
+				claimed = true
+				break
+			}
+		}
+		if !claimed {
+			continue
+		}
+		// Lose appends to Consumed as well as Loss, so a key already reported
+		// as lost is already covered here and is not named twice.
+		if slicesContains(p.Consumed, k) {
+			continue
+		}
+		// A key some target defines is not residue, even when this dialect did
+		// not read it. It is either an attribute this emitter wrote in the
+		// conventions' own vocabulary -- which is increasingly the normal case
+		// as emitters converge -- or one another dialect handles. Reporting it
+		// as "not an attribute the conventions define" would be false, and a
+		// loss list that names conformant attributes is worse than one that is
+		// merely short.
+		if _, ok := semconv.FieldForKey(k); ok {
+			continue
+		}
+		// A key this dialect's own rules name is not residue either. It was
+		// passed over because a higher-precedence spelling of the same fact won,
+		// which is redundancy rather than an unknown attribute -- the emitter
+		// wrote the same thing twice and one of them was read.
+		if known[k] {
+			continue
+		}
+		p.Lose(k, ReasonNoField, "not an attribute the conventions define at any version")
+	}
+}

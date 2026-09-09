@@ -258,7 +258,9 @@ func (braintrust) scores(s Span, p *Parsed) {
 // function took and returned, which is a message list only when the traced
 // function happened to be a model call, and gen_ai.input.messages is read above
 // for the case where Braintrust knew it was one.
-func (braintrust) losses(s Span, p *Parsed) {
+func (d braintrust) losses(s Span, p *Parsed) {
+	defer p.sweepResidue(s, d, "braintrust.", "gen_ai.")
+
 	for _, k := range []string{
 		"braintrust.input",
 		"braintrust.input_json",
