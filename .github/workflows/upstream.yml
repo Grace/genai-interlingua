@@ -23,7 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      # v7 rather than the newer v10: setup-uv publishes floating major tags
+      # only through v7, and v8 onwards exist solely as exact patch tags. v7 is
+      # already node24, which is the whole requirement, and staying on a major
+      # keeps it patched and consistent with the other three actions here.
+      - uses: astral-sh/setup-uv@v7
 
       # Re-vendor into a scratch copy and compare. The committed files stay
       # pinned: the point is to notice movement, and a job that silently
