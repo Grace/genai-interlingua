@@ -13,3 +13,10 @@ Apache License, Version 2.0:
 They are vendored verbatim, converted to JSON, under
 internal/semconv/testdata/upstream/. Each file records the upstream repository
 and the commit it was taken from in its own _source block.
+
+The WebAssembly build published at grace.github.io/demos/genai-interlingua
+redistributes the Go runtime and the toolchain's wasm_exec.js shim, Copyright
+The Go Authors, under a BSD 3-Clause license. Where this NOTICE sits beside that
+build, the text is in LICENSE.go -- which is the file wasm_exec.js means when its
+own header says its license "can be found in the LICENSE file", the LICENSE
+beside it being Apache 2.0 and not the one it is referring to.

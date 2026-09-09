@@ -52,6 +52,40 @@ if [ -z "${exec_copied:-}" ]; then
   exit 1
 fi
 
+# What is deployed is a binary, and a binary carries no terms on its face. Apache
+# 2.0 section 4 asks that a copy of the license and the NOTICE travel with a work
+# distributed in object form, and the blog repository is where this one is
+# distributed from. Copying them here rather than placing them by hand once means
+# they cannot drift from the license this repository actually carries -- which is
+# the same reason this script exists at all.
+echo "copying LICENSE and NOTICE"
+cp LICENSE "$OUT/LICENSE"
+cp NOTICE "$OUT/NOTICE"
+
+# wasm_exec.js says its license "can be found in the LICENSE file", meaning Go's,
+# and next to a LICENSE that is Apache 2.0 that sentence points at the wrong file.
+# So Go's BSD-3-Clause goes beside it under a name that says whose it is, and the
+# NOTICE above names it. The runtime linked into the .wasm is under the same terms,
+# so this would be owed even if the shim were not here.
+#
+# It sits at $GOROOT/LICENSE on a stock install and one level up on Homebrew,
+# whose GOROOT points into libexec. Both are tried, and a miss is fatal rather
+# than a warning: shipping the shim without its terms is the thing being fixed.
+for candidate in "$GOROOT/LICENSE" "$GOROOT/../LICENSE"; do
+  if [ -f "$candidate" ]; then
+    echo "copying Go's LICENSE from $(go version | cut -d' ' -f3)"
+    cp "$candidate" "$OUT/LICENSE.go"
+    go_license_copied=1
+    break
+  fi
+done
+if [ -z "${go_license_copied:-}" ]; then
+  echo "could not find Go's LICENSE under $GOROOT or its parent" >&2
+  echo "wasm_exec.js and the runtime in the .wasm are BSD-3-Clause and cannot be" >&2
+  echo "redistributed without it, so this is fatal rather than a warning." >&2
+  exit 1
+fi
+
 # The binary's size is set by the Go toolchain far more than by this code. The
 # copy deployed in September 2026 was 3.6M from go1.25.0; the same source under
 # go1.27.1 is 4.7M, and a build of the tree from *before* that month's work is
@@ -60,6 +94,7 @@ fi
 # looking for one.
 echo
 echo "built:"
-ls -lh "$OUT/genai-interlingua.wasm" "$OUT/wasm_exec.js" | awk '{print "  " $9 "  " $5}'
+ls -lh "$OUT/genai-interlingua.wasm" "$OUT/wasm_exec.js" \
+       "$OUT/LICENSE" "$OUT/NOTICE" "$OUT/LICENSE.go" | awk '{print "  " $9 "  " $5}'
 echo
 echo "the .wasm is committed to the blog repository, so commit it there."
