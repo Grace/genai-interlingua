@@ -14,9 +14,9 @@ jobs:
     name: core module
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
           # The core module has no go.sum because it has no dependencies.
@@ -117,11 +117,11 @@ jobs:
       run:
         working-directory: processor/genaiinterlingua
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Its own go.mod, because the processor needs the Collector's Go floor
       # (1.26) and the core module deliberately does not.
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: processor/genaiinterlingua/go.mod
           cache-dependency-path: processor/genaiinterlingua/go.sum
@@ -149,9 +149,9 @@ jobs:
     env:
       GOTOOLCHAIN: auto
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: processor/genaiinterlingua/go.mod
           cache-dependency-path: processor/genaiinterlingua/go.sum
@@ -195,18 +195,18 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # goreleaser builds the changelog from history, and a shallow clone
           # has none.
           fetch-depth: 0
 
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
           cache: false
 
-      - uses: goreleaser/goreleaser-action@v7
+      - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           version: "~> v2"
           args: release --clean

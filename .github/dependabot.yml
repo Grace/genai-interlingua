@@ -1,0 +1,41 @@
+# Every action in .github/workflows/ is pinned to a commit SHA rather than to a
+# floating major tag, because a tag is a mutable pointer: it resolves to
+# whatever commit it names at the moment a job starts, and whoever controls the
+# action's repository can move it. That is not hypothetical -- the
+# tj-actions/changed-files compromise in March 2025 worked by retagging existing
+# version tags to a commit that dumped runner memory into public build logs.
+# Every repository pinned to a tag ran it; every repository pinned to a SHA did
+# not.
+#
+# A SHA never moves, which is the point and also the problem: patches stop
+# arriving, including security fixes to the action itself, and a pin nobody
+# updates rots into its own liability. So this file exists to make the pinning
+# sustainable rather than a slow decay. Without it, the SHAs above are a
+# decision made once and then never revisited, which is worse than floating
+# tags rather than better.
+#
+# The trade is not safety against risk. It is which update path is trusted: a
+# tag updates instantly and invisibly, a pin updates as a pull request with a
+# diff and a changelog to read. Nothing about what CI executes changes without
+# a commit in this repository. That is the same argument this repository makes
+# about telemetry, applied to its own build.
+#
+# The `# vX.Y.Z` comment beside each SHA is load-bearing, not decoration:
+# Dependabot reads it to know the current version, and updates both together.
+
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    # Grouped so a week that bumps three actions is one pull request to review
+    # rather than three. The whole cost of this approach is the reviewing, so
+    # it is worth keeping small.
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "ci"
