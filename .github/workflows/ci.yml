@@ -14,9 +14,9 @@ jobs:
     name: core module
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           # The core module has no go.sum because it has no dependencies.
@@ -117,11 +117,11 @@ jobs:
       run:
         working-directory: processor/genaiinterlingua
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Its own go.mod, because the processor needs the Collector's Go floor
       # (1.26) and the core module deliberately does not.
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: processor/genaiinterlingua/go.mod
           cache-dependency-path: processor/genaiinterlingua/go.sum
@@ -138,10 +138,20 @@ jobs:
   collector:
     name: collector builds
     runs-on: ubuntu-latest
+    # setup-go v6 began setting GOTOOLCHAIN=local, which forbids Go from ever
+    # fetching a toolchain. That is the right default for the other two jobs,
+    # which build modules whose go directives this repository writes. It is the
+    # wrong one here: ocb *generates* a module below and fills it with Collector
+    # dependencies whose own go directives are not ours to control, so one of
+    # them asking for a newer toolchain would turn a download into a build
+    # failure. auto is what setup-go v5 did, and this keeps it rather than
+    # letting a runtime bump change what the job means.
+    env:
+      GOTOOLCHAIN: auto
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: processor/genaiinterlingua/go.mod
           cache-dependency-path: processor/genaiinterlingua/go.sum
@@ -185,18 +195,18 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # goreleaser builds the changelog from history, and a shallow clone
           # has none.
           fetch-depth: 0
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: false
 
-      - uses: goreleaser/goreleaser-action@v6
+      - uses: goreleaser/goreleaser-action@v7
         with:
           version: "~> v2"
           args: release --clean
