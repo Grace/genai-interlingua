@@ -28,24 +28,53 @@ licenses in this repository's history.
 
 ## Grant
 
-You keep the copyright in your contribution.
+You keep the copyright in your contribution. Nothing here asks you to assign it,
+and nothing here asks for terms beyond the license the repository already
+carries. [Apache 2.0](LICENSE) settles it in section 5:
 
-By submitting a contribution, you grant the copyright holder identified in
-[LICENSE](LICENSE) a perpetual, worldwide, non-exclusive, irrevocable,
-royalty-free, sublicensable and transferable license to use, reproduce, modify,
-prepare derivative works of, publicly display, distribute and relicense that
-contribution, in whole or in part, **under any license terms and as part of any
-product**.
+> Unless You explicitly state otherwise, any Contribution intentionally
+> submitted for inclusion in the Work by You to the Licensor shall be under the
+> terms and conditions of this License, without any additional terms or
+> conditions.
 
-That last clause is doing real work and is stated plainly rather than buried.
-The concrete reason it is here: parts of this repository are intended to be
-proposed upstream to
+That is the whole of the inbound grant. Contributions arrive under Apache 2.0
+and are used under Apache 2.0.
+
+An earlier version of this section asked for considerably more: a sublicensable,
+transferable right to relicense any contribution "under any license terms and as
+part of any product". That is a reasonable thing to ask when there is a closed
+product for contributions to end up in. There is not one here, and there is not
+going to be, so the clause was buying nothing and costing something. It is
+recorded rather than quietly deleted, because a contributor comparing this file
+against its history should be able to see that a demand was dropped rather than
+wonder whether they had missed it.
+
+Section 5 has a second sentence — that nothing in it supersedes "any separate
+license agreement you may have executed with Licensor". No such agreement
+exists for this repository, and the sign-off above is not one. The DCO certifies
+provenance, not extra terms.
+
+## Upstreaming
+
+Parts of this repository are intended to be proposed to
 [`opentelemetry-collector-contrib`](https://github.com/open-telemetry/opentelemetry-collector-contrib)
-and to the OpenTelemetry semantic conventions, which means a contribution made
-here may end up submitted there, under that project's own license and CLA, with
-the OpenTelemetry Authors named as copyright holder rather than you. If that is
-unacceptable to you, do not contribute. That is a reasonable position and no
-argument will be made against it.
+and to the OpenTelemetry semantic conventions.
+[`docs/upstream.md`](docs/upstream.md) is the ledger.
+
+This needs no special grant from you. Contrib is Apache 2.0 and so is this
+repository, so a contribution made here is already in the right terms to go
+there.
+
+What it does need is a signature that is yours. OpenTelemetry requires every
+contributor to sign the Linux Foundation CLA, and that signature carries
+representations about the code being submitted. So if something you wrote is
+headed upstream, you will either send it yourself under your own CLA, or be
+asked first. Your work will not be forwarded under somebody else's signature
+because a file in this repository said it could be.
+
+Upstreaming does not move your copyright either. Files in contrib carry a
+`Copyright The OpenTelemetry Authors` header as a project convention; it is not
+an assignment, and neither Apache 2.0 nor anything here transfers what you hold.
 
 ## Practical rules
 
@@ -73,6 +102,19 @@ argument will be made against it.
 
 ## Not legal advice
 
-This document was drafted without a lawyer. Before the first external
-contribution is accepted, it — and the Apache 2.0 relicense it sits on top of —
-should be reviewed by one.
+This document was drafted without a lawyer, so it is worth being precise about
+which parts of it that actually bears on.
+
+Not the license. Apache 2.0 is used here verbatim, with only the appendix
+boilerplate filled in, and it is the most heavily reviewed permissive license in
+existence. Not the relicense from MIT either: this repository has one copyright
+holder, and a sole holder may relicense their own work. Both are settled, and a
+later reader should not spend time re-opening them.
+
+What is left is the interaction between section 5 and an upstream project that
+requires a CLA — specifically, whether the sublicense right section 5 conveys
+would be enough for the representations the Linux Foundation CLA asks of someone
+submitting code they did not write. The Upstreaming section above is written so
+that this question does not need an answer: contributions go upstream under
+their own author's signature. If that practice is ever departed from, this is
+the point that needs an opinion first.
