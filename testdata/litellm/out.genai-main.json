@@ -507,6 +507,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.hops",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
                   "key": "interlingua.lossy",
                   "value": {
                     "arrayValue": {

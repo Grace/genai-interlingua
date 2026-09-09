@@ -23,6 +23,12 @@ attributes:
       produced it -- almost none do -- so it was identified by scoring the
       evidence its attributes carry. Read it together with
       `interlingua.dialect.confidence`, which says how clear-cut that was.
+
+      Written once and never rewritten. A second translation is looking at this
+      tool's own output, where the only surviving evidence of the original
+      emitter is what the first pass recorded; re-detecting there answers "what
+      does normalized output look like", which is a different question, and
+      answers it `raw`.
     examples: ["openllmetry", "openinference", "vercel", "litellm", "braintrust", "raw"]
 
   - key: interlingua.dialect.confidence
@@ -64,6 +70,11 @@ attributes:
       translator declined to resolve by guessing. The source attributes
       themselves are preserved on the span by default, so this list is a pointer
       to what to go and read, not an epitaph.
+
+      A span translated more than once carries the union across passes rather
+      than the last pass's list. A key the first translation could not carry did
+      not become carryable by being looked at again, and a later pass that
+      happened to lose nothing must not report that this span lost nothing.
     examples:
       - ["gen_ai.usage.total_tokens", "gen_ai.prompt.version"]
 
@@ -78,6 +89,30 @@ attributes:
       backend that will not aggregate over an array will happily aggregate over
       this.
     examples: [0, 5]
+
+  - key: interlingua.hops
+    type: int
+    stability: development
+    brief: How many times this span has been translated.
+    note: >
+      One on a span normalized once, and it is written on every span rather than
+      only on re-translated ones, because absent-means-one is a rule every
+      reader would have to know. A value above one is usually a mistake worth
+      finding -- the same normalizer installed at the edge and again at ingest
+      -- and this is the attribute that makes it findable.
+
+      It is an integer, and the alternative was an array of per-hop records
+      saying where each translation came from and what it cost. That design was
+      measured and dropped: every backend checked stores an array-valued
+      attribute as an opaque string, including for the conventions' own
+      `gen_ai.input.messages` and `gen_ai.response.finish_reasons`, so a chain
+      would arrive somewhere it could not be grouped by, filtered into, or
+      counted. What a chain was for is covered instead by three rules --
+      re-normalizing to the same target does nothing, `interlingua.dialect` is
+      written once and never rewritten, and `interlingua.lossy` merges across
+      passes rather than replacing -- none of which needs an attribute to hold
+      it.
+    examples: [1, 2]
 
   - key: interlingua.export
     type: string

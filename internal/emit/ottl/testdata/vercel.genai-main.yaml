@@ -71,6 +71,15 @@
 #    from what a given span turned out to carry. What is emitted instead is
 #    interlingua.export.unsupported: the same statement made structurally,
 #    about the config rather than about the span.
+#
+# 3. It is not idempotent the way the processor is. The processor leaves a
+#    span alone entirely once it already carries the requested target; the
+#    transform processor ORs the conditions below, so there is no config
+#    scoped way to express "and not already done" without repeating the
+#    guard on every statement. What that costs is bounded on purpose:
+#    interlingua.dialect is guarded and will not be overwritten, and
+#    interlingua.hops counts up, so a span through this config twice says
+#    2 rather than quietly looking like a span through it once.
 
 processors:
   transform/interlingua_vercel:
@@ -147,8 +156,10 @@ processors:
           - set(attributes["gen_ai.tool.call.id"], attributes["ai.toolCall.id"]) where attributes["ai.toolCall.id"] != nil
           - set(attributes["gen_ai.tool.call.arguments"], attributes["ai.toolCall.args"]) where attributes["ai.toolCall.args"] != nil
           - set(attributes["gen_ai.tool.call.result"], attributes["ai.toolCall.result"]) where attributes["ai.toolCall.result"] != nil
-          - set(attributes["interlingua.dialect"], "vercel")
+          - set(attributes["interlingua.dialect"], "vercel") where attributes["interlingua.dialect"] == nil
           - set(attributes["interlingua.target"], "genai-main")
+          - set(attributes["interlingua.hops"], attributes["interlingua.hops"] + 1) where attributes["interlingua.hops"] != nil
+          - set(attributes["interlingua.hops"], 1) where attributes["interlingua.hops"] == nil
           - set(attributes["interlingua.export"], "ottl")
           - set(attributes["interlingua.export.unsupported"], ["gen_ai.input.messages", "gen_ai.output.messages", "gen_ai.response.finish_reasons", "gen_ai.system_instructions", "gen_ai.tool.definitions"])
           - set(attributes["interlingua.export.partial"], ["gen_ai.response.finish_reasons"])

@@ -61,6 +61,15 @@
 #    from what a given span turned out to carry. What is emitted instead is
 #    interlingua.export.unsupported: the same statement made structurally,
 #    about the config rather than about the span.
+#
+# 3. It is not idempotent the way the processor is. The processor leaves a
+#    span alone entirely once it already carries the requested target; the
+#    transform processor ORs the conditions below, so there is no config
+#    scoped way to express "and not already done" without repeating the
+#    guard on every statement. What that costs is bounded on purpose:
+#    interlingua.dialect is guarded and will not be overwritten, and
+#    interlingua.hops counts up, so a span through this config twice says
+#    2 rather than quietly looking like a span through it once.
 
 processors:
   transform/interlingua_braintrust:
@@ -79,8 +88,10 @@ processors:
           - set(attributes["gen_ai.usage.input_tokens"], attributes["gen_ai.usage.prompt_tokens"]) where attributes["gen_ai.usage.input_tokens"] == nil and attributes["gen_ai.usage.prompt_tokens"] != nil
           - set(attributes["gen_ai.usage.output_tokens"], attributes["gen_ai.usage.completion_tokens"]) where attributes["gen_ai.usage.output_tokens"] == nil and attributes["gen_ai.usage.completion_tokens"] != nil
           - set(attributes["gen_ai.tool.definitions"], attributes["gen_ai.agent.tools"]) where attributes["gen_ai.agent.tools"] != nil
-          - set(attributes["interlingua.dialect"], "braintrust")
+          - set(attributes["interlingua.dialect"], "braintrust") where attributes["interlingua.dialect"] == nil
           - set(attributes["interlingua.target"], "v1.41.0")
+          - set(attributes["interlingua.hops"], attributes["interlingua.hops"] + 1) where attributes["interlingua.hops"] != nil
+          - set(attributes["interlingua.hops"], 1) where attributes["interlingua.hops"] == nil
           - set(attributes["interlingua.export"], "ottl")
           - set(attributes["interlingua.export.unsupported"], ["gen_ai.evaluation.name", "gen_ai.evaluation.score.value", "gen_ai.operation.name", "gen_ai.usage.cache_read.input_tokens", "gen_ai.usage.input_tokens", "gen_ai.usage.output_tokens", "gen_ai.usage.reasoning.output_tokens"])
           - set(attributes["interlingua.export.partial"], ["gen_ai.operation.name", "gen_ai.usage.input_tokens", "gen_ai.usage.output_tokens"])

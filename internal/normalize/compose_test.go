@@ -12,11 +12,19 @@ import (
 // ends up in it twice; somebody re-processes an archive against a newer target.
 // None of that is exotic and all of it is invisible in the result.
 //
-// These tests characterize what this package currently does about that, which
-// is nothing, and they are written to fail once it does something. They assert
-// the defect rather than the requirement, and the comment on each says which is
-// which, because a test that pins wrong behaviour without saying so is worse
-// than no test.
+// These tests used to characterize what this package did about that, which was
+// nothing, and were written to fail once it did something. They now assert the
+// requirement instead of the defect, and each one says what it used to claim,
+// because the history is the argument: this repository found the failure in
+// itself before anybody else had to.
+//
+// Three rules make it hold, and none of them is a chain of per-hop records. A
+// span already at the requested target is left alone. The dialect is written
+// once and never rewritten. The loss list merges rather than replaces. One
+// integer, interlingua.hops, says how many times it happened -- an integer
+// because every backend measured stores an array attribute as an opaque
+// string, so a list of hop records would be unqueryable exactly where it would
+// be read.
 
 // hop runs one normalization over a payload and returns the output, so the
 // tests below read as a pipeline rather than as plumbing.
@@ -71,22 +79,21 @@ func attrsOf(t *testing.T, data []byte, spanName string) map[string]any {
 	return nil
 }
 
-// TestSecondHopErasesTheFirst is the defect, and it is the sharpest thing in
-// this repository's favour precisely because it is against it.
+// TestSecondHopKeepsTheFirstHopsRecord was TestSecondHopErasesTheFirst, and the
+// rename is the point of the file.
 //
-// Normalize an OpenLLMetry span to v1.41.0 with originals stripped, then
-// normalize that output to genai-main. After the second hop the span says it
-// was emitted by "raw" and that it lost nothing. Both are false: it came from
-// OpenLLMetry, and three attributes were dropped one hop earlier.
+// It used to assert the defect. Normalize an OpenLLMetry span to v1.41.0 with
+// originals stripped, then normalize that output to genai-main, and the span
+// came out claiming it was emitted by "raw" and that it had lost nothing. Both
+// were false: it came from OpenLLMetry, and three attributes were dropped one
+// hop earlier. The span carried a clean bill of health it had not earned, which
+// is exactly the failure this repository exists to name, committed by this
+// repository.
 //
-// The span now carries a clean bill of health it did not earn. That is exactly
-// the failure this repository exists to name -- a translation layer that drops
-// data silently is worse than no translation layer, because you will trust the
-// result -- and it is committed here, by this code, today.
-//
-// WHEN THE FIX LANDS THIS TEST INVERTS. The diff on this file is the proof that
-// the chain works, so it is kept and rewritten rather than deleted.
-func TestSecondHopErasesTheFirst(t *testing.T) {
+// The fix is not a chain of per-hop records. It is two rules -- the dialect is
+// written once and never rewritten, and the loss list merges rather than
+// replaces -- plus an integer saying how many times this happened.
+func TestSecondHopKeepsTheFirstHopsRecord(t *testing.T) {
 	in := mustReadFile(t, testdata+"/openllmetry/in.json")
 
 	first := hop(t, in, semconv.TargetV1_41_0, false)
@@ -95,64 +102,91 @@ func TestSecondHopErasesTheFirst(t *testing.T) {
 	a1 := attrsOf(t, first, "openai.chat")
 	a2 := attrsOf(t, second, "openai.chat")
 
-	// After one hop, the record is accurate.
 	if got, want := a1[AttrDialect], "openllmetry"; got != want {
 		t.Fatalf("hop 1 dialect = %v, want %v", got, want)
 	}
-	if got := a1[AttrLossyCount].(int64); got == 0 {
+	firstLosses := a1[AttrLossyCount].(int64)
+	if firstLosses == 0 {
 		t.Fatalf("hop 1 recorded no losses; this fixture is supposed to have some")
 	}
-	firstLosses := a1[AttrLossyCount].(int64)
 
-	// After two, it is not. Both assertions below are the defect.
-	if got, want := a2[AttrDialect], "raw"; got != want {
-		t.Errorf("DEFECT CHANGED: hop 2 dialect = %v, expected the defective %v."+
-			"\n    If a fix landed, this test should be rewritten to assert the chain"+
-			"\n    preserves openllmetry as the first hop's source.", got, want)
-	}
-	if got := a2[AttrLossyCount].(int64); got != 0 {
-		t.Errorf("DEFECT CHANGED: hop 2 lossy count = %d, expected the defective 0."+
-			"\n    If a fix landed, this should now be >= %d, because the first hop's"+
-			"\n    losses are part of this span's history and did not stop being true.",
-			got, firstLosses)
+	// The emitter is a fact about where the data came from. Translating it
+	// again does not make it have come from somewhere else, and the second pass
+	// has no evidence of it beyond what the first pass wrote down.
+	if got, want := a2[AttrDialect], "openllmetry"; got != want {
+		t.Errorf("hop 2 dialect = %v, want %v -- the second pass re-detected from"+
+			"\n    normalized output instead of keeping the first pass's answer", got, want)
 	}
 
-	// This part is FIXED and is asserted as a requirement rather than pinned as
-	// a defect. It used to be the sharpest failure of the three: the count is
-	// written on every hop including when zero, the array only when non-empty,
-	// so a second hop that lost nothing overwrote the count with 0 and left the
-	// first hop's array in place. The span reported losing nothing while naming
-	// three things it lost.
-	//
-	// A span that contradicts itself is worse than one that is merely
-	// incomplete. Each pass now clears the attributes it is not writing, so the
-	// count and the list always agree.
-	stale, hasArray := a2[AttrLossy].([]string)
-	if hasArray {
-		t.Errorf("REGRESSION: hop 2 carries a stale %s from hop 1: %v"+
-			"\n    Each pass must clear the interlingua.* attributes it is not writing,"+
-			"\n    or the span reports one thing in the count and another in the list.",
-			AttrLossy, stale)
+	// A key the first hop could not carry did not become carryable by being
+	// looked at a second time.
+	if got := a2[AttrLossyCount].(int64); got < firstLosses {
+		t.Errorf("hop 2 lossy count = %d, want >= %d: the first hop's losses are part"+
+			"\n    of this span's history and did not stop being true", got, firstLosses)
 	}
-	if got := a2[AttrLossyCount].(int64); got != 0 {
-		t.Errorf("REGRESSION: %s = %d with no %s array; they must agree", AttrLossyCount, got, AttrLossy)
+
+	// The count and the list are written by different rules, so they are
+	// checked against each other rather than each against a constant. This is
+	// the assertion that caught the original self-contradiction: a count of 0
+	// sitting beside a three-element list.
+	list, _ := a2[AttrLossy].([]string)
+	if got := int(a2[AttrLossyCount].(int64)); got != len(list) {
+		t.Errorf("%s = %d but %s has %d entries; they must agree",
+			AttrLossyCount, got, AttrLossy, len(list))
+	}
+	for _, k := range a1[AttrLossy].([]string) {
+		if !containsString(list, k) {
+			t.Errorf("hop 2 dropped %q from the loss list; the merge is not a merge", k)
+		}
+	}
+
+	if got, want := a2[AttrHops].(int64), int64(2); got != want {
+		t.Errorf("%s = %d after two translations, want %d", AttrHops, got, want)
 	}
 }
 
-// TestPreservingOriginalsHidesItRatherThanFixingIt is the same defect wearing a
-// disguise, and it is worth pinning separately because the disguise is the
-// default configuration.
+// TestRenormalizingToTheSameTargetIsANoOp is the cheaper half of the fix and
+// covers the case that actually happens.
 //
-// With originals preserved, the second hop re-detects the original emitter from
-// the surviving ai.*/traceloop.* attributes and redoes the whole translation
-// from scratch. The output looks right. But it is repetition rather than
-// composition, and the consequence is that a span translated once and a span
-// translated twice are byte-identical: nothing records how many times the data
-// was rewritten, or through what path.
+// Nobody deliberately translates v1.41.0 output to genai-main. What happens in
+// practice is the same normalization running twice: a collector normalizes at
+// the edge and a backend normalizes again at ingest, a spooled payload is
+// replayed after a restart, a pipeline is rebuilt with the processor in it
+// twice. All of those ask for a target the span already has, and the honest
+// amount of work to do is none.
 //
-// It looks harmless here only because both hops happen to reach the same
-// answer. Change either target and they do not.
-func TestPreservingOriginalsHidesItRatherThanFixingIt(t *testing.T) {
+// Byte-identical rather than attribute-equal, because a no-op that reorders
+// attributes or bumps a counter is not a no-op.
+func TestRenormalizingToTheSameTargetIsANoOp(t *testing.T) {
+	in := mustReadFile(t, testdata+"/openllmetry/in.json")
+
+	for _, preserve := range []bool{true, false} {
+		once := hop(t, in, semconv.TargetGenAIMain, preserve)
+		twice := hop(t, once, semconv.TargetGenAIMain, preserve)
+
+		if string(once) != string(twice) {
+			t.Errorf("preserve=%v: normalizing to the same target twice changed the span;"+
+				"\n    a span that already carries this target has arrived", preserve)
+		}
+		if got, want := attrsOf(t, twice, "openai.chat")[AttrHops].(int64), int64(1); got != want {
+			t.Errorf("preserve=%v: %s = %d, want %d -- a pass that did nothing counted itself",
+				preserve, AttrHops, got, want)
+		}
+	}
+}
+
+// TestHopsDistinguishesOneTranslationFromTwo was
+// TestPreservingOriginalsHidesItRatherThanFixingIt, which pinned the complaint
+// that a span translated once and a span translated twice were byte-identical:
+// nothing recorded how many times the data had been rewritten.
+//
+// With originals preserved the second hop can re-derive everything from the
+// surviving traceloop.* attributes, so it reaches the same answer by
+// repetition. That is not a problem in itself -- the answer is right -- but a
+// consumer could not tell the two apart, and "this span went through two
+// translations" is a thing an operator wants to be able to query. It is one
+// integer, and it is a column rather than a blob.
+func TestHopsDistinguishesOneTranslationFromTwo(t *testing.T) {
 	in := mustReadFile(t, testdata+"/openllmetry/in.json")
 
 	once := hop(t, in, semconv.TargetGenAIMain, true)
@@ -161,17 +195,29 @@ func TestPreservingOriginalsHidesItRatherThanFixingIt(t *testing.T) {
 	a1 := attrsOf(t, once, "openai.chat")
 	a2 := attrsOf(t, twice, "openai.chat")
 
-	if a1[AttrDialect] != a2[AttrDialect] ||
-		a1[AttrTarget] != a2[AttrTarget] ||
-		a1[AttrLossyCount] != a2[AttrLossyCount] {
-		t.Errorf("DEFECT CHANGED: one hop and two hops now differ, which means something"+
-			"\n    records the difference.\n    once:  %v\n    twice: %v", a1, a2)
+	// Everything a consumer queries on still agrees, which is why the hop count
+	// has to be the thing that differs.
+	if a1[AttrDialect] != a2[AttrDialect] || a1[AttrTarget] != a2[AttrTarget] {
+		t.Errorf("one hop and two hops disagree about provenance"+
+			"\n    once:  %v / %v\n    twice: %v / %v",
+			a1[AttrDialect], a1[AttrTarget], a2[AttrDialect], a2[AttrTarget])
 	}
 
-	// Stated as its own assertion because it is the whole point: these two
-	// spans had different histories and the telemetry cannot tell them apart.
-	if _, ok := a2["interlingua.translations"]; ok {
-		t.Errorf("DEFECT CHANGED: a translation chain exists; rewrite this test to assert" +
-			"\n    that two hops produce two records and one hop produces one.")
+	if got, want := a1[AttrHops].(int64), int64(1); got != want {
+		t.Errorf("one hop: %s = %d, want %d", AttrHops, got, want)
 	}
+	if got, want := a2[AttrHops].(int64), int64(2); got != want {
+		t.Errorf("two hops: %s = %d, want %d", AttrHops, got, want)
+	}
+}
+
+// containsString is here rather than imported so this file states its own
+// assertions in full.
+func containsString(haystack []string, needle string) bool {
+	for _, s := range haystack {
+		if s == needle {
+			return true
+		}
+	}
+	return false
 }

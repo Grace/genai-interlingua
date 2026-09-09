@@ -77,6 +77,15 @@
 #    from what a given span turned out to carry. What is emitted instead is
 #    interlingua.export.unsupported: the same statement made structurally,
 #    about the config rather than about the span.
+#
+# 3. It is not idempotent the way the processor is. The processor leaves a
+#    span alone entirely once it already carries the requested target; the
+#    transform processor ORs the conditions below, so there is no config
+#    scoped way to express "and not already done" without repeating the
+#    guard on every statement. What that costs is bounded on purpose:
+#    interlingua.dialect is guarded and will not be overwritten, and
+#    interlingua.hops counts up, so a span through this config twice says
+#    2 rather than quietly looking like a span through it once.
 
 processors:
   transform/interlingua_openinference:
@@ -146,8 +155,10 @@ processors:
           - set(attributes["gen_ai.tool.description"], attributes["tool.description"]) where attributes["tool.description"] != nil
           - set(attributes["gen_ai.tool.call.id"], attributes["tool_call.id"]) where attributes["tool_call.id"] != nil
           - set(attributes["gen_ai.tool.call.arguments"], attributes["tool_call.function.arguments"]) where attributes["tool_call.function.arguments"] != nil
-          - set(attributes["interlingua.dialect"], "openinference")
+          - set(attributes["interlingua.dialect"], "openinference") where attributes["interlingua.dialect"] == nil
           - set(attributes["interlingua.target"], "genai-main")
+          - set(attributes["interlingua.hops"], attributes["interlingua.hops"] + 1) where attributes["interlingua.hops"] != nil
+          - set(attributes["interlingua.hops"], 1) where attributes["interlingua.hops"] == nil
           - set(attributes["interlingua.export"], "ottl")
           - set(attributes["interlingua.export.unsupported"], ["gen_ai.input.messages", "gen_ai.output.messages", "gen_ai.request.choice.count", "gen_ai.request.frequency_penalty", "gen_ai.request.max_tokens", "gen_ai.request.presence_penalty", "gen_ai.request.seed", "gen_ai.request.stop_sequences", "gen_ai.request.stream", "gen_ai.request.temperature", "gen_ai.request.top_k", "gen_ai.request.top_p", "gen_ai.retrieval.documents", "gen_ai.tool.call.arguments", "gen_ai.tool.call.result", "gen_ai.tool.definitions"])
           - set(attributes["interlingua.export.partial"], ["gen_ai.tool.call.arguments"])

@@ -125,6 +125,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.hops",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
                   "key": "interlingua.lossy.count",
                   "value": {
                     "intValue": "0"
@@ -428,6 +434,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.hops",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
                   "key": "interlingua.lossy",
                   "value": {
                     "arrayValue": {
@@ -679,6 +691,12 @@
                   "key": "interlingua.dialect.confidence",
                   "value": {
                     "intValue": "7"
+                  }
+                },
+                {
+                  "key": "interlingua.hops",
+                  "value": {
+                    "intValue": "1"
                   }
                 },
                 {

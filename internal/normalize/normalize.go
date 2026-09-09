@@ -34,12 +34,25 @@ import (
 // has no tags to point at, so the only durable record of which vocabulary these
 // gen_ai.* keys belong to is the span itself. A reader six months from now
 // should not have to find the collector config that produced it.
+//
+// AttrHops counts translations rather than describing them, and the difference
+// is deliberate. The obvious design for a span that has been through this twice
+// is a list of records, one per hop, saying where each came from and what it
+// cost. That design does not survive contact with a backend. Honeycomb types
+// every array-valued attribute as a string column -- including the conventions'
+// own gen_ai.input.messages and gen_ai.response.finish_reasons, which its own
+// schema documents as arrays and stores as strings -- so a chain would arrive
+// as an opaque blob that cannot be grouped by, filtered into, or counted. An
+// integer can be all three, and "was this translated more than once" is the
+// question actually worth being able to ask: it is how you find a normalizer
+// sitting in a pipeline twice.
 const (
 	AttrDialect    = "interlingua.dialect"
 	AttrConfidence = "interlingua.dialect.confidence"
 	AttrTarget     = "interlingua.target"
 	AttrLossy      = "interlingua.lossy"
 	AttrLossyCount = "interlingua.lossy.count"
+	AttrHops       = "interlingua.hops"
 )
 
 // Options configures one normalization.
@@ -82,6 +95,12 @@ type Result struct {
 	// leave the first pass's answer sitting next to its own.
 	Remove []string
 
+	// PriorLossy is what an earlier normalization of this span already reported
+	// losing. Lossy merges it rather than replacing it: a key the first hop
+	// could not carry did not become carryable by being looked at a second
+	// time, and the span is still not a faithful carrier of it.
+	PriorLossy []string
+
 	// DialectLoss is what the emitter said that the IR could not carry.
 	DialectLoss []dialect.Loss
 
@@ -99,12 +118,16 @@ func (r Result) SetKeys() []string {
 	return keys
 }
 
-// Lossy returns the deduplicated, sorted keys from both loss lists. This is the
-// value written to interlingua.lossy: one flat list, because a consumer scanning
-// spans for a key they care about does not want to know which half of the
-// pipeline dropped it, only that this span is not a faithful carrier of it.
+// Lossy returns the deduplicated, sorted keys from both loss lists and from any
+// earlier pass. This is the value written to interlingua.lossy: one flat list,
+// because a consumer scanning spans for a key they care about does not want to
+// know which half of the pipeline dropped it, or which hop dropped it, only
+// that this span is not a faithful carrier of it.
 func (r Result) Lossy() []string {
-	seen := make(map[string]bool, len(r.DialectLoss)+len(r.TargetLoss))
+	seen := make(map[string]bool, len(r.DialectLoss)+len(r.TargetLoss)+len(r.PriorLossy))
+	for _, k := range r.PriorLossy {
+		seen[k] = true
+	}
 	for _, l := range r.DialectLoss {
 		seen[l.Key] = true
 	}
@@ -128,16 +151,41 @@ func (r Result) Lossy() []string {
 // normalization, and stamping interlingua.* onto every HTTP span in a trace
 // would be a worse outcome than recognizing nothing.
 func Span(s dialect.Span, opts Options) (Result, bool) {
+	// A span already carrying this exact target has arrived where it was being
+	// sent, and the honest amount of work left to do on it is none. Falling
+	// through would re-detect a dialect from this package's own output rather
+	// than from an emitter's, which is how a span ends up labeled raw.
+	//
+	// This reports false, the same answer given for a span no dialect claims,
+	// because both callers already read false as "leave it exactly as found".
+	// Two collectors running the same config, or a payload replayed after a
+	// restart, now converge instead of accumulating.
+	if v, ok := s.Attr(AttrTarget); ok && v.Kind == dialect.KindStr && v.Str == string(opts.Target) {
+		return Result{}, false
+	}
+
 	p, ok := dialect.Parse(s)
 	if !ok {
 		return Result{}, false
 	}
 
+	prior, translated := priorProvenance(s)
+
 	r := Result{
 		Dialect:     p.Dialect,
 		Confidence:  p.Confidence,
 		Set:         make(map[string]dialect.Value),
+		PriorLossy:  prior.lossy,
 		DialectLoss: p.Loss,
+	}
+
+	// Detection ran on already-normalized attributes and answered the wrong
+	// question, so its answer is discarded in favour of the one the first pass
+	// recorded. The original emitter is a fact about where the data came from;
+	// it does not change because the data was translated again.
+	if translated {
+		r.Dialect = prior.dialect
+		r.Confidence = prior.confidence
 	}
 
 	for _, f := range p.SortedFields() {
@@ -172,9 +220,10 @@ func Span(s dialect.Span, opts Options) (Result, bool) {
 		r.Set[key] = v
 	}
 
-	r.Set[AttrDialect] = dialect.String(string(p.Dialect))
-	r.Set[AttrConfidence] = dialect.Int(int64(p.Confidence))
+	r.Set[AttrDialect] = dialect.String(string(r.Dialect))
+	r.Set[AttrConfidence] = dialect.Int(int64(r.Confidence))
 	r.Set[AttrTarget] = dialect.String(string(opts.Target))
+	r.Set[AttrHops] = dialect.Int(int64(prior.hops + 1))
 	// The list and its length are both written, and the length is written even
 	// when it is zero.
 	//
@@ -198,26 +247,69 @@ func Span(s dialect.Span, opts Options) (Result, bool) {
 		r.Remove = removals(p.Consumed, r.Set)
 	}
 
-	// A span can reach this function twice -- a collector normalizes at the
-	// edge and a backend normalizes again at ingest, or a spooled payload is
-	// replayed after a restart. When that happens this normalization must own
-	// its own attributes completely, and that means clearing the ones it is not
-	// writing rather than leaving a previous run's behind.
-	//
-	// The count and the list are the pair that breaks. The count is written on
-	// every pass, including when it is zero; the list only when it is not
-	// empty. So a second pass that loses nothing used to overwrite the count
-	// with 0 and leave the first pass's list untouched, producing a span that
-	// simultaneously reported losing nothing and named three things it lost.
+	// The count and the list are the pair that breaks when a span is normalized
+	// more than once. The count is written on every pass, including when it is
+	// zero; the list only when it is not empty. So a second pass that lost
+	// nothing used to overwrite the count with 0 and leave the first pass's
+	// list untouched, producing a span that simultaneously reported losing
+	// nothing and named three things it lost.
 	//
 	// A span that contradicts itself is worse than one that is merely
 	// incomplete, and it is a poor advertisement for a tool whose entire
 	// argument is honest loss accounting.
+	//
+	// lossy is the merged list, so this clear now fires only when nothing was
+	// lost on any pass -- an earlier pass's losses keep the attribute alive
+	// rather than being erased by a later pass that happened to lose nothing.
 	if len(lossy) == 0 {
 		r.Remove = append(r.Remove, AttrLossy)
 	}
 
 	return r, true
+}
+
+// provenance is what an earlier normalization left on a span.
+type provenance struct {
+	dialect    dialect.Name
+	confidence int
+	lossy      []string
+	hops       int
+}
+
+// priorProvenance reads the interlingua.* attributes an earlier pass wrote and
+// reports whether this span carries a usable record of one.
+//
+// AttrTarget is the marker rather than AttrDialect because it is the attribute
+// written unconditionally on every pass: any span that reached the end of Span
+// has a target on it, whatever else it does or does not have.
+func priorProvenance(s dialect.Span) (provenance, bool) {
+	if _, ok := s.Attr(AttrTarget); !ok {
+		return provenance{}, false
+	}
+
+	var p provenance
+	if v, ok := s.Attr(AttrDialect); ok && v.Kind == dialect.KindStr {
+		p.dialect = dialect.Name(v.Str)
+	}
+	if v, ok := s.Attr(AttrConfidence); ok && v.Kind == dialect.KindInt {
+		p.confidence = int(v.Int)
+	}
+	if v, ok := s.Attr(AttrLossy); ok && v.Kind == dialect.KindStrSeq {
+		p.lossy = v.StrSeq
+	}
+
+	// An absent counter means one, not zero. A span normalized by a build that
+	// predates AttrHops has still been through a translation, and reading the
+	// absence as zero would make its second hop report itself as its first.
+	p.hops = 1
+	if v, ok := s.Attr(AttrHops); ok && v.Kind == dialect.KindInt {
+		p.hops = int(v.Int)
+	}
+
+	// A target with no dialect beside it is not a record this can build on, so
+	// the caller falls back to detecting one. The hop count still stands: the
+	// span was translated whether or not it says by what.
+	return p, p.dialect != ""
 }
 
 // removals is the consumed source keys that are not about to be written back

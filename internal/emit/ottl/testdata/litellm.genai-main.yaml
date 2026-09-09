@@ -56,6 +56,15 @@
 #    from what a given span turned out to carry. What is emitted instead is
 #    interlingua.export.unsupported: the same statement made structurally,
 #    about the config rather than about the span.
+#
+# 3. It is not idempotent the way the processor is. The processor leaves a
+#    span alone entirely once it already carries the requested target; the
+#    transform processor ORs the conditions below, so there is no config
+#    scoped way to express "and not already done" without repeating the
+#    guard on every statement. What that costs is bounded on purpose:
+#    interlingua.dialect is guarded and will not be overwritten, and
+#    interlingua.hops counts up, so a span through this config twice says
+#    2 rather than quietly looking like a span through it once.
 
 processors:
   transform/interlingua_litellm:
@@ -92,7 +101,9 @@ processors:
           - delete_key(attributes, "interlingua.__scratch")
           - delete_key(attributes, "gen_ai.operation.name") where attributes["llm.request.type"] != nil and attributes["gen_ai.operation.name"] != nil and not IsMatch(attributes["gen_ai.operation.name"], "^(chat|create_agent|create_memory|create_memory_store|delete_memory|delete_memory_store|embeddings|execute_tool|fetch_response|generate_content|invoke_agent|invoke_workflow|plan|retrieval|search_memory|text_completion|update_memory|upsert_memory)$")
           - set(attributes["gen_ai.usage.cache_write.input_tokens"], attributes["gen_ai.usage.cache_creation.input_tokens"]) where attributes["gen_ai.usage.cache_creation.input_tokens"] != nil
-          - set(attributes["interlingua.dialect"], "litellm")
+          - set(attributes["interlingua.dialect"], "litellm") where attributes["interlingua.dialect"] == nil
           - set(attributes["interlingua.target"], "genai-main")
+          - set(attributes["interlingua.hops"], attributes["interlingua.hops"] + 1) where attributes["interlingua.hops"] != nil
+          - set(attributes["interlingua.hops"], 1) where attributes["interlingua.hops"] == nil
           - set(attributes["interlingua.export"], "ottl")
           - set(attributes["interlingua.export.unsupported"], ["gen_ai.input.messages", "gen_ai.output.messages", "gen_ai.response.finish_reasons", "gen_ai.tool.definitions"])

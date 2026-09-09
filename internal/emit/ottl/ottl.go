@@ -77,6 +77,10 @@ const (
 	// still absent, correct, or whatever the emitter happened to write, and
 	// nothing distinguishes the third case from the second at read time.
 	AttrExportPartial = "interlingua.export.partial"
+
+	// AttrHops is the translation counter, incremented rather than set, so a
+	// config re-applied to its own output says so instead of hiding it.
+	AttrHops = "interlingua.hops"
 )
 
 // Options selects what to emit.
@@ -164,9 +168,22 @@ func Config(opts Options) (Result, error) {
 	// normalized by this config is not the same as a span normalized by the
 	// processor, and anything reading interlingua.dialect downstream deserves
 	// to know which produced it.
+	//
+	// The dialect is guarded rather than set, because the processor writes it
+	// once and never rewrites it and the two implementations have to agree. A
+	// span this config sees may already have been through the processor at the
+	// edge, and overwriting a positive identification with this config's fixed
+	// guess would be the same erasure the processor was fixed to stop.
+	//
+	// The hop counter is two statements in this order and not the other: the
+	// increment runs first and matches only a span that already has a count,
+	// then the initializer catches the ones still without one. Reversed, every
+	// span would be set to 1 and then immediately incremented to 2.
 	stmts = append(stmts,
-		fmt.Sprintf(`set(attributes["interlingua.dialect"], %s)`, quote(name)),
+		fmt.Sprintf(`set(attributes["interlingua.dialect"], %s) where attributes["interlingua.dialect"] == nil`, quote(name)),
 		fmt.Sprintf(`set(attributes["interlingua.target"], %s)`, quote(string(opts.Target))),
+		fmt.Sprintf(`set(attributes[%s], attributes[%s] + 1) where attributes[%s] != nil`, quote(AttrHops), quote(AttrHops), quote(AttrHops)),
+		fmt.Sprintf(`set(attributes[%s], 1) where attributes[%s] == nil`, quote(AttrHops), quote(AttrHops)),
 		fmt.Sprintf(`set(attributes[%s], "ottl")`, quote(AttrExport)),
 	)
 	if len(unsupported) > 0 {
@@ -531,6 +548,15 @@ func render(opts Options, carried, conformant, partial, unsupported, conds, stmt
 	p("#    from what a given span turned out to carry. What is emitted instead is")
 	p("#    interlingua.export.unsupported: the same statement made structurally,")
 	p("#    about the config rather than about the span.")
+	p("#")
+	p("# 3. It is not idempotent the way the processor is. The processor leaves a")
+	p("#    span alone entirely once it already carries the requested target; the")
+	p("#    transform processor ORs the conditions below, so there is no config")
+	p("#    scoped way to express \"and not already done\" without repeating the")
+	p("#    guard on every statement. What that costs is bounded on purpose:")
+	p("#    interlingua.dialect is guarded and will not be overwritten, and")
+	p("#    interlingua.hops counts up, so a span through this config twice says")
+	p("#    2 rather than quietly looking like a span through it once.")
 	p("")
 	p("processors:")
 	p("  transform/interlingua_%s:", strings.ReplaceAll(name, "-", "_"))
