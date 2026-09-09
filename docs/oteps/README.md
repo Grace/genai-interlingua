@@ -62,8 +62,21 @@ design question with no concrete cases attached to it. All three are kept in
 
 It is cheap, self-contained and already implemented, and none of that makes it
 urgent. The two issue comments come first because they are answers to questions
-somebody asked; 0001 is an answer to a question nobody has asked yet, which is a
-different and slower conversation.
+somebody asked.
+
+An earlier version of this file said 0001 was "an answer to a question nobody
+has asked yet". That was wrong, and checking it is what found the error:
+[specification#3497](https://github.com/open-telemetry/opentelemetry-specification/issues/3497)
+has been open since 2023 with 36 comments and a
+`triage:deciding:community-feedback` label, and lmolkova asks in it for "a way to
+signal that we could not apply transformation on a given data" — which is
+`lossy`, under a different name. The same thread argues that a transformation
+"should preserve original attributes", which is this repository's default.
+
+So the question has been asked, by someone with standing, and left open for two
+years. That makes 0001 better founded than the earlier framing allowed and does
+not make it more urgent: a thread that old is slow because the project has not
+converged, and arriving with a document is not what converges it.
 
 ## What has to happen before either is filed
 

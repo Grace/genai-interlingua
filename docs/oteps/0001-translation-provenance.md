@@ -43,7 +43,7 @@ to it.
 
 ## Proposal
 
-A small attribute namespace, recorded on telemetry that was translated. Six
+A small attribute namespace, recorded on telemetry that was translated. Seven
 attributes, no new file format, no SDK changes, no parser work. The running
 implementation is
 [`registry/model/translation.yaml`](../../registry/model/translation.yaml),
@@ -59,6 +59,14 @@ The neutral naming below is the proposal.
 | `telemetry.translation.lossy` | string[] | Attribute keys this telemetry is **not** a faithful carrier of. |
 | `telemetry.translation.lossy.count` | int | The length of that list, written **even when zero**. |
 | `telemetry.translation.by` | string | What performed the translation, when several implementations of one mapping exist and they do not carry the same amount. |
+| `telemetry.translation.hops` | int | How many times this telemetry has been translated. One on the common case; a higher number is usually a pipeline mistake worth finding. |
+
+Three of these have merge semantics, which is the part of this proposal that
+took a working implementation to get right and is stated in full under
+[chained translation](#chained-translation) below. In short: `source` is written
+once and never rewritten, `lossy` unions across translations rather than
+replacing, and a translation to a target the telemetry already carries does
+nothing at all.
 
 ### Why the count is separate from the list
 
@@ -96,6 +104,59 @@ The two are independent, and this one does not wait on them. It is worth doing
 whatever those issues conclude, because the translations are happening now, in Go
 and OTTL and vendor ingest pipelines, and none of them can currently leave a
 trace.
+
+### Chained translation
+
+This was an open question in an earlier draft — a span translated twice, vendor
+to conventions in the SDK and conventions to a backend's vocabulary at ingest,
+has two stories and these attributes hold one — and it said plainly that the
+general case was unsolved. It has since been solved, and the answer is not the
+one the question implies.
+
+The obvious design is a list of records, one per translation, saying where each
+came from and what it cost. It was built as a plan and dropped before being
+written, because it does not survive contact with a backend. Honeycomb types
+every array-valued attribute as a `string` column. That is not a quirk of one
+vendor's handling of a nonstandard attribute: it applies to the conventions'
+own `gen_ai.input.messages` and `gen_ai.response.finish_reasons`, which the
+registry documents as arrays and the backend stores as strings. A chain of
+records would arrive somewhere it could not be grouped by, filtered into, or
+counted — unqueryable at exactly the point it would be read.
+
+What the reproduction actually showed is that the damage is not the missing
+history, it is the erasure. Translate an OpenLLMetry span to one convention
+version with originals stripped, then translate that output to another, and the
+result claims it was emitted by `raw` and that it lost nothing. Both are false,
+and the second is the dangerous one: the telemetry has acquired a clean bill of
+health it did not earn. None of that requires a chain to fix. It requires the
+second translation to stop overwriting what the first one knew.
+
+Three rules, all of which a translator can follow without any new attribute:
+
+1. **Telemetry already carrying the requested target is left alone.** This is
+   the case that actually happens — a collector translating at the edge and a
+   backend translating again at ingest, a spooled payload replayed after a
+   restart, a processor installed twice in one pipeline. All of them ask for a
+   target the telemetry already has, and the honest amount of work is none.
+2. **`source` and its confidence are written once and never rewritten.** A
+   second translation is reading the first one's output, where the only
+   evidence of the original emitter is what the first one recorded. Inferring
+   there answers a different question, and answers it wrongly.
+3. **`lossy` unions across translations rather than replacing.** A key the first
+   translation could not carry did not become carryable by being looked at
+   again, and a later translation that happened to lose nothing must not be
+   able to report that the telemetry lost nothing.
+
+`hops` is what is left over: the one fact none of the three rules preserves,
+and one integer holds it. It is deliberately a count rather than a description,
+because a count is a column and a description is a blob.
+
+The trade is stated rather than hidden. This records *that* telemetry was
+translated more than once and *cumulatively* what that cost, and does not record
+the per-hop breakdown. Anyone who needs the breakdown needs a log or a separate
+signal, not a wider attribute — and in the corpus behind this proposal the
+multi-hop case has a population of zero, so paying a document per span to
+describe it would be the wrong trade even if backends stored it well.
 
 ## Prior art, and why it does not cover this
 
@@ -136,11 +197,9 @@ spans from one emitter lose the same things, so it compresses well — but the
 honest answer is that this needs measuring on a large corpus, and it has not
 been.
 
-**Chained translation.** A span translated twice — vendor to conventions in the
-SDK, conventions to a backend's vocabulary at ingest — has two stories and these
-attributes hold one. A list of records would be more correct and much heavier.
-This draft proposes recording the last translation and says plainly that the
-general case is unsolved.
+**Whether `hops` earns its place**, which is the one remaining piece of the
+question below rather than an open problem in its own right. It is one integer
+and it is the only new attribute chained translation turned out to need.
 
 **Whether `by` earns its place.** It exists because one implementation of this
 mapping carries less than another — an exported OTTL config cannot do everything
