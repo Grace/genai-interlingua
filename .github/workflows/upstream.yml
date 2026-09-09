@@ -27,7 +27,16 @@ jobs:
       # only through v7, and v8 onwards exist solely as exact patch tags. v7 is
       # already node24, which is the whole requirement, and staying on a major
       # keeps it patched and consistent with the other three actions here.
+      #
+      # to_json.py declares its own dependencies inline, PEP 723 style, and
+      # this repository has no requirements.txt, pyproject.toml or uv.lock for
+      # setup-uv's default glob to find. Left at the default it warns that the
+      # cache can never be invalidated, which is true and is worth fixing
+      # rather than tolerating: the script is the dependency manifest, so it is
+      # the thing the cache key should be built from.
       - uses: astral-sh/setup-uv@v7
+        with:
+          cache-dependency-glob: internal/semconv/testdata/upstream/to_json.py
 
       # Re-vendor into a scratch copy and compare. The committed files stay
       # pinned: the point is to notice movement, and a job that silently
