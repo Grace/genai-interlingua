@@ -14,8 +14,9 @@ Facts, checked against the GitHub API on 2026-09-07 rather than recalled:
 
 | Date | Event |
 | --- | --- |
-| 2026-04-28 | `semantic-conventions` **v1.41.0**. Last release with live `gen_ai.*` definitions. |
+| 2026-04-28 | `semantic-conventions` **v1.41.0**. Last release to add to `gen_ai.*`. |
 | 2026-05-05 | `semantic-conventions-genai` created. |
+| 2026-05-11 | `semantic-conventions` v1.41.1. Patch release; touches `CHANGELOG.md`, a deprecated k8s metrics file and the policy rego. **No `gen_ai.*` changes** -- so it is the last tag with live `gen_ai.*`, and it is byte-identical to v1.41.0 in everything this repository reads. |
 | 2026-06-12 | `semantic-conventions` **v1.42.0**. All `gen_ai.*` deprecated and moved out. |
 | 2026-07-03 | `semantic-conventions` v1.43.0. |
 | 2026-08-04 | `semantic-conventions` v1.44.0. |
@@ -64,7 +65,11 @@ conventions never has to make:
 
 Both are defensible. Neither is correct. What is *not* defensible is making the
 choice silently, which is what a normalizer with a hardcoded attribute table
-does.
+does. Concretely: `processor/genainormalizer` in `opentelemetry-collector-contrib`
+stamps `https://opentelemetry.io/schemas/1.40.0` on the scope, which asserts a
+version whose `gen_ai.*` definitions have since been deprecated and moved. That
+is not a criticism of the component so much as evidence that the choice is
+unavoidable and currently gets made by default.
 
 ## What this repository does
 
@@ -77,7 +82,10 @@ that pretends to be neutral:
 ```
 
 `v1.41.0` is the default. Not because it is better, but because it is the only
-one of the two that a reader six months from now can reconstruct exactly. A
+one of the two that a reader six months from now can reconstruct exactly. (The
+target is named for v1.41.0 rather than v1.41.1 because v1.41.0 is the release
+that last *added* to `gen_ai.*`; v1.41.1 is a patch that changed nothing this
+repository reads, so the two are interchangeable here.) A
 default of `genai-main` would mean the same command produces different spans in
 March and in September with no record of why.
 

@@ -77,14 +77,14 @@ GROUP BY interlingua.dialect  ORDER BY MAX DESC
 
 | AVG | COUNT | MAX | dialect |
 | --- | --- | --- | --- |
-| 49 | 1 | 49 | litellm |
+| 53 | 1 | 53 | litellm |
 | 10 | 1 | 10 | openinference |
-| 5.17 | 6 | 9 | openllmetry |
+| 6.67 | 6 | 12 | openllmetry |
 | 5 | 2 | 7 | braintrust |
+| 4.33 | 3 | 7 | vercel |
 | 3 | 2 | 5 | raw |
-| 3 | 3 | 5 | vercel |
 
-LiteLLM writes forty-nine attributes per span that the conventions have no home
+LiteLLM writes fifty-three attributes per span that the conventions have no home
 for — costs, proxy tenancy, routing decisions. That is not a criticism of
 LiteLLM; it is a number you could not previously get, and it tells you what you
 would lose by trusting `gen_ai.*` alone for those services.

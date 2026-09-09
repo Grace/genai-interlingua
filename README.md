@@ -3,7 +3,7 @@
 **Normalize LLM and GenAI spans from any instrumentation library into one
 `gen_ai.*` schema, and record on every span exactly what the translation cost.**
 
-Six libraries. Six different names for the same token count. One schema out.
+Six dialects. Six different names for the same token count. One schema out.
 
 Runs as an [OpenTelemetry Collector processor](processor/genaiinterlingua/) or a
 [standalone CLI](cmd/interlingua/). No dependencies in the core.
@@ -36,21 +36,25 @@ instruction.
 So the target is an explicit choice, not a constant hidden in a table:
 
 ```
--target v1.41.0     # the last tagged cut. frozen, deprecated at source.  (default)
+-target v1.41.0     # last cut that added to gen_ai.*. frozen, deprecated at source.  (default)
 -target genai-main  # current. untagged, moving.
 ```
 
 The default is the frozen cut, because it is the only one of the two a reader can
-reconstruct six months from now. [`docs/moving-target.md`](docs/moving-target.md)
-argues it out.
+reconstruct six months from now. (A v1.41.1 patch release followed, changing
+nothing in `gen_ai.*`; the target is named for the release that last added to it.)
+[`docs/moving-target.md`](docs/moving-target.md) argues it out.
 
 ## Why you would use it
 
 **You get one vocabulary.** One dashboard, one alert, one SLO over every model
 call, regardless of which library instrumented it.
 
-**You find out what it cost you.** This is the part other normalizers skip. Every
-span carries `interlingua.lossy`: the list of keys this span is *not* a faithful
+**You find out what it cost you.** This is the part other normalizers skip, and
+it is checkable rather than rhetorical: the closest comparable component drops
+silently by design, and says so in its own source — see [Components covering
+similar use cases](#components-covering-similar-use-cases) below. Every span here
+carries `interlingua.lossy`: the list of keys this span is *not* a faithful
 carrier of. A translation layer that silently drops data is worse than no
 translation layer, because you will trust the result.
 
@@ -68,6 +72,50 @@ rather than a thing you discover later.
 CI fails if it disagrees with them. Every dialect is backed by spans captured
 from the real libraries, and the table says which — a row cannot borrow
 credibility it did not earn.
+
+## Components covering similar use cases
+
+**[`processor/genainormalizer`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/genainormalizerprocessor)**,
+in `opentelemetry-collector-contrib` since 2026-02-13
+([donation #46069](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/46069)).
+Alpha, traces, and — the part that matters — **already in the `otelcol-contrib`
+binary you are probably running**. It maps OpenInference and OpenLLMetry into
+`gen_ai.*` from built-in tables, accepts user-defined tables for anything else,
+coerces values to the types semconv declares, and stamps
+`https://opentelemetry.io/schemas/1.40.0` on the scope. If those two libraries
+are what you run, reach for it first: it needs no custom build and this
+repository does.
+
+Four differences, measured against `main` at 2026-09-09 (it moves; `v0.155.0`
+and `main` already differ):
+
+| | `genainormalizer` | here |
+| --- | --- | --- |
+| which dialect a span is | declared in config. Every listed source is applied to every span, in list order | scored per span; the winner's margin over the runner-up is written to the span |
+| what the mapping cost | not recorded. `internal/otelsemconv/coerce.go:16` — *"callers must drop the attribute"*; `:91` — *"Caller drops the rename."* With `remove_originals: true` the source is deleted too | `interlingua.lossy` names the keys the span is not a faithful carrier of |
+| which target | `schemas/1.40.0`, hardcoded | `-target`, an explicit choice, because [there is no version of `gen_ai.*` you can pin](docs/moving-target.md) |
+| built-in dialects | OpenInference, OpenLLMetry | those two plus Vercel AI SDK, LiteLLM, Braintrust, and a shape-only fallback |
+
+It also reconstructs indexed messages into a JSON string where this repository
+builds a nested document. That is a design difference, not a gap.
+
+**These differences are being taken upstream rather than maintained in
+competition.** A second component in this space would be worse for everyone than
+one good one; the useful thing this repository has is measurements and three
+more mapping tables built from captured spans, and those belong in the component
+that already has distribution. Progress is tracked in
+[`docs/upstream.md`](docs/upstream.md).
+
+Two adjacent components:
+[`processor/transform`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/transformprocessor)
+(general-purpose OTTL — which is why this repository can
+[emit an OTTL config](#use-it-without-this-binary--emit-ottl) instead of asking
+you to run its binary), and
+[`processor/schema`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/schemaprocessor),
+which applies Telemetry Schema Files by matching a signal's `schema_url` — the
+mechanism [`-emit schema-file`](#-emit-schema-file-and-why-it-carries-less)
+targets, and the reason the shortfall measured there is worth measuring. (#46069
+also cited `processor/datadogsemantics`; it is no longer in contrib.)
 
 ## Install
 
@@ -174,9 +222,9 @@ exported; one whose mappings are still performed in Go cannot, and the CLI says
 so rather than emitting something that looks complete:
 
 ```console
-$ interlingua -emit ottl -dialect vercel
-interlingua: vercel does not declare its mappings as data yet, so it cannot be
-exported (exportable: litellm)
+$ interlingua -emit ottl -dialect raw
+interlingua: raw does not declare its mappings as data yet, so it cannot be
+exported (exportable: braintrust, litellm, openinference, openllmetry, vercel)
 ```
 
 Migration is deliberately incremental. `internal/dialect/rules.go` explains where
@@ -189,9 +237,14 @@ otherwise drop it while advertising that it did not.
 
 The same rules also render as an [OpenTelemetry Telemetry Schema
 File](https://opentelemetry.io/docs/specs/otel/schemas/file_format_v1.1.0/) —
-the artifact OpenTelemetry already has for "these attributes used to be called
-something else". It carries much less, and the shape of the shortfall is the
-interesting part rather than a disclaimer:
+the artifact OpenTelemetry has had for "these attributes used to be called
+something else". The emitter writes format 1.1.0, which is what the spec's
+schemas page still documents and what tooling still reads, but
+[OTEP 4815](https://github.com/open-telemetry/opentelemetry-specification/blob/main/oteps/4815-semantic-conventions-schema-v2.md)
+(merged May 2026) discontinues publishing it and the spec page has not caught up.
+[`docs/oteps/README.md`](docs/oteps/README.md) covers where that leaves this
+emitter. It carries much less than the processor either way, and the shape of the
+shortfall is the interesting part rather than a disclaimer:
 
 ```console
 $ interlingua -emit schema-file -dialect litellm -target genai-main
@@ -216,7 +269,7 @@ fails if it drifts.
 ## The provenance attributes are a published registry
 
 [`registry/`](registry/) is a Weaver semantic convention registry defining the
-seven `interlingua.*` attributes — which vocabulary a span arrived in, which one
+nine `interlingua.*` attributes — which vocabulary a span arrived in, which one
 it left in, how confident the identification was, and what the trip cost.
 
 ```console
@@ -255,7 +308,7 @@ Build it into a distribution with [`ocb`](https://opentelemetry.io/docs/collecto
 
 ```yaml
 processors:
-  - gomod: github.com/Grace/genai-interlingua/processor/genaiinterlingua v0.1.0
+  - gomod: github.com/Grace/genai-interlingua/processor/genaiinterlingua v0.2.0
 ```
 
 [`processor/genaiinterlingua/`](processor/genaiinterlingua/) is a separate Go
@@ -301,7 +354,7 @@ That is a real span from that stack, and it is worth reading closely:
   belong to, on the span, because there is no schema URL to carry it.
 
 The Collector's OTLP port is published, so you can push any fixture in from the
-host — `testdata/litellm/in.json` comes back with 49 entries in
+host — `testdata/litellm/in.json` comes back with 53 entries in
 `interlingua.lossy`, because LiteLLM writes a great deal the conventions have no
 words for.
 
@@ -353,7 +406,7 @@ With Docker, the demo has a profile for it:
 $ HONEYCOMB_API_KEY=... docker compose -f demo/compose.yaml --profile honeycomb up --build
 ```
 
-Without Docker, push the repository's own fixtures straight in — seven captured
+Without Docker, push the repository's own fixtures straight in — nine fixtures across six
 dialects, one service each:
 
 ```console
@@ -400,9 +453,9 @@ $ python3 demo/send-to-honeycomb.py --raw     # the same spans, untouched
 SUM(gen_ai.usage.input_tokens) GROUP BY gen_ai.provider.name, interlingua.dialect
 ```
 
-![One Honeycomb query summing token usage across five different instrumentation libraries](docs/img/honeycomb-cross-dialect-query.jpg)
+![One Honeycomb query summing token usage across nine services and six instrumentation dialects](docs/img/honeycomb-cross-dialect-query.jpg)
 
-**4120 tokens across five instrumentation libraries.** Ask the same question in
+**4120 tokens across nine services and six dialects.** Ask the same question in
 OpenLLMetry's own vocabulary — `gen_ai.usage.prompt_tokens` — and you get 412
 from one service, because that is the only service that spells it that way.
 
@@ -467,8 +520,9 @@ It also reports, per dialect, whether the inputs behind a row were **captured**
 from a running library or **hand-built** here, read from a marker file next to
 each fixture so that account cannot drift from the truth.
 
-Six of the seven fixtures are captured -- everything except `raw-folk`, which is
-hand-rolled attribute names that no library emits.
+Seven of the nine fixtures are captured. The two hand-built ones are
+`openllmetry-legacy` -- the indexed shape OpenLLMetry used to emit and no longer
+does -- and `raw-folk`, hand-rolled attribute names that no library emits.
 `testdata/capture/capture.sh` runs the real libraries against a local mock
 OpenAI server -- no API key, nothing sent anywhere -- and records what they put
 on the wire.
@@ -493,10 +547,13 @@ Four of those captures found a bug that hand-built fixtures had hidden:
   conventions themselves own, so a leftover in them is GenAI data that could not
   be placed, and it is now recorded.
 
-The Vercel capture found nothing, which is the other useful outcome. The
-Braintrust one found nothing wrong with the *parser* but removed three marks the
-hand-built fixture had been claiming, which is the same lesson pointed at the
-evidence instead of the code.
+The Vercel and LangChain captures found nothing, which is the other useful
+outcome — and the LangChain one is a useful negative specifically, because it is
+Traceloop's instrumentation and the OpenLLMetry parser read it correctly on the
+first pass without having been written against it. The Braintrust capture found
+nothing wrong with the *parser* but removed three marks the hand-built fixture
+had been claiming, which is the same lesson pointed at the evidence instead of
+the code.
 
 **[`docs/findings.md`](docs/findings.md) is all of it in one place** — what each
 fixture had assumed, what the library actually did, and why none of it was
@@ -509,9 +566,10 @@ OpenTelemetry's own instrumentation emits today is expressible at the frozen
 v1.41.0 cut, which is the best available argument for it being the default. See
 [`docs/moving-target.md`](docs/moving-target.md).
 
-Only `raw-folk` stays hand-built -- bare names like `prompt_tokens` that
-somebody wrote by hand, which no library emits. Details in
-[`testdata/README.md`](testdata/README.md).
+The two hand-built fixtures stay hand-built for the same reason: nothing emits
+them any more. `openllmetry-legacy` is the indexed shape the library has since
+migrated away from, and `raw-folk` is bare names like `prompt_tokens` that
+somebody wrote by hand. Details in [`testdata/README.md`](testdata/README.md).
 
 ## Staying current with a moving target
 
@@ -565,7 +623,7 @@ cmd/interlingua      stdin to stdout.
 internal/emit        the same mappings as OTTL and as a schema file.
 wasm.go              the same mappings in a browser. builds with demos/build.sh.
 processor/…          the same, as a Collector processor. own module.
-testdata/            eight fixtures x two targets, plus the capture harness.
+testdata/            nine fixtures x two targets, plus the capture harness.
 ```
 
 `internal/semconv` and `internal/dialect` do not import each other and neither
@@ -578,7 +636,7 @@ file where that is the only question being asked.
 `preserve_original` defaults to **true**, and `-strip-original` inverts it. The
 default keeps the emitter's own attributes beside the normalized ones: the
 `openllmetry-legacy` span used above goes in with 30 attributes and comes out
-with 47. (The HTTP span sharing that trace goes in with 3 and comes out with 3.)
+with 49. (The HTTP span sharing that trace goes in with 3 and comes out with 3.)
 
 That is the right default anyway: a normalizer that is sometimes wrong should not
 also be the last reader of its input. Turn it off once you trust the mapping for
@@ -597,22 +655,23 @@ a real Collector to assert the processor registers in it, and fuzzes the codec.
 
 Apple M1 Pro, `go test -bench . -benchmem`:
 
-| | ns/op | allocs/op |
-| --- | --- | --- |
-| Decline a non-GenAI span (library) | 1,114 | **0** |
-| Decline a non-GenAI span (Collector) | 2,218 | 2 |
-| Normalize a GenAI span (library) | 11,204 | 40 |
-| Normalize a 2-span batch (Collector) | 31,796 | 118 |
-| Full CLI path: decode, normalize, encode | 173,701 | 268 |
+| | ns/op | allocs/op | B/op |
+| --- | --- | --- | --- |
+| Decline a non-GenAI span (library) | 943 | **1** | 16 |
+| Decline a non-GenAI span (Collector) | 2,331 | 3 | 832 |
+| Normalize a GenAI span (library) | 15,091 | 88 | 18,840 |
+| Normalize a 2-span batch (Collector) | 39,472 | 216 | 37,592 |
+| Full CLI path: decode, normalize, encode | 116,368 | 316 | 76,530 |
 
 **Read the first two rows first.** Almost every span in a real pipeline is an
 HTTP handler or a database call, so the cost of *declining* is paid constantly
-while normalization is paid rarely. Declining allocates nothing at all in the
-library.
+while normalization is paid rarely. Declining costs one 16-byte allocation in
+the library.
 
-It allocates twice in the Collector, and that is worth being straight about:
-the pdata path builds an attribute map before it knows whether any dialect will
-claim the span, so non-GenAI traffic pays 816 bytes of garbage per span. At
+It allocates three times in the Collector, and that is worth being straight
+about: the pdata path builds an attribute map before it knows whether any
+dialect will claim the span, so non-GenAI traffic pays 832 bytes of garbage per
+span. At
 50k spans/second that is around 40MB/s of allocation for spans nobody
 normalizes. The fix is to let the dialects score against a view over
 `pcommon.Map` rather than a converted map, which is a real refactor rather than

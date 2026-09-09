@@ -41,8 +41,12 @@ works is the difference between a report and a wish.
 
 Written down now, so it is not decided retrospectively.
 
-**#29289 — the highest-signal thread.** It had four options and no decision, and no comments
-at all before this one. If a maintainer picks an option, that answers whether the list-mapping
+**#29289 — the highest-signal thread.** It had four options and no decision, and no comment
+since February 2025. (An earlier version of this file said "no comments at all before this
+one," which was wrong: there are five, from TylerHelmuth and jsuereth, running 2024-01 to
+2025-02, and jsuereth has a working list-comprehensions branch linked from the last of them.
+That is a materially different thread from the one this described, and it makes the comment
+below a contribution to a stalled design rather than the opening of an unopened one.) If a maintainer picks an option, that answers whether the list-mapping
 gap ever closes; if it is option 2 or 4, the `Map`-over-a-slice rule becomes exportable and
 `interlingua.export.partial` loses an entry. If anyone asks about the diff harness rather than
 the bug, that is the larger opening — a general method for finding this class of gap is worth

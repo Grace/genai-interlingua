@@ -127,9 +127,16 @@ conventions carry one evaluation per span.
 
 ## The two that found nothing
 
-`ai==5.0.253` and the official OTel instrumentation both came through clean. All
-three Vercel span shapes matched what the hand-built fixture claimed, and
-`ai.settings.maxOutputTokens` was already handled under its v5 name.
+`ai==5.0.253` and `opentelemetry-instrumentation-langchain==0.62.3` both came
+through clean. All three Vercel span shapes matched what the hand-built fixture
+claimed, and `ai.settings.maxOutputTokens` was already handled under its v5 name.
+The LangChain capture emits OpenLLMetry's vocabulary -- it is Traceloop's
+instrumentation -- and was parsed correctly on the first pass, which is a useful
+negative: the OpenLLMetry parser generalizes past the one SDK it was written
+against.
+
+(The official OTel instrumentation is *not* one of the two. It is the `raw`
+capture above, and it found a bug.)
 
 This is worth stating rather than quietly omitting. A harness that only ever
 confirms the author was right is not measuring anything, and "we checked and it
