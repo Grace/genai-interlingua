@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package schemafile renders a dialect's declared rules as an OpenTelemetry
 // Telemetry Schema File, and reports everything that did not fit.
 //

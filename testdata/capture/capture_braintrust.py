@@ -2,6 +2,9 @@
 # requires-python = ">=3.11,<3.14"
 # dependencies = ["braintrust[otel]", "openai", "opentelemetry-sdk"]
 # ///
+
+# SPDX-License-Identifier: Apache-2.0
+
 """Drives Braintrust's OpenTelemetry integration through one chat-with-tool-call
 plus one scoring span.
 

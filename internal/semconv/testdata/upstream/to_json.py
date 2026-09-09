@@ -2,6 +2,9 @@
 # requires-python = ">=3.11"
 # dependencies = ["pyyaml"]
 # ///
+
+# SPDX-License-Identifier: Apache-2.0
+
 """Converts an upstream registry YAML into the JSON the Go test reads.
 
 Only what the check needs is kept -- each attribute's key, and the values of its

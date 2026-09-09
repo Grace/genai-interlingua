@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """Merges the exports in an ndjson stream into one ExportTraceServiceRequest.
 
 Spans are sorted by start time so that a fixture does not reorder itself between

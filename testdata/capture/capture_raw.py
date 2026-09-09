@@ -8,6 +8,9 @@
 #   "httpx",
 # ]
 # ///
+
+# SPDX-License-Identifier: Apache-2.0
+
 """Drives OpenTelemetry's own first-party OpenAI instrumentation.
 
 This is the control case, and the reason it belongs in the fixtures at all: it is

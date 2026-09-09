@@ -637,3 +637,19 @@ Released with goreleaser on a `v*` tag, after the other three jobs pass.
 
 Every dialect is backed by captured spans, including `raw`, which is captured
 from OpenTelemetry's own first-party instrumentation.
+
+## License
+
+[Apache License 2.0](LICENSE). Contributions require a
+[sign-off](CONTRIBUTING.md) certifying the [DCO](DCO).
+
+Everything up to and including `v0.2.0` was released under the MIT License and
+stays MIT — a license is granted at the point of distribution and cannot be
+withdrawn from a copy already handed over. Apache 2.0 applies from the next
+release forward, and the choice is not neutral: the processor here is meant to
+be proposed to `opentelemetry-collector-contrib`, which requires Apache 2.0 of
+every component, and the semantic convention registries this repository vendors
+under `internal/semconv/testdata/upstream/` are Apache 2.0 already. Matching the
+license of the thing you intend to join is cheaper done now than at the point
+someone asks. Apache 2.0 also carries an express patent grant, which MIT leaves
+to inference.

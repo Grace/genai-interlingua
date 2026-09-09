@@ -2,6 +2,9 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
+
+# SPDX-License-Identifier: Apache-2.0
+
 """A deterministic OpenAI-compatible chat completions server.
 
 Fixtures captured against the real API would change every time the model does,

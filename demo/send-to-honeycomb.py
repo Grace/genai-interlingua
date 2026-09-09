@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+# SPDX-License-Identifier: Apache-2.0
+
 """Sends the normalized fixtures to Honeycomb, one service per dialect.
 
     export HONEYCOMB_API_KEY=...     # or put it in demo/.env

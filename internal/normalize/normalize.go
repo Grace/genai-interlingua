@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package normalize turns a span in some GenAI dialect into a span in one
 // chosen version of the GenAI semantic conventions, and records everything that
 // did not survive the trip.

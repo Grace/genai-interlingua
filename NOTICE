@@ -1,0 +1,15 @@
+genai-interlingua
+Copyright 2026 Grace
+
+This product is licensed under the Apache License, Version 2.0. See LICENSE.
+
+This product includes semantic convention registries vendored from the
+OpenTelemetry project, Copyright The OpenTelemetry Authors, licensed under the
+Apache License, Version 2.0:
+
+  https://github.com/open-telemetry/semantic-conventions
+  https://github.com/open-telemetry/semantic-conventions-genai
+
+They are vendored verbatim, converted to JSON, under
+internal/semconv/testdata/upstream/. Each file records the upstream repository
+and the commit it was taken from in its own _source block.

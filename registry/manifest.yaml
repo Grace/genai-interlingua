@@ -13,6 +13,13 @@
 # working artifact is a different conversation from one that does not.
 #
 #   weaver registry check -r registry/
+
+# Licensed under the Apache License, Version 2.0, as a part of
+# github.com/Grace/genai-interlingua. See LICENSE and NOTICE there. Stated in
+# a comment because the manifest schema has no license field: weaver ignores
+# unknown keys rather than rejecting them, so one would read as supported
+# without being so. This registry is meant to be vendorable on its own, which
+# is the case where a reader has the file and not the repository.
 name: genai-interlingua
 description: Attributes recording that telemetry was translated, and what the translation cost.
 schema_url: https://github.com/Grace/genai-interlingua/registry/0.1.0

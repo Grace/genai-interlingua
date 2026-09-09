@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# SPDX-License-Identifier: Apache-2.0
+
 # Checks that the emitted OTTL is OTTL -- that a stock Collector's transform
 # processor loads every statement this package generates.
 #

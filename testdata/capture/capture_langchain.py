@@ -9,6 +9,9 @@
 #   "httpx",
 # ]
 # ///
+
+# SPDX-License-Identifier: Apache-2.0
+
 """Drives a LangChain chain with a tool, instrumented for OpenTelemetry.
 
 LangChain is named in a lot of job descriptions as its own telemetry ecosystem,

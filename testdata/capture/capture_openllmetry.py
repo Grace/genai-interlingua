@@ -2,6 +2,9 @@
 # requires-python = ">=3.11,<3.14"
 # dependencies = ["traceloop-sdk", "openai", "httpx"]
 # ///
+
+# SPDX-License-Identifier: Apache-2.0
+
 """Drives OpenLLMetry (Traceloop) through one chat-with-tool-call.
 
 The workflow decorator and the prompt association are here because the dialect

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 package dialect
 
 // Reason is why a source attribute did not survive into the IR. The set is

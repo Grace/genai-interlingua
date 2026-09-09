@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package genaiinterlingua is an OpenTelemetry Collector processor that
 // normalizes GenAI spans from any recognized instrumentation dialect into one
 // chosen version of the GenAI semantic conventions.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 package normalize
 
 // Reason is why a parsed field did not survive rendering into the target schema.

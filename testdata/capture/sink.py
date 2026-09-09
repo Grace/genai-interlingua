@@ -2,6 +2,9 @@
 # requires-python = ">=3.11"
 # dependencies = ["opentelemetry-proto>=1.29", "protobuf>=5"]
 # ///
+
+# SPDX-License-Identifier: Apache-2.0
+
 """An OTLP/HTTP trace receiver that writes exactly one export to a file as
 OTLP/JSON.
 

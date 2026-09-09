@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Drives the Vercel AI SDK through one chat-with-tool-call.
 //
 // experimental_telemetry is what makes the SDK emit spans at all; without it a

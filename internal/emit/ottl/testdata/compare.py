@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """Compares a span normalized by the processor against the same span normalized
 by the exported OTTL config.
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package dialect detects which GenAI instrumentation library produced a span
 // and parses it into a neutral intermediate representation.
 //

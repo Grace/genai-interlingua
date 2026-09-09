@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package semconv renders normalized GenAI fields into a chosen target schema
 // version.
 //

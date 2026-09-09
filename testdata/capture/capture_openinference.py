@@ -7,6 +7,9 @@
 #   "opentelemetry-exporter-otlp-proto-http",
 # ]
 # ///
+
+# SPDX-License-Identifier: Apache-2.0
+
 """Drives Arize OpenInference through one chat-with-tool-call."""
 
 import os

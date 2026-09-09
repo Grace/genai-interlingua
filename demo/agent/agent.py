@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """A support agent, instrumented with OpenLLMetry, talking to a mock model.
 
 This is the same library the capture harness drives, for the same reason: what

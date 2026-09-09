@@ -2,6 +2,9 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
+
+# SPDX-License-Identifier: Apache-2.0
+
 """Prints the resolved versions of a capture runner's *declared* dependencies.
 
 A uv lockfile lists the full transitive closure, which for these runners is

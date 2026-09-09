@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """Prints what a captured fixture actually contains, so a capture that silently
 produced the wrong thing is visible at the point it was produced."""
 

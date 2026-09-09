@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# SPDX-License-Identifier: Apache-2.0
+
 # Builds the WebAssembly demo at grace.github.io/demos/genai-interlingua.
 #
 #   ./demos/build.sh [path-to-grace.github.io]

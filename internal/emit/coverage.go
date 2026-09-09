@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package emit compares what each export format can carry.
 //
 // There are three ways out of this repository and they are not equivalent. The

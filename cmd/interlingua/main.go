@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Command interlingua normalizes GenAI spans on stdin into one chosen version of
 // the GenAI semantic conventions on stdout.
 //

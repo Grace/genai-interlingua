@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 //go:build js && wasm
 
 // A browser entry point for the demo at grace.github.io/demos/genai-interlingua.

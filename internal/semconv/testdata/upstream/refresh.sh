@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# SPDX-License-Identifier: Apache-2.0
+
 # Re-vendors the upstream attribute registries this package is checked against.
 #
 #   ./internal/semconv/testdata/upstream/refresh.sh

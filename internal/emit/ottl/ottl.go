@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Package ottl renders a dialect's declared rules as an OpenTelemetry
 // Collector transform processor configuration.
 //

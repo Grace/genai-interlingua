@@ -7,6 +7,9 @@
 #   "opentelemetry-api",
 # ]
 # ///
+
+# SPDX-License-Identifier: Apache-2.0
+
 """Drives LiteLLM through one chat-with-tool-call.
 
 LiteLLM emits OTel through its own callback rather than an instrumentation

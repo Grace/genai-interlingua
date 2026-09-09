@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# SPDX-License-Identifier: Apache-2.0
+
 # Checks that the emitted OTTL means what the Go normalizer means.
 #
 #   ./internal/emit/ottl/testdata/equivalence.sh

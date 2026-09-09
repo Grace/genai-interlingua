@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# SPDX-License-Identifier: Apache-2.0
+
 # Captures a real span from one instrumentation library into testdata/<dialect>/in.json.
 #
 # Nothing here talks to a model provider. A mock OpenAI-compatible server returns
