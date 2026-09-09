@@ -9,13 +9,14 @@ This file is the ledger. It records what has been offered, what was accepted,
 and what was declined — including the declines, because a proposal that lost an
 argument is more useful to a reader than a proposal that quietly vanished.
 
-**Status: nothing offered yet.** Everything below is intent.
+**Status as of 2026-09-09:** one direction proposed, awaiting a code owner. Everything else
+below is still intent.
 
 ## Ledger
 
 | | What | Where | Status |
 | --- | --- | --- | --- |
-| 1 | Generate the semconv target-types map at build time instead of reflecting at init | [contrib#48607](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/48607) | not yet offered |
+| 1 | Generate the semconv target-types map at build time instead of reflecting at init | [contrib#48607](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/48607) | **proposed 2026-09-09**, awaiting reply |
 | 2 | LiteLLM as a built-in source | new PR | not yet offered |
 | 3 | Braintrust as a built-in source | new PR | not yet offered |
 | 4 | Vercel AI SDK as a built-in source | new PR | not yet offered |
@@ -41,6 +42,13 @@ The argument for it is the one in that generator's own header: a table somebody
 typed is a claim about upstream that upstream never made. The operational version
 is that a generated file changes visibly in a diff when upstream retypes an
 attribute, and reflection does not.
+
+**Proposed 2026-09-09.** The thread had stalled on one objection: build-time generation was
+taken to mean losing user-selectable target versions, leaving users a `schemaprocessor` hop.
+That only follows if the generator emits one table. Emitting one per target keeps selection a
+runtime value, which is what this repository already does — `go generate` here prints
+`72 fields modelled, 2 targets`. The honest cost, which the proposal states, is that the set is
+bounded by what a maintainer has added rather than open to any version a user names.
 
 ### 2–4 — three more built-in sources
 
@@ -96,6 +104,32 @@ in the YAML, which is not a decision anybody made.
 This is the largest change and the least welcome as an unsolicited patch, so it
 is a discussion with a reproducing span attached, after the others have landed —
 not a PR.
+
+## How this repository talks to OpenTelemetry
+
+OpenTelemetry is dealing with maintainer burden from AI-assisted contributions
+([community#3649](https://github.com/open-telemetry/community/issues/3649)), and has two
+documents about it. Both bear on how anything in this ledger gets offered.
+
+[`policies/genai.md`](https://github.com/open-telemetry/community/blob/main/policies/genai.md)
+lets maintainers close or hide contributions made in whole or in part with generative AI, at
+their discretion, and asks for disclosure when a tool wrote the bulk of one. For code, the
+requested form is an `Assisted-by:` commit trailer naming the model.
+
+Contrib's [`AGENTS.md`](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/AGENTS.md)
+is blunter, and is addressed to the tools rather than to people:
+
+> The most important rule is not to post comments on issues or PRs that are AI-generated.
+> Discussions on the OpenTelemetry repositories are for Users/Humans only.
+
+So: every comment, issue and PR description that goes out under this repository's name is
+written by a human, start to finish. Research, reading upstream source and drafting code are
+all explicitly fine — the policy FAQ calls using an LLM to understand a codebase "a good idea"
+— and the line falls at anything that gets published as speech.
+
+One practical trap worth writing down. Contrib gates on **EasyCLA**, which validates every
+commit author *and co-author*. A `Co-Authored-By:` trailer naming a non-signatory fails the
+check outright, which is a second reason `Assisted-by:` is the right form.
 
 ## What stays here
 
