@@ -222,6 +222,25 @@ type Ruled interface {
 	// This is the list that makes an export honest. Everything on it is
 	// something the emitted config cannot do, said out loud, in the config.
 	Unstated() []semconv.Field
+
+	// Signature names source attribute keys whose presence identifies this
+	// emitter -- the same evidence Score weighs, written as data because an
+	// exported config has to gate on something and cannot run Score.
+	//
+	// Concrete keys rather than the namespace prefixes Score mostly uses,
+	// because OTTL has no predicate over the attribute map: there is no way to
+	// ask "does this span carry any braintrust.* key" without iteration, which
+	// is the gap tracked as collector-contrib#29289. So the prefix has to be
+	// expanded here into the keys the parser actually reads.
+	//
+	// Braintrust is why this exists. Everything distinctive about a Braintrust
+	// span lives in the JSON blobs its parser reads, so its rule table names
+	// only conventions spellings, and a gate derived from that table alone
+	// matched none of its own spans -- a config that did nothing while its
+	// header advertised six mappings. Returning nil is allowed and means the
+	// rule table is distinctive enough on its own; it is not a shortcut, and
+	// TestExportedConfigGatesOnItsOwnCorpus is what holds it to that.
+	Signature() []string
 }
 
 // applyRules runs a rule table against a span. Rules are independent by

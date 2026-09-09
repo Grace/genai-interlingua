@@ -210,6 +210,13 @@ func (vercel) Rules() []Rule {
 	}
 }
 
+// Signature is ai.operationId, which Score weighs at two and which no other
+// emitter here writes. The rest of the ai.* namespace already reaches the gate
+// through the rule table, since none of it is spelled the conventions' way.
+func (vercel) Signature() []string {
+	return []string{"ai.operationId"}
+}
+
 // Unstated is the messages and the tool definitions, all four of which are
 // reassembly rather than translation: ai.prompt.messages is a JSON array whose
 // content is either a bare string or a list of typed parts, and both spellings

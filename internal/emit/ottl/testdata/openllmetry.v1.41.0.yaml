@@ -88,8 +88,12 @@ processors:
           - attributes["llm.is_streaming"] != nil
           - attributes["llm.presence_penalty"] != nil
           - attributes["llm.top_k"] != nil
+          - attributes["traceloop.entity.input"] != nil
+          - attributes["traceloop.entity.name"] != nil
+          - attributes["traceloop.entity.output"] != nil
           - attributes["traceloop.prompt.key"] != nil
           - attributes["traceloop.prompt.version"] != nil
+          - attributes["traceloop.span.kind"] != nil
           - attributes["traceloop.workflow.name"] != nil
         statements:
           - set(attributes["gen_ai.provider.name"], attributes["gen_ai.system"]) where attributes["gen_ai.provider.name"] == nil and attributes["gen_ai.system"] != nil

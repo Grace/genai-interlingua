@@ -156,6 +156,23 @@ func (liteLLM) Rules() []Rule {
 	}
 }
 
+// Signature is the two namespaces Score weighs and the rule table cannot spell:
+// litellm.* is the emitter's own, and gen_ai.cost.* is its invention -- the
+// conventions price nothing at any version.
+//
+// gen_ai.framework is deliberately absent even though Score weighs it highest.
+// Score tests its value, and a gate tests presence: any emitter that names the
+// framework it is running under writes that key, so its presence identifies
+// nothing. A signature entry has to be distinctive under the weaker test the
+// gate can actually perform.
+func (liteLLM) Signature() []string {
+	return []string{
+		"litellm.call_id",
+		"litellm.provider.model",
+		"gen_ai.cost.total_cost",
+	}
+}
+
 // Unstated is what is left after the rules: the messages, and the finish
 // reasons derived from them.
 //

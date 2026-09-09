@@ -134,6 +134,13 @@ func (openInference) Rules() []Rule {
 	}
 }
 
+// Signature is openinference.span.kind, which Score weighs at two and which
+// nothing else writes. The llm.* keys it also scores on are already in the rule
+// table under their own spellings, so they reach the gate that way.
+func (openInference) Signature() []string {
+	return []string{"openinference.span.kind"}
+}
+
 // Unstated is unusually long here, and the reason is one attribute.
 //
 // OpenInference packs every sampling setting into llm.invocation_parameters as

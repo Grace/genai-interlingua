@@ -73,8 +73,11 @@ processors:
     trace_statements:
       - context: span
         conditions:
+          - attributes["gen_ai.cost.total_cost"] != nil
           - attributes["gen_ai.system"] != nil
           - attributes["gen_ai.usage.cache_creation.input_tokens"] != nil
+          - attributes["litellm.call_id"] != nil
+          - attributes["litellm.provider.model"] != nil
           - attributes["llm.request.type"] != nil
         statements:
           - set(attributes["gen_ai.provider.name"], attributes["gen_ai.system"]) where attributes["gen_ai.provider.name"] == nil and attributes["gen_ai.system"] != nil

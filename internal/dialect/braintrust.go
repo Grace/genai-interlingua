@@ -80,6 +80,30 @@ func (braintrust) Rules() []Rule {
 	}
 }
 
+// Signature is the braintrust namespace, expanded into the keys this parser
+// reads. Nothing else emits braintrust.*, which is why Score needs only the
+// prefix and one weight of three to identify the emitter outright.
+//
+// This is the dialect the mechanism exists for. Its rule table names only
+// conventions spellings -- gen_ai.request.model, gen_ai.system and the rest --
+// because Braintrust writes the conventions' own names wherever it has a plain
+// value for them and puts everything else in JSON. A gate built from that table
+// keeps only the spellings that are not already the target's, which on a real
+// Braintrust span is none of them.
+func (braintrust) Signature() []string {
+	return []string{
+		"braintrust.span_attributes",
+		"braintrust.scores",
+		"braintrust.metrics",
+		"braintrust.input_json",
+		"braintrust.output_json",
+		"braintrust.expected_json",
+		"braintrust.context_json",
+		"braintrust.metadata",
+		"braintrust.tags",
+	}
+}
+
 // Unstated is where this dialect stops being like the others.
 //
 // Five of these seven fields are *also* produced by a rule above, which no

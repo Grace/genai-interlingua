@@ -105,6 +105,14 @@ type Result struct {
 	// separately so a caller can report it without parsing YAML back.
 	Unsupported []string
 
+	// Gates names the attribute keys the config's conditions test. A span
+	// carrying none of them is not touched by this config at all, so this is
+	// the config's answer to "which spans is this for" -- returned rather than
+	// left in the YAML for the same reason Unsupported and Partial are, and
+	// because a config that cannot match its own emitter's spans is a config
+	// that does nothing while advertising coverage.
+	Gates []string
+
 	// Partial names the attribute keys a rule states *and* the dialect can also
 	// reach by reading the span. The config carries them when the emitter spells
 	// them the conventions' way and does not when the same fact only arrives in
@@ -195,8 +203,11 @@ func Config(opts Options) (Result, error) {
 			fmt.Sprintf(`set(attributes[%s], [%s])`, quote(AttrExportPartial), quoteList(partial)))
 	}
 
+	gateKeys := gates(rules, opts.Dialect.Signature(), opts.Target)
+
 	return Result{
-		YAML:        render(opts, carried, conformant, partial, unsupported, conditions(rules, opts.Target), stmts),
+		YAML:        render(opts, carried, conformant, partial, unsupported, conditions(gateKeys), stmts),
+		Gates:       gateKeys,
 		Unsupported: unsupported,
 		Partial:     partial,
 	}, nil
@@ -376,10 +387,24 @@ func unsupportedKeys(opts Options, partial []string) []string {
 // Detect scores all the evidence and takes a winner. Two libraries sharing a
 // vocabulary -- LiteLLM and OpenLLMetry both write llm.request.type -- are not
 // distinguished here, and the header says to route by service.
-func conditions(rules []dialect.Rule, target semconv.Target) []string {
+func gates(rules []dialect.Rule, signature []string, target semconv.Target) []string {
 	seen := make(map[string]bool)
 	var out []string
 	var all []string
+
+	// The dialect's own signature first, and unfiltered. These are the keys
+	// detection identifies the emitter by, so they are distinctive by
+	// definition and no amount of reasoning about target spellings applies to
+	// them.
+	for _, k := range signature {
+		if seen[k] {
+			continue
+		}
+		seen[k] = true
+		all = append(all, k)
+		out = append(out, k)
+	}
+
 	for _, r := range rules {
 		key, represented := target.Key(r.Field)
 		for _, k := range r.Keys {
@@ -387,21 +412,32 @@ func conditions(rules []dialect.Rule, target semconv.Target) []string {
 				continue
 			}
 			seen[k] = true
-			clause := fmt.Sprintf(`attributes[%s] != nil`, quote(k))
-			all = append(all, clause)
+			all = append(all, k)
 			if !represented || k != key {
-				out = append(out, clause)
+				out = append(out, k)
 			}
 		}
 	}
+
 	if len(out) == 0 {
-		// Every source key is already the target key: this emitter writes the
-		// conventions verbatim and the config only stamps provenance. There is
-		// nothing distinctive to gate on, so gate on the shape and let the
-		// header carry the warning.
+		// Every source key is already the target key and the dialect declares
+		// no signature: this emitter writes the conventions verbatim and the
+		// config only stamps provenance. There is nothing distinctive to gate
+		// on, so gate on the shape and let the header carry the warning.
 		out = all
 	}
 	sort.Strings(out)
+	return out
+}
+
+// conditions renders gate keys as OTTL presence tests. The transform processor
+// ORs them, which is what makes the signature safe to add: a wider gate can
+// only make a config run on more spans, never fewer.
+func conditions(gates []string) []string {
+	out := make([]string, len(gates))
+	for i, k := range gates {
+		out[i] = fmt.Sprintf(`attributes[%s] != nil`, quote(k))
+	}
 	return out
 }
 

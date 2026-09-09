@@ -78,6 +78,15 @@ processors:
     trace_statements:
       - context: span
         conditions:
+          - attributes["braintrust.context_json"] != nil
+          - attributes["braintrust.expected_json"] != nil
+          - attributes["braintrust.input_json"] != nil
+          - attributes["braintrust.metadata"] != nil
+          - attributes["braintrust.metrics"] != nil
+          - attributes["braintrust.output_json"] != nil
+          - attributes["braintrust.scores"] != nil
+          - attributes["braintrust.span_attributes"] != nil
+          - attributes["braintrust.tags"] != nil
           - attributes["gen_ai.agent.tools"] != nil
           - attributes["gen_ai.system"] != nil
           - attributes["gen_ai.usage.completion_tokens"] != nil

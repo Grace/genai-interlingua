@@ -109,6 +109,20 @@ func (openLLMetry) Rules() []Rule {
 	}
 }
 
+// Signature is the traceloop namespace, which Score weighs at two. The
+// gen_ai.prompt.* and gen_ai.completion.* prefixes it also scores on are
+// indexed rather than fixed keys, so they cannot be written down here -- a gate
+// cannot name gen_ai.prompt.0.role without guessing how many there are.
+func (openLLMetry) Signature() []string {
+	return []string{
+		"traceloop.span.kind",
+		"traceloop.workflow.name",
+		"traceloop.entity.name",
+		"traceloop.entity.input",
+		"traceloop.entity.output",
+	}
+}
+
 // Unstated. Six of these are the usual reassembly work. gen_ai.operation.name
 // is the interesting one, and it is here for a reason worth being precise
 // about, because it is not the reason the other five are.
