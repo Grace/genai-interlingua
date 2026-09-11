@@ -72,7 +72,10 @@ export function App() {
 
   return (
     <>
-      <Intro />
+      <div className="masthead">
+        <h1>Interlingua</h1>
+        <p>Explain exactly what happened to your telemetry.</p>
+      </div>
 
       <div className="controls" role="group" aria-label="What to inspect">
         <label>
@@ -159,6 +162,10 @@ export function App() {
           original={result.original}
         />
       )}
+
+      <div className="essay">
+        <Intro />
+      </div>
     </>
   )
 }
