@@ -35,9 +35,11 @@ import (
 //
 // What it does not cover, said plainly. The unstated half of each dialect is
 // Go, and Go cannot be hashed the way a table can. Digest covers the *fields*
-// those methods declare they produce, via Unstated, so adding or removing one
-// moves the digest; it does not cover a change of behaviour inside a method
-// that keeps producing the same field. Rewriting how openinference reassembles
+// those methods declare they produce, via Unstated, and the readings they
+// declare they perform, via Interpretations -- which key means which field,
+// under what evidence, through what value table -- so a change of meaning moves
+// the digest. It does not cover a change of behaviour inside a method that keeps
+// performing the same declared readings. Rewriting how openinference reassembles
 // messages, and changing nothing about which fields come out, leaves the digest
 // where it was. That is a real limit and it is stated here rather than papered
 // over with a commit hash that would have moved for a reason unrelated to the
@@ -75,31 +77,30 @@ func canonical() string {
 	for _, d := range ds {
 		fmt.Fprintf(&b, "dialect %s\n", d.Name())
 
-		r, ok := d.(Ruled)
-		if !ok {
-			// A dialect with no rule table states nothing this can hash beyond
-			// its name. Recorded as such rather than skipped, so that one
-			// growing a table is a change to this text and not a silent
-			// addition to it.
+		if r, ok := d.(Ruled); ok {
+			for _, rule := range r.Rules() {
+				writeRule(&b, rule)
+			}
+
+			unstated := append([]semconv.Field(nil), r.Unstated()...)
+			sort.Slice(unstated, func(i, j int) bool { return unstated[i] < unstated[j] })
+			for _, f := range unstated {
+				fmt.Fprintf(&b, "  unstated %s\n", f)
+			}
+
+			sig := append([]string(nil), r.Signature()...)
+			sort.Strings(sig)
+			for _, k := range sig {
+				fmt.Fprintf(&b, "  signature %s\n", k)
+			}
+		} else {
+			// A dialect with no rule table is recorded as such rather than
+			// skipped, so that one growing a table is a change to this text
+			// and not a silent addition to it.
 			b.WriteString("  unruled\n")
-			continue
 		}
 
-		for _, rule := range r.Rules() {
-			writeRule(&b, rule)
-		}
-
-		unstated := append([]semconv.Field(nil), r.Unstated()...)
-		sort.Slice(unstated, func(i, j int) bool { return unstated[i] < unstated[j] })
-		for _, f := range unstated {
-			fmt.Fprintf(&b, "  unstated %s\n", f)
-		}
-
-		sig := append([]string(nil), r.Signature()...)
-		sort.Strings(sig)
-		for _, k := range sig {
-			fmt.Fprintf(&b, "  signature %s\n", k)
-		}
+		writeInterpretations(&b, d)
 	}
 
 	// The targets are part of the mapping, not a separate thing it is pointed
@@ -122,6 +123,44 @@ func canonical() string {
 	}
 
 	return b.String()
+}
+
+// writeInterpretations renders the readings a dialect declares beyond its rules,
+// sorted. They are where the meaning of the hand-written half lives: a key read
+// into a different field, or through a different value table, or under
+// different evidence, is a different mapping even though no Rule moved, and
+// before these were declared it left the digest exactly where it was.
+func writeInterpretations(b *strings.Builder, d Dialect) {
+	in, ok := d.(Interpreted)
+	if !ok {
+		return
+	}
+	var lines []string
+	for _, i := range in.Interpretations() {
+		var lb strings.Builder
+		writeInterpretation(&lb, i)
+		lines = append(lines, lb.String())
+	}
+	sort.Strings(lines)
+	for _, l := range lines {
+		b.WriteString(l)
+	}
+}
+
+// writeInterpretation renders one reading field by field, zeros included, for
+// the reason writeTransform does.
+func writeInterpretation(b *strings.Builder, i Interpretation) {
+	fmt.Fprintf(b, "  means %s when=%q -> %s\n", i.Key, i.When, i.Meaning)
+	fmt.Fprintf(b, "    candidates=%s\n", joinFields(i.Candidates))
+	fmt.Fprintf(b, "    byspelling=%t\n", i.BySpelling)
+	keys := make([]string, 0, len(i.Values))
+	for k := range i.Values {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		fmt.Fprintf(b, "    value %s=%s\n", k, i.Values[k])
+	}
 }
 
 // writeRule renders one rule. Every caller goes through here, tests included,

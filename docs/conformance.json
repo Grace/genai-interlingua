@@ -164,7 +164,7 @@
       "dialects": {
         "braintrust": true,
         "litellm": true,
-        "openinference": false,
+        "openinference": true,
         "openllmetry": true,
         "raw": true,
         "vercel": true
@@ -178,7 +178,7 @@
       },
       "dialects": {
         "braintrust": false,
-        "litellm": false,
+        "litellm": true,
         "openinference": true,
         "openllmetry": true,
         "raw": true,
@@ -387,7 +387,7 @@
         "v1.41.0": true
       },
       "dialects": {
-        "braintrust": false,
+        "braintrust": true,
         "litellm": true,
         "openinference": true,
         "openllmetry": true,
@@ -402,7 +402,7 @@
         "v1.41.0": true
       },
       "dialects": {
-        "braintrust": false,
+        "braintrust": true,
         "litellm": true,
         "openinference": true,
         "openllmetry": true,
@@ -499,9 +499,7 @@
         "braintrust.tags"
       ],
       "unstructured": [
-        "braintrust.context_json",
-        "braintrust.input_json",
-        "braintrust.output_json"
+        "braintrust.context_json"
       ]
     },
     "litellm": {
@@ -573,7 +571,6 @@
       ],
       "unstructured": [
         "input.value",
-        "llm.invocation_parameters",
         "output.value"
       ]
     },
@@ -642,6 +639,7 @@
     "genai-main": {
       "openllmetry": {
         "no_value": [
+          "gen_ai.operation.name",
           "gen_ai.provider.name"
         ]
       }
@@ -658,6 +656,7 @@
           "gen_ai.prompt.version"
         ],
         "no_value": [
+          "gen_ai.operation.name",
           "gen_ai.provider.name"
         ]
       }

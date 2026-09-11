@@ -125,6 +125,41 @@ It gained one mark it had never earned: `braintrust.scores` under `flattened`,
 because the capture includes a second span carrying several scores and the
 conventions carry one evaluation per span.
 
+**Later.** Both message fields came back, from Braintrust's own attributes rather
+than from a hand-built claim. On a span typed `llm`, `braintrust.input_json` and
+`braintrust.output_json` are OpenAI chat messages, and the dialect had been
+recording them as unstructured on every span -- including the ones where
+Braintrust had said exactly what they were.
+
+## Spelling is not meaning
+
+A pass over every dialect for attributes whose name suggested one meaning while
+their value carried another found three, all in the captures.
+
+OpenInference's `llm.model_name` held `gpt-4o-mini-2024-07-18` where the request
+asked for `gpt-4o-mini`. It had been read as the request model, so the span
+carried the answering model under `gen_ai.request.model` and no response model at
+all. It is now the response model on a span with a response and ambiguous on one
+without, and the requested model is lifted out of `llm.invocation_parameters`.
+
+Finish reasons came out in three spellings for one event: `tool_call` from
+OpenLLMetry, `tool_calls` from OpenInference, from OpenTelemetry's own OpenAI
+instrumentation and from Vercel after its table respelled `tool-calls`, and a
+JSON array inside a string from LiteLLM. The message schema at both targets spells
+it `tool_call`, so that is what every dialect now writes. The old table's comment
+said every other emitter wrote `tool_calls`; the captures were the evidence
+against it, and nobody had looked.
+
+LangChain's `gen_ai.operation.name=execute_task` is not an operation either target
+defines, and it passed through unrecorded because no dialect read the attribute
+-- it was spelled like the conventions, so it was waved through as though it
+were. A conventions-spelled key nobody read is now checked against the target and
+reported, without being read into anything.
+
+Each dialect now declares what it reads each key as, including the readings its
+hand-written code performs, and the mapping digest covers those declarations, so
+changing what a key means moves `interlingua.mapping` even where no rule moved.
+
 ## The two that found nothing
 
 `ai==5.0.253` and `opentelemetry-instrumentation-langchain==0.62.3` both came

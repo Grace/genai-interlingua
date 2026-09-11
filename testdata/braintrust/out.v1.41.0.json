@@ -117,9 +117,21 @@
                   }
                 },
                 {
+                  "key": "gen_ai.input.messages",
+                  "value": {
+                    "stringValue": "[{\"role\":\"system\",\"parts\":[{\"type\":\"text\",\"content\":\"You are a support agent. Use the tools you are given.\"}]},{\"role\":\"user\",\"parts\":[{\"type\":\"text\",\"content\":\"Where is order A-1187?\"}]}]"
+                  }
+                },
+                {
                   "key": "gen_ai.operation.name",
                   "value": {
                     "stringValue": "chat"
+                  }
+                },
+                {
+                  "key": "gen_ai.output.messages",
+                  "value": {
+                    "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"tool_call\",\"id\":\"call_9RtYbK2mXqLp\",\"name\":\"lookup_order\",\"arguments\":{\"order_id\":\"A-1187\"}}]}]"
                   }
                 },
                 {
@@ -176,16 +188,10 @@
                           "stringValue": "braintrust.expected_json"
                         },
                         {
-                          "stringValue": "braintrust.input_json"
-                        },
-                        {
                           "stringValue": "braintrust.metadata"
                         },
                         {
                           "stringValue": "braintrust.metrics"
-                        },
-                        {
-                          "stringValue": "braintrust.output_json"
                         },
                         {
                           "stringValue": "braintrust.tags"
@@ -197,13 +203,13 @@
                 {
                   "key": "interlingua.lossy.count",
                   "value": {
-                    "intValue": "7"
+                    "intValue": "5"
                   }
                 },
                 {
                   "key": "interlingua.mapping",
                   "value": {
-                    "stringValue": "5fd7babe7b4ccda2"
+                    "stringValue": "731a97a6a88ed466"
                   }
                 },
                 {
@@ -332,7 +338,7 @@
                 {
                   "key": "interlingua.mapping",
                   "value": {
-                    "stringValue": "5fd7babe7b4ccda2"
+                    "stringValue": "731a97a6a88ed466"
                   }
                 },
                 {

@@ -85,8 +85,8 @@ func TestNormalizationNeverRemovesAnAttribute(t *testing.T) {
 		for _, target := range semconv.Targets {
 			opts := DefaultOptions()
 			opts.Target = target
-			if !opts.PreserveOriginal {
-				t.Fatal("DefaultOptions no longer preserves originals; this test assumes it does")
+			if opts.Originals != OriginalsKeep {
+				t.Fatal("DefaultOptions no longer keeps originals; this test assumes it does")
 			}
 
 			out, err := Payload(data, opts)

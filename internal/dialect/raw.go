@@ -3,6 +3,8 @@
 package dialect
 
 import (
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/Grace/genai-interlingua/internal/semconv"
@@ -100,16 +102,52 @@ func (raw) Score(s Span) int {
 	return conformant*2 + folk
 }
 
+// Interpretations are every reading this dialect performs, and every one of
+// them is by spelling. That is the dialect's definition rather than a lapse: it
+// claims spans no library wrote, so there is nobody whose convention to follow
+// and the name is the only evidence there is. Declaring it is what lets the
+// explanation say so, instead of presenting gen_ai.request.model on a
+// hand-rolled span with the same confidence as one a library's mapping vouched
+// for.
+func (raw) Interpretations() []Interpretation {
+	in := []Interpretation{
+		{Key: "gen_ai.*", BySpelling: true},
+		{Key: "gen_ai.response.finish_reasons", BySpelling: true,
+			Meaning: semconv.ResponseFinishReasons, Values: finishReasons},
+	}
+	for _, k := range slices.Sorted(maps.Keys(rawAliases)) {
+		i := Interpretation{Key: k, Meaning: rawAliases[k], BySpelling: true}
+		if i.Meaning == semconv.ResponseFinishReasons {
+			i.Values = finishReasons
+		}
+		in = append(in, i)
+	}
+	return in
+}
+
 func (d raw) Parse(s Span) Parsed {
 	var p Parsed
 
 	// A key the conventions themselves define is taken at its word. Someone
 	// who wrote gen_ai.usage.input_tokens by hand got it right, and the fact
-	// that no library was involved does not make the attribute mean less.
+	// that no library was involved does not make the attribute mean less. It is
+	// recorded as read by spelling, because that is what it is.
 	for _, k := range s.Keys() {
-		if f, ok := semconv.FieldForKey(k); ok {
-			p.Take(s, k, f)
+		f, ok := semconv.FieldForKey(k)
+		if !ok {
+			continue
 		}
+		v, ok := s.Attr(k)
+		if !ok {
+			continue
+		}
+		if f == semconv.ResponseFinishReasons {
+			if reasons, ok := finishReasonList(v); ok {
+				v = strSeq(reasons)
+			}
+		}
+		p.setBySpelling(f, v, k)
+		p.Consumed = append(p.Consumed, k)
 	}
 
 	for _, k := range s.Keys() {
@@ -122,21 +160,18 @@ func (d raw) Parse(s Span) Parsed {
 			p.Lose(k, ReasonNoField, "the span also carries this as a gen_ai attribute")
 			continue
 		}
-		if f == semconv.ResponseFinishReasons {
-			if v, ok := s.Attr(k); ok {
-				p.setFrom(f, strSeq([]string{v.Str}), k)
-				p.Consumed = append(p.Consumed, k)
-			}
+		v, ok := s.Attr(k)
+		if !ok {
 			continue
 		}
-		if f == semconv.ProviderName {
-			if v, ok := s.Attr(k); ok {
-				p.setFrom(f, String(strings.ToLower(v.Str)), k)
-				p.Consumed = append(p.Consumed, k)
-			}
-			continue
+		switch f {
+		case semconv.ResponseFinishReasons:
+			v = strSeq([]string{finishReason(v.Str)})
+		case semconv.ProviderName:
+			v = String(strings.ToLower(v.Str))
 		}
-		p.Take(s, k, f)
+		p.setBySpelling(f, v, k)
+		p.Consumed = append(p.Consumed, k)
 	}
 
 	// Recognized, and deliberately not carried. Every other dialect here

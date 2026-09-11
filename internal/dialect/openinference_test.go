@@ -341,12 +341,58 @@ func TestOpenInferencePrefersProviderOverSystem(t *testing.T) {
 }
 
 func TestOpenInferenceReadsTheFinishReason(t *testing.T) {
+	// OpenAI's tool_calls, respelled onto the conventions' tool_call.
 	p := (openInference{}).Parse(Span{Attributes: map[string]Value{
 		"llm.finish_reason": String("tool_calls"),
 	}})
 	got := mustField(t, p, semconv.ResponseFinishReasons).StrSeq
-	if len(got) != 1 || got[0] != "tool_calls" {
-		t.Errorf("finish reasons = %v, want [tool_calls]", got)
+	if len(got) != 1 || got[0] != "tool_call" {
+		t.Errorf("finish reasons = %v, want [tool_call]", got)
+	}
+}
+
+// llm.model_name is spelled like the model a request asked for. The capture
+// asked for gpt-4o-mini and recorded gpt-4o-mini-2024-07-18 there, so on a span
+// that got an answer it is the model that answered, and the model asked for is
+// the one in the invocation parameters.
+func TestOpenInferenceModelNameIsTheResponseModelOnASpanWithAResponse(t *testing.T) {
+	p := (openInference{}).Parse(Span{Attributes: map[string]Value{
+		"llm.model_name":             String("gpt-4o-mini-2024-07-18"),
+		"llm.token_count.completion": Int(27),
+		"llm.invocation_parameters":  String(`{"model":"gpt-4o-mini"}`),
+	}})
+
+	if got := mustField(t, p, semconv.ResponseModel).Str; got != "gpt-4o-mini-2024-07-18" {
+		t.Errorf("response model = %q, want the model llm.model_name recorded", got)
+	}
+	if got := mustField(t, p, semconv.RequestModel).Str; got != "gpt-4o-mini" {
+		t.Errorf("request model = %q, want the model the invocation parameters asked for", got)
+	}
+	if got, want := p.Source[semconv.ResponseModel], (Origin{Key: "llm.model_name", When: openInferenceResponded}); got != want {
+		t.Errorf("response model attributed to %+v, want %+v", got, want)
+	}
+	if got, want := p.Source[semconv.RequestModel], (Origin{Key: "llm.invocation_parameters", Lifted: true}); got != want {
+		t.Errorf("request model attributed to %+v, want %+v", got, want)
+	}
+}
+
+// Without a response nothing on the span says which model llm.model_name is,
+// and choosing the one that makes nicer telemetry is the guess this refuses.
+func TestOpenInferenceModelNameIsAmbiguousWithoutAResponse(t *testing.T) {
+	p := (openInference{}).Parse(Span{Attributes: map[string]Value{
+		"llm.model_name": String("gpt-4o-mini"),
+	}})
+	for _, f := range []semconv.Field{semconv.RequestModel, semconv.ResponseModel} {
+		if v, ok := p.Fields[f]; ok {
+			t.Errorf("%s was set to %v from a span with no response to say which model it was", f, v)
+		}
+	}
+	l := lossFor(t, p, "llm.model_name")
+	if l.Reason != ReasonAmbiguous {
+		t.Errorf("llm.model_name recorded with reason %q, want %q", l.Reason, ReasonAmbiguous)
+	}
+	if got := joinFields(l.Candidates); got != "request.model,response.model" {
+		t.Errorf("candidates are %q, want both models", got)
 	}
 }
 

@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor/processortest"
 
+	"github.com/Grace/genai-interlingua/internal/normalize"
 	"github.com/Grace/genai-interlingua/internal/semconv"
 )
 
@@ -24,11 +25,51 @@ func TestDefaultConfigPinsTheFrozenCutAndKeepsOriginals(t *testing.T) {
 	if cfg.Target != semconv.TargetV1_41_0.String() {
 		t.Errorf("default target is %q, want %q", cfg.Target, semconv.TargetV1_41_0)
 	}
-	if !cfg.PreserveOriginal {
-		t.Error("the default discards the emitter's own attributes")
-	}
 	if err := cfg.Validate(); err != nil {
-		t.Errorf("the default configuration does not validate: %v", err)
+		t.Fatalf("the default configuration does not validate: %v", err)
+	}
+	opts, err := cfg.options()
+	if err != nil {
+		t.Fatalf("the default configuration has no options: %v", err)
+	}
+	if opts.Originals != normalize.OriginalsKeep {
+		t.Errorf("the default removes the emitter's own attributes: originals is %q", opts.Originals)
+	}
+}
+
+// preserve_original is what v0.5.0 shipped, and a config written against it has
+// to keep meaning what it meant rather than quietly flipping to the new default.
+func TestTheDeprecatedPreserveOriginalStillMeansWhatItDid(t *testing.T) {
+	for preserve, want := range map[bool]normalize.Originals{
+		true:  normalize.OriginalsKeep,
+		false: normalize.OriginalsPrune,
+	} {
+		cfg := &Config{Target: "v1.41.0", PreserveOriginal: &preserve}
+		opts, err := cfg.options()
+		if err != nil {
+			t.Fatalf("preserve_original: %t was refused: %v", preserve, err)
+		}
+		if opts.Originals != want {
+			t.Errorf("preserve_original: %t became originals %q, want %q", preserve, opts.Originals, want)
+		}
+	}
+}
+
+func TestConflictingOriginalsSettingsAreRefused(t *testing.T) {
+	off := false
+	err := (&Config{Target: "v1.41.0", Originals: "keep", PreserveOriginal: &off}).Validate()
+	if err == nil {
+		t.Fatal("preserve_original: false beside originals: keep was accepted; one of them had to be ignored")
+	}
+	for _, want := range []string{"preserve_original", "originals: keep"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("the conflict error does not mention %q: %v", want, err)
+		}
+	}
+
+	if err := (&Config{Target: "v1.41.0", Originals: "strip"}).Validate(); err == nil ||
+		!strings.Contains(err.Error(), "prune") {
+		t.Errorf("an unknown originals mode was not refused with the legal set: %v", err)
 	}
 }
 
@@ -36,7 +77,7 @@ func TestAnUnknownTargetIsRefusedRatherThanDefaulted(t *testing.T) {
 	// A pipeline normalizing to a different schema than its author asked for is
 	// worse than one that refuses to start. v1.42.0 is the tempting mistake: it
 	// exists upstream, and it is the release that removed gen_ai.* entirely.
-	cfg := &Config{Target: "v1.42.0", PreserveOriginal: true}
+	cfg := &Config{Target: "v1.42.0"}
 
 	err := cfg.Validate()
 	if err == nil {

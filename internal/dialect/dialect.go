@@ -142,6 +142,12 @@ type Parsed struct {
 	// "could not carry" distinct from "was never asked to" -- a blank means
 	// nobody can say, and that is worth being able to report.
 	Source map[semconv.Field]Origin
+
+	// Inputs names every attribute a derived field was rebuilt from: the
+	// fields Source leaves out because no one key produced them. All of them,
+	// because "derived from these" is the record and naming one would be the
+	// guess Source refuses to make.
+	Inputs map[semconv.Field][]string
 }
 
 // Origin is where one field's value came from.
@@ -162,6 +168,16 @@ type Origin struct {
 	// before-value would show a reader a JSON blob turning into an integer and
 	// call it a transform.
 	Lifted bool
+
+	// When is the evidence the reading turned on, as the declared
+	// Interpretation states it -- traceloop.span.kind=tool -- or empty when the
+	// key alone decided. It is what lets a reader see that one key meant
+	// different things on two spans, and why.
+	When string
+
+	// BySpelling says the only evidence for the meaning was the key's name. See
+	// Interpretation.BySpelling.
+	BySpelling bool
 }
 
 // Set records a field, ignoring empty values so that callers can pass the result
@@ -180,6 +196,7 @@ func (p *Parsed) Set(f semconv.Field, v Value) {
 	}
 	p.Fields[f] = v
 	delete(p.Source, f)
+	delete(p.Inputs, f)
 }
 
 // setFrom records a field and the single source attribute it came from. The
@@ -194,6 +211,59 @@ func (p *Parsed) setFrom(f semconv.Field, v Value, key string) {
 // Origin.Lifted for why the two are not the same record.
 func (p *Parsed) liftFrom(f semconv.Field, v Value, key string) {
 	p.setOrigin(f, v, Origin{Key: key, Lifted: true})
+}
+
+// takeWhen is Take for a reading that turned on evidence elsewhere on the span,
+// recording that evidence the way the dialect's Interpretation declares it.
+func (p *Parsed) takeWhen(s Span, key string, f semconv.Field, when string) bool {
+	v, ok := s.Attr(key)
+	if !ok {
+		return false
+	}
+	p.setOrigin(f, v, Origin{Key: key, When: when})
+	p.Consumed = append(p.Consumed, key)
+	return true
+}
+
+// liftWhen is liftFrom for a lift that turned on evidence elsewhere on the span.
+func (p *Parsed) liftWhen(f semconv.Field, v Value, key, when string) {
+	p.setOrigin(f, v, Origin{Key: key, Lifted: true, When: when})
+}
+
+// setBySpelling records a field whose only evidence was the key's name. See
+// Interpretation.BySpelling.
+func (p *Parsed) setBySpelling(f semconv.Field, v Value, key string) {
+	p.setOrigin(f, v, Origin{Key: key, BySpelling: true})
+}
+
+// rebuild records a field assembled from several attributes, and every one of
+// them. Duplicates are dropped and the list sorted, so the record depends on
+// what was read rather than on the order the parser happened to read it in.
+func (p *Parsed) rebuild(f semconv.Field, v Value, inputs []string) {
+	p.Set(f, v)
+	if _, ok := p.Fields[f]; !ok || len(inputs) == 0 {
+		return
+	}
+	in := append([]string(nil), inputs...)
+	sort.Strings(in)
+	unique := in[:1]
+	for _, k := range in[1:] {
+		if k != unique[len(unique)-1] {
+			unique = append(unique, k)
+		}
+	}
+	if p.Inputs == nil {
+		p.Inputs = make(map[semconv.Field][]string)
+	}
+	p.Inputs[f] = unique
+}
+
+// ambiguous records a value the span does not carry the evidence to place, and
+// the fields it could have meant. Nothing is set: choosing one would be the
+// guess this exists to refuse.
+func (p *Parsed) ambiguous(key string, candidates []semconv.Field, detail string) {
+	p.Consumed = append(p.Consumed, key)
+	p.Loss = append(p.Loss, Loss{Key: key, Reason: ReasonAmbiguous, Detail: detail, Candidates: candidates})
 }
 
 func (p *Parsed) setOrigin(f semconv.Field, v Value, o Origin) {
@@ -291,6 +361,16 @@ func Dialects() []Dialect {
 	out := make([]Dialect, len(registry))
 	copy(out, registry)
 	return out
+}
+
+// ByName returns the registered dialect with this name.
+func ByName(n Name) (Dialect, bool) {
+	for _, d := range registry {
+		if d.Name() == n {
+			return d, true
+		}
+	}
+	return nil, false
 }
 
 // fallback marks a dialect that recognizes spans by shape rather than by

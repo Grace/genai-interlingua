@@ -142,10 +142,18 @@ What is real with no help from the runner is the pipeline: a genuine
 This is why braintrust's row in the conformance table is sparser than the
 others. Capturing it removed three marks the hand-built fixture had claimed --
 `gen_ai.provider.name`, `gen_ai.usage.cache_read.input_tokens`, and both message
-fields -- because Braintrust's contract defines none of them. A real Braintrust
-span usually *does* carry `gen_ai.*` fields, but they come from whatever
-instrumentation sits beside Braintrust rather than from Braintrust, and this
-table credits a dialect only for what that dialect contributes.
+fields -- because Braintrust's contract defines none of them under those names.
+A real Braintrust span usually *does* carry `gen_ai.*` fields, but they come from
+whatever instrumentation sits beside Braintrust rather than from Braintrust, and
+this table credits a dialect only for what that dialect contributes.
+
+The message fields have since come back, for a better reason than the one they
+were claimed for. On a span whose `braintrust.span_attributes` type is `llm`,
+`braintrust.input_json` and `braintrust.output_json` are the request's messages
+and the response's message in OpenAI's chat shape, and they are carried into
+`gen_ai.input.messages` and `gen_ai.output.messages`. On any other span type they
+are still recorded as unstructured, because there they are whatever the traced
+function took and returned.
 
 It also gained a mark the hand-built fixture never earned: `braintrust.scores`
 under **flattened**, because the capture includes a second span carrying several

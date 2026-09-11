@@ -20,7 +20,9 @@ worth reviewing.
 |---|---|
 | `gen_ai.evaluation.name` | `braintrust.scores (lifted out of)` |
 | `gen_ai.evaluation.score.value` | `braintrust.scores (lifted out of)` |
+| `gen_ai.input.messages` | `braintrust.input_json (lifted out of)` |
 | `gen_ai.operation.name` | `braintrust.span_attributes (lifted out of)` |
+| `gen_ai.output.messages` | `braintrust.output_json (lifted out of)` |
 | `gen_ai.request.model` | `gen_ai.request.model` |
 | `gen_ai.response.model` | `gen_ai.response.model` |
 | `gen_ai.usage.input_tokens` | `braintrust.metrics (lifted out of)` |
@@ -38,6 +40,7 @@ worth reviewing.
 | `gen_ai.request.model` | `gen_ai.request.model` |
 | `gen_ai.request.temperature` | `gen_ai.request.temperature` |
 | `gen_ai.request.top_p` | `gen_ai.request.top_p` |
+| `gen_ai.response.finish_reasons` | `gen_ai.response.finish_reasons` |
 | `gen_ai.response.model` | `gen_ai.response.model` |
 | `gen_ai.tool.definitions` | _derived_ |
 | `gen_ai.usage.input_tokens` | `gen_ai.usage.input_tokens` |
@@ -52,10 +55,11 @@ worth reviewing.
 | `gen_ai.output.messages` | _derived_ |
 | `gen_ai.provider.name` | `llm.system` |
 | `gen_ai.request.max_tokens` | `llm.invocation_parameters (lifted out of)` |
-| `gen_ai.request.model` | `llm.model_name` |
+| `gen_ai.request.model` | `llm.invocation_parameters (lifted out of)` |
 | `gen_ai.request.temperature` | `llm.invocation_parameters (lifted out of)` |
 | `gen_ai.request.top_p` | `llm.invocation_parameters (lifted out of)` |
 | `gen_ai.response.finish_reasons` | `llm.finish_reason` |
+| `gen_ai.response.model` | `llm.model_name` |
 | `gen_ai.tool.definitions` | _derived_ |
 | `gen_ai.usage.audio.input_tokens` | `llm.token_count.prompt_details.audio` |
 | `gen_ai.usage.audio.output_tokens` | `llm.token_count.completion_details.audio` |
@@ -80,7 +84,7 @@ worth reviewing.
 | `gen_ai.request.stream` | `gen_ai.is_streaming`, `llm.is_streaming` |
 | `gen_ai.request.temperature` | `gen_ai.request.temperature` |
 | `gen_ai.request.top_p` | `gen_ai.request.top_p` |
-| `gen_ai.response.finish_reasons` | _derived_ |
+| `gen_ai.response.finish_reasons` | _derived_, `gen_ai.response.finish_reasons` |
 | `gen_ai.response.id` | `gen_ai.response.id` |
 | `gen_ai.response.model` | `gen_ai.response.model` |
 | `gen_ai.tool.definitions` | _derived_ |
@@ -112,7 +116,7 @@ worth reviewing.
 
 | Field | Read from |
 |---|---|
-| `gen_ai.input.messages` | _derived_ |
+| `gen_ai.input.messages` | `ai.prompt.messages (lifted out of)` |
 | `gen_ai.operation.name` | `ai.operationId` |
 | `gen_ai.output.messages` | _derived_ |
 | `gen_ai.provider.name` | `ai.model.provider` |
@@ -126,7 +130,7 @@ worth reviewing.
 | `gen_ai.tool.call.arguments` | `ai.toolCall.args` |
 | `gen_ai.tool.call.id` | `ai.toolCall.id` |
 | `gen_ai.tool.call.result` | `ai.toolCall.result` |
-| `gen_ai.tool.definitions` | _derived_ |
+| `gen_ai.tool.definitions` | `ai.prompt.tools (lifted out of)` |
 | `gen_ai.tool.name` | `ai.toolCall.name` |
 | `gen_ai.usage.input_tokens` | `ai.usage.promptTokens`, `gen_ai.usage.input_tokens` |
 | `gen_ai.usage.output_tokens` | `ai.usage.completionTokens`, `gen_ai.usage.output_tokens` |

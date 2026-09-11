@@ -103,13 +103,6 @@ func (vercel) Score(s Span) int {
 	return n
 }
 
-// vercelFinishReasons maps the SDK's hyphenated finish reasons onto the
-// spelling every other emitter here uses.
-var vercelFinishReasons = map[string]string{
-	"tool-calls":     "tool_calls",
-	"content-filter": "content_filter",
-}
-
 // Rules are the Vercel mappings that can be stated rather than performed.
 //
 // This dialect is where the rule table earned its keep and also where it turned
@@ -179,16 +172,19 @@ func (vercel) Rules() []Rule {
 		// one string. Map runs over either shape and ToList only wraps the
 		// scalar, so one rule covers both.
 		//
-		// The table respells the SDK's hyphenated reasons. That attribute has
-		// no closed value set in the registry, so nothing downstream would
-		// reject tool-calls -- it would sit in a backend beside OpenLLMetry's
-		// tool_calls as a second spelling of one concept, which is the exact
-		// thing a span normalizer exists to prevent. error, other and unknown
-		// are the SDK's own and have no counterpart, so they pass through.
+		// The table respells the SDK's hyphenated reasons onto the conventions'
+		// own, the table every dialect shares. That attribute has no closed value
+		// set in the registry, so nothing downstream would reject tool-calls --
+		// it would sit in a backend beside OpenLLMetry's tool_call as a second
+		// spelling of one concept, which is the exact thing a span normalizer
+		// exists to prevent. This table used to write tool_calls, on the belief
+		// that every other emitter did; the captures and the message schema both
+		// say tool_call. error is the conventions' own; other and unknown are
+		// the SDK's and pass through.
 		{
 			Field:     semconv.ResponseFinishReasons,
 			Keys:      []string{"gen_ai.response.finish_reasons", "ai.response.finishReason"},
-			Transform: Transform{Map: vercelFinishReasons, ToList: true},
+			Transform: Transform{Map: finishReasons, ToList: true},
 		},
 
 		// Milliseconds to the seconds the conventions specify. Not a loss: every
@@ -229,6 +225,18 @@ func (vercel) Unstated() []semconv.Field {
 		semconv.OutputMessages,
 		semconv.ToolDefinitions,
 		semconv.SystemInstructions,
+	}
+}
+
+// Interpretations are the readings Parse performs beyond the rule table: two
+// JSON attributes lifted whole into their fields, and the assistant message the
+// SDK splits across two.
+func (vercel) Interpretations() []Interpretation {
+	return []Interpretation{
+		{Key: "ai.prompt.messages", Meaning: semconv.InputMessages},
+		{Key: "ai.prompt.tools", Meaning: semconv.ToolDefinitions},
+		{Key: "ai.response.text", Meaning: semconv.OutputMessages},
+		{Key: "ai.response.toolCalls", Meaning: semconv.OutputMessages},
 	}
 }
 
@@ -293,7 +301,7 @@ func (d vercel) inputMessages(s Span, p *Parsed) {
 			Parts: d.parts(m.Content, fmt.Sprintf("ai.prompt.messages[%d]", i), p),
 		})
 	}
-	p.Set(semconv.InputMessages, messagesValue(msgs))
+	p.liftFrom(semconv.InputMessages, messagesValue(msgs), "ai.prompt.messages")
 }
 
 // parts converts one message's content into the typed parts the conventions
@@ -347,9 +355,11 @@ func (vercel) parts(content json.RawMessage, where string, p *Parsed) []part {
 // two attributes: the text in one, the tool calls in another.
 func (vercel) outputMessages(s Span, p *Parsed) {
 	var parts []part
+	var inputs []string
 
 	if v, ok := s.Attr("ai.response.text"); ok {
 		p.Consumed = append(p.Consumed, "ai.response.text")
+		inputs = append(inputs, "ai.response.text")
 		if v.Str != "" {
 			parts = append(parts, textPart(v.Str))
 		}
@@ -357,6 +367,7 @@ func (vercel) outputMessages(s Span, p *Parsed) {
 
 	if v, ok := s.Attr("ai.response.toolCalls"); ok {
 		p.Consumed = append(p.Consumed, "ai.response.toolCalls")
+		inputs = append(inputs, "ai.response.toolCalls")
 		var calls []vercelPart
 		if err := json.Unmarshal([]byte(v.Str), &calls); err != nil {
 			p.Loss = append(p.Loss, Loss{Key: "ai.response.toolCalls",
@@ -375,7 +386,7 @@ func (vercel) outputMessages(s Span, p *Parsed) {
 	if len(parts) == 0 {
 		return
 	}
-	p.Set(semconv.OutputMessages, messagesValue([]message{{Role: "assistant", Parts: parts}}))
+	p.rebuild(semconv.OutputMessages, messagesValue([]message{{Role: "assistant", Parts: parts}}), inputs)
 }
 
 // toolDefinitions lifts ai.prompt.tools. The SDK writes it as an array of
@@ -413,7 +424,7 @@ func (vercel) toolDefinitions(s Span, p *Parsed) {
 	if err != nil {
 		return
 	}
-	p.Set(semconv.ToolDefinitions, String(string(b)))
+	p.liftFrom(semconv.ToolDefinitions, String(string(b)), "ai.prompt.tools")
 }
 
 // losses records the attributes the SDK writes that the conventions have no

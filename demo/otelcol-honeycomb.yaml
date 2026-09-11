@@ -18,7 +18,7 @@ receivers:
 processors:
   genaiinterlingua:
     target: v1.41.0
-    preserve_original: true
+    originals: keep
   batch:
 
 exporters:

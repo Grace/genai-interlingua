@@ -144,7 +144,9 @@ processors:
           - set(attributes["gen_ai.usage.output_tokens"], attributes["ai.usage.completionTokens"]) where attributes["gen_ai.usage.output_tokens"] == nil and attributes["ai.usage.completionTokens"] != nil
           - set(attributes["gen_ai.response.finish_reasons"], attributes["ai.response.finishReason"]) where attributes["gen_ai.response.finish_reasons"] == nil and attributes["ai.response.finishReason"] != nil
           - set(attributes["interlingua.__scratch"], "content_filter") where attributes["gen_ai.response.finish_reasons"] == "content-filter"
-          - set(attributes["interlingua.__scratch"], "tool_calls") where attributes["gen_ai.response.finish_reasons"] == "tool-calls"
+          - set(attributes["interlingua.__scratch"], "tool_call") where attributes["gen_ai.response.finish_reasons"] == "function_call"
+          - set(attributes["interlingua.__scratch"], "tool_call") where attributes["gen_ai.response.finish_reasons"] == "tool-calls"
+          - set(attributes["interlingua.__scratch"], "tool_call") where attributes["gen_ai.response.finish_reasons"] == "tool_calls"
           - set(attributes["gen_ai.response.finish_reasons"], attributes["interlingua.__scratch"]) where attributes["interlingua.__scratch"] != nil
           - delete_key(attributes, "interlingua.__scratch")
           - set(attributes["gen_ai.response.finish_reasons"], [attributes["gen_ai.response.finish_reasons"]]) where attributes["gen_ai.response.finish_reasons"] != nil and IsString(attributes["gen_ai.response.finish_reasons"])

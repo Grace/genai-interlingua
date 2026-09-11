@@ -25,6 +25,23 @@ export interface Attribution {
   lifted: boolean
   /** What the source held, present only when a transform changed it. Never set for a lift. */
   fromValue?: string
+  /**
+   * What the value means: the semantic field the dialect read it into, such as
+   * request.model. key is only how the target spells that field, and one
+   * spelling on two spans can have been read out of attributes that meant
+   * different things.
+   */
+  field?: string
+  /** The evidence the reading turned on, when the source key alone was not enough to say what it meant. */
+  when?: string
+  /** The meaning was taken from the source key's name alone, on a span no library claimed. */
+  bySpelling?: boolean
+  /** Every source attribute a derived value was rebuilt from. */
+  inputs?: string[]
+  /** The written value's type: string, int, double, bool or string[]. */
+  kind: string
+  /** The source value's type, when there is one source; differs from kind when a transform changed the type. */
+  sourceKind?: string
 }
 
 /** A key that could not be carried, and why. */
@@ -35,6 +52,8 @@ export interface LossDetail {
   /** "dialect" -- the emitter said something the IR has no field for.
    *  "target"  -- the IR carried something this schema version cannot express. */
   stage: 'dialect' | 'target'
+  /** For an ambiguous value, the attributes it could have been; the translator declined to choose. */
+  candidates?: string[]
 }
 
 /** One span's normalization, described rather than applied. */
@@ -57,7 +76,7 @@ declare global {
   interface Window {
     Go: new () => { importObject: WebAssembly.Imports; run(i: WebAssembly.Instance): void }
     interlinguaExplain?(payload: string, target: string): Ok<{ explanations: string }> | Err
-    interlinguaNormalize?(payload: string, target: string, strip: boolean): Ok<{ out: string }> | Err
+    interlinguaNormalize?(payload: string, target: string, originals: Originals): Ok<{ out: string }> | Err
     interlinguaOriginal?(payload: string): Ok<{ out: string }> | Err
     interlinguaTargets?(): Ok<{ targets: string[]; default: string }> | Err
   }
@@ -93,11 +112,14 @@ export function explain(payload: string, target: string): Explanation[] {
   return JSON.parse(r.explanations) as Explanation[]
 }
 
+/** What becomes of the emitter's own attributes; the names normalize.ParseOriginals accepts. */
+export type Originals = 'keep' | 'dedupe' | 'prune'
+
 /** The normalized payload, for the reader who wants to see the whole span. */
-export function normalize(payload: string, target: string, strip = false): string {
+export function normalize(payload: string, target: string, originals: Originals = 'keep'): string {
   const fn = window.interlinguaNormalize
   if (!fn) throw new Error('normalizer not loaded')
-  const r = fn(payload, target, strip)
+  const r = fn(payload, target, originals)
   if (!r.ok) throw new Error(r.error)
   return r.out
 }

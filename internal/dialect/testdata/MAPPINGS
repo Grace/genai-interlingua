@@ -1,4 +1,4 @@
-# 5fd7babe7b4ccda2
+# 731a97a6a88ed466
 
 dialect braintrust
   rule provider.name <- gen_ai.provider.name,gen_ai.system
@@ -66,7 +66,9 @@ dialect braintrust
     tolist=false
   unstated evaluation.name
   unstated evaluation.score.value
+  unstated input.messages
   unstated operation.name
+  unstated output.messages
   unstated usage.cache_read.input_tokens
   unstated usage.input_tokens
   unstated usage.output_tokens
@@ -80,6 +82,43 @@ dialect braintrust
   signature braintrust.scores
   signature braintrust.span_attributes
   signature braintrust.tags
+  means braintrust.input when="braintrust.span_attributes type=llm" -> input.messages
+    candidates=
+    byspelling=false
+  means braintrust.input_json when="braintrust.span_attributes type=llm" -> input.messages
+    candidates=
+    byspelling=false
+  means braintrust.metrics#completion_reasoning_tokens when="" -> usage.reasoning.output_tokens
+    candidates=
+    byspelling=false
+  means braintrust.metrics#completion_tokens when="" -> usage.output_tokens
+    candidates=
+    byspelling=false
+  means braintrust.metrics#prompt_cached_tokens when="" -> usage.cache_read.input_tokens
+    candidates=
+    byspelling=false
+  means braintrust.metrics#prompt_tokens when="" -> usage.input_tokens
+    candidates=
+    byspelling=false
+  means braintrust.output when="braintrust.span_attributes type=llm" -> output.messages
+    candidates=
+    byspelling=false
+  means braintrust.output_json when="braintrust.span_attributes type=llm" -> output.messages
+    candidates=
+    byspelling=false
+  means braintrust.scores#name when="braintrust.scores holds exactly one score" -> evaluation.name
+    candidates=
+    byspelling=false
+  means braintrust.scores#value when="braintrust.scores holds exactly one score" -> evaluation.score.value
+    candidates=
+    byspelling=false
+  means braintrust.span_attributes#type when="" -> operation.name
+    candidates=
+    byspelling=false
+    value function=execute_tool
+    value llm=chat
+    value task=invoke_workflow
+    value tool=execute_tool
 dialect litellm
   rule provider.name <- gen_ai.provider.name,gen_ai.system
     lower=true
@@ -243,6 +282,35 @@ dialect litellm
   signature gen_ai.cost.total_cost
   signature litellm.call_id
   signature litellm.provider.model
+  means gen_ai.completion.* when="" -> output.messages
+    candidates=
+    byspelling=false
+  means gen_ai.completion.*.finish_reason when="" -> response.finish_reasons
+    candidates=
+    byspelling=false
+    value content-filter=content_filter
+    value function_call=tool_call
+    value tool-calls=tool_call
+    value tool_calls=tool_call
+  means gen_ai.input.messages when="" -> input.messages
+    candidates=
+    byspelling=false
+  means gen_ai.output.messages when="" -> output.messages
+    candidates=
+    byspelling=false
+  means gen_ai.prompt.* when="" -> input.messages
+    candidates=
+    byspelling=false
+  means gen_ai.response.finish_reasons when="" -> response.finish_reasons
+    candidates=
+    byspelling=false
+    value content-filter=content_filter
+    value function_call=tool_call
+    value tool-calls=tool_call
+    value tool_calls=tool_call
+  means llm.request.functions.* when="" -> tool.definitions
+    candidates=
+    byspelling=false
 dialect openinference
   rule operation.name <- openinference.span.kind
     lower=false
@@ -270,7 +338,7 @@ dialect openinference
     mapunmatched=
     divide=0
     tolist=false
-  rule request.model <- llm.model_name,embedding.model_name
+  rule request.model <- embedding.model_name
     lower=false
     cutafter=""
     trimsuffix=[]
@@ -281,6 +349,10 @@ dialect openinference
     lower=false
     cutafter=""
     trimsuffix=[]
+    map content-filter=content_filter
+    map function_call=tool_call
+    map tool-calls=tool_call
+    map tool_calls=tool_call
     mapunmatched=
     divide=0
     tolist=true
@@ -373,6 +445,7 @@ dialect openinference
   unstated request.choice.count
   unstated request.frequency_penalty
   unstated request.max_tokens
+  unstated request.model
   unstated request.presence_penalty
   unstated request.seed
   unstated request.stop_sequences
@@ -380,11 +453,72 @@ dialect openinference
   unstated request.temperature
   unstated request.top_k
   unstated request.top_p
+  unstated response.model
   unstated retrieval.documents
   unstated tool.call.arguments
   unstated tool.call.result
   unstated tool.definitions
   signature openinference.span.kind
+  means input.value when="openinference.span.kind=TOOL" -> tool.call.arguments
+    candidates=
+    byspelling=false
+  means llm.input_messages.* when="" -> input.messages
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#frequency_penalty when="" -> request.frequency_penalty
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#max_output_tokens when="" -> request.max_tokens
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#max_tokens when="" -> request.max_tokens
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#model when="" -> request.model
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#n when="" -> request.choice.count
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#presence_penalty when="" -> request.presence_penalty
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#seed when="" -> request.seed
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#stop when="" -> request.stop_sequences
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#stream when="" -> request.stream
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#temperature when="" -> request.temperature
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#top_k when="" -> request.top_k
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#top_p when="" -> request.top_p
+    candidates=
+    byspelling=false
+  means llm.model_name when="the span carries a response (llm.output_messages or llm.token_count.completion)" -> response.model
+    candidates=
+    byspelling=false
+  means llm.model_name when="the span carries no response" -> 
+    candidates=request.model,response.model
+    byspelling=false
+  means llm.output_messages.* when="" -> output.messages
+    candidates=
+    byspelling=false
+  means llm.tools.* when="" -> tool.definitions
+    candidates=
+    byspelling=false
+  means output.value when="openinference.span.kind=TOOL" -> tool.call.result
+    candidates=
+    byspelling=false
+  means retrieval.documents.* when="" -> retrieval.documents
+    candidates=
+    byspelling=false
 dialect openllmetry
   rule provider.name <- gen_ai.provider.name,gen_ai.system
     lower=true
@@ -538,8 +672,135 @@ dialect openllmetry
   signature traceloop.entity.output
   signature traceloop.span.kind
   signature traceloop.workflow.name
+  means gen_ai.completion.* when="" -> output.messages
+    candidates=
+    byspelling=false
+  means gen_ai.completion.*.finish_reason when="" -> response.finish_reasons
+    candidates=
+    byspelling=false
+    value content-filter=content_filter
+    value function_call=tool_call
+    value tool-calls=tool_call
+    value tool_calls=tool_call
+  means gen_ai.prompt.* when="" -> input.messages
+    candidates=
+    byspelling=false
+  means gen_ai.response.finish_reasons when="" -> response.finish_reasons
+    candidates=
+    byspelling=false
+    value content-filter=content_filter
+    value function_call=tool_call
+    value tool-calls=tool_call
+    value tool_calls=tool_call
+  means llm.request.functions.* when="" -> tool.definitions
+    candidates=
+    byspelling=false
+  means llm.request.type when="" -> operation.name
+    candidates=
+    byspelling=false
+    value chat=chat
+    value completion=text_completion
+    value embedding=embeddings
+  means traceloop.entity.name when="traceloop.span.kind names neither an agent nor a tool" -> 
+    candidates=agent.name,tool.name
+    byspelling=false
+  means traceloop.entity.name when="traceloop.span.kind=agent" -> agent.name
+    candidates=
+    byspelling=false
+  means traceloop.entity.name when="traceloop.span.kind=tool" -> tool.name
+    candidates=
+    byspelling=false
+  means traceloop.span.kind when="" -> operation.name
+    candidates=
+    byspelling=false
+    value agent=invoke_agent
+    value tool=execute_tool
+    value workflow=invoke_workflow
 dialect raw
   unruled
+  means completion_tokens when="" -> usage.output_tokens
+    candidates=
+    byspelling=true
+  means finish_reason when="" -> response.finish_reasons
+    candidates=
+    byspelling=true
+    value content-filter=content_filter
+    value function_call=tool_call
+    value tool-calls=tool_call
+    value tool_calls=tool_call
+  means gen_ai.* when="" -> 
+    candidates=
+    byspelling=true
+  means gen_ai.response.finish_reasons when="" -> response.finish_reasons
+    candidates=
+    byspelling=true
+    value content-filter=content_filter
+    value function_call=tool_call
+    value tool-calls=tool_call
+    value tool_calls=tool_call
+  means input_tokens when="" -> usage.input_tokens
+    candidates=
+    byspelling=true
+  means llm.completion_tokens when="" -> usage.output_tokens
+    candidates=
+    byspelling=true
+  means llm.max_tokens when="" -> request.max_tokens
+    candidates=
+    byspelling=true
+  means llm.model when="" -> request.model
+    candidates=
+    byspelling=true
+  means llm.model_name when="" -> request.model
+    candidates=
+    byspelling=true
+  means llm.prompt_tokens when="" -> usage.input_tokens
+    candidates=
+    byspelling=true
+  means llm.provider when="" -> provider.name
+    candidates=
+    byspelling=true
+  means llm.temperature when="" -> request.temperature
+    candidates=
+    byspelling=true
+  means max_tokens when="" -> request.max_tokens
+    candidates=
+    byspelling=true
+  means model when="" -> request.model
+    candidates=
+    byspelling=true
+  means model_name when="" -> request.model
+    candidates=
+    byspelling=true
+  means openai.model when="" -> request.model
+    candidates=
+    byspelling=true
+  means output_tokens when="" -> usage.output_tokens
+    candidates=
+    byspelling=true
+  means prompt_tokens when="" -> usage.input_tokens
+    candidates=
+    byspelling=true
+  means provider when="" -> provider.name
+    candidates=
+    byspelling=true
+  means request_id when="" -> response.id
+    candidates=
+    byspelling=true
+  means response_id when="" -> response.id
+    candidates=
+    byspelling=true
+  means temperature when="" -> request.temperature
+    candidates=
+    byspelling=true
+  means top_p when="" -> request.top_p
+    candidates=
+    byspelling=true
+  means usage.completion_tokens when="" -> usage.output_tokens
+    candidates=
+    byspelling=true
+  means usage.prompt_tokens when="" -> usage.input_tokens
+    candidates=
+    byspelling=true
 dialect vercel
   rule provider.name <- ai.model.provider,gen_ai.system
     lower=true
@@ -663,7 +924,9 @@ dialect vercel
     cutafter=""
     trimsuffix=[]
     map content-filter=content_filter
-    map tool-calls=tool_calls
+    map function_call=tool_call
+    map tool-calls=tool_call
+    map tool_calls=tool_call
     mapunmatched=
     divide=0
     tolist=true
@@ -714,6 +977,18 @@ dialect vercel
   unstated system_instructions
   unstated tool.definitions
   signature ai.operationId
+  means ai.prompt.messages when="" -> input.messages
+    candidates=
+    byspelling=false
+  means ai.prompt.tools when="" -> tool.definitions
+    candidates=
+    byspelling=false
+  means ai.response.text when="" -> output.messages
+    candidates=
+    byspelling=false
+  means ai.response.toolCalls when="" -> output.messages
+    candidates=
+    byspelling=false
 target v1.41.0
   provider.name -> gen_ai.provider.name
     enum anthropic,aws.bedrock,azure.ai.inference,azure.ai.openai,cohere,deepseek,gcp.gemini,gcp.gen_ai,gcp.vertex_ai,groq,ibm.watsonx.ai,mistral_ai,openai,perplexity,x_ai

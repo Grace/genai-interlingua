@@ -30,11 +30,11 @@ import (
 
 // hop runs one normalization over a payload and returns the output, so the
 // tests below read as a pipeline rather than as plumbing.
-func hop(t *testing.T, data []byte, target semconv.Target, preserve bool) []byte {
+func hop(t *testing.T, data []byte, target semconv.Target, originals Originals) []byte {
 	t.Helper()
 	opts := DefaultOptions()
 	opts.Target = target
-	opts.PreserveOriginal = preserve
+	opts.Originals = originals
 	out, err := Payload(data, opts)
 	if err != nil {
 		t.Fatalf("normalize to %s: %v", target, err)
@@ -98,8 +98,8 @@ func attrsOf(t *testing.T, data []byte, spanName string) map[string]any {
 func TestSecondHopKeepsTheFirstHopsRecord(t *testing.T) {
 	in := mustReadFile(t, testdata+"/openllmetry/in.json")
 
-	first := hop(t, in, semconv.TargetV1_41_0, false)
-	second := hop(t, first, semconv.TargetGenAIMain, false)
+	first := hop(t, in, semconv.TargetV1_41_0, OriginalsPrune)
+	second := hop(t, first, semconv.TargetGenAIMain, OriginalsPrune)
 
 	a1 := attrsOf(t, first, "openai.chat")
 	a2 := attrsOf(t, second, "openai.chat")
@@ -162,17 +162,17 @@ func TestSecondHopKeepsTheFirstHopsRecord(t *testing.T) {
 func TestRenormalizingToTheSameTargetIsANoOp(t *testing.T) {
 	in := mustReadFile(t, testdata+"/openllmetry/in.json")
 
-	for _, preserve := range []bool{true, false} {
-		once := hop(t, in, semconv.TargetGenAIMain, preserve)
-		twice := hop(t, once, semconv.TargetGenAIMain, preserve)
+	for _, mode := range AllOriginals {
+		once := hop(t, in, semconv.TargetGenAIMain, mode)
+		twice := hop(t, once, semconv.TargetGenAIMain, mode)
 
 		if string(once) != string(twice) {
-			t.Errorf("preserve=%v: normalizing to the same target twice changed the span;"+
-				"\n    a span that already carries this target has arrived", preserve)
+			t.Errorf("originals %s: normalizing to the same target twice changed the span;"+
+				"\n    a span that already carries this target has arrived", mode)
 		}
 		if got, want := attrsOf(t, twice, "openai.chat")[AttrHops].(int64), int64(1); got != want {
-			t.Errorf("preserve=%v: %s = %d, want %d -- a pass that did nothing counted itself",
-				preserve, AttrHops, got, want)
+			t.Errorf("originals %s: %s = %d, want %d -- a pass that did nothing counted itself",
+				mode, AttrHops, got, want)
 		}
 	}
 }
@@ -191,8 +191,8 @@ func TestRenormalizingToTheSameTargetIsANoOp(t *testing.T) {
 func TestHopsDistinguishesOneTranslationFromTwo(t *testing.T) {
 	in := mustReadFile(t, testdata+"/openllmetry/in.json")
 
-	once := hop(t, in, semconv.TargetGenAIMain, true)
-	twice := hop(t, hop(t, in, semconv.TargetV1_41_0, true), semconv.TargetGenAIMain, true)
+	once := hop(t, in, semconv.TargetGenAIMain, OriginalsKeep)
+	twice := hop(t, hop(t, in, semconv.TargetV1_41_0, OriginalsKeep), semconv.TargetGenAIMain, OriginalsKeep)
 
 	a1 := attrsOf(t, once, "openai.chat")
 	a2 := attrsOf(t, twice, "openai.chat")

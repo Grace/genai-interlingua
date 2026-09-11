@@ -26,9 +26,12 @@ processors:
     # Default: v1.41.0
     target: v1.41.0
 
-    # Keep the emitter's own attributes on the span beside the normalized ones.
-    # Default: true
-    preserve_original: true
+    # What becomes of the emitter's own attributes. One of:
+    #   keep    all of them stay beside the normalized ones
+    #   dedupe  only the exact copies a plain rename left behind are removed
+    #   prune   everything a dialect read is removed, lossy keys included
+    # Default: keep
+    originals: keep
 ```
 
 `target` defaults to the frozen cut and not to the newest schema, because the
@@ -41,9 +44,20 @@ An unrecognized `target` fails validation rather than falling back to the
 default. A pipeline normalizing to a different schema than its author asked for
 is worse than one that refuses to start.
 
-`preserve_original: false` makes this processor the last reader of its input.
-That is a trade worth making only once you trust the mapping for the emitters
-you actually run, and it is the only setting here that can destroy data.
+`originals: prune` makes this processor the last reader of its input. That is a
+trade worth making only once you trust the mapping for the emitters you actually
+run, and it is the only setting here that can destroy data: a key named in
+`interlingua.lossy` had nowhere to go, and prune removes it anyway.
+
+`originals: dedupe` is the smaller trade. It removes an attribute only where the
+span now carries its exact value under a conventions name, so it never removes
+the only copy of anything: a value that was rewritten, lifted out of a JSON blob,
+rebuilt from several attributes, or listed in `interlingua.lossy` stays.
+
+`preserve_original`, the v0.5.0 name, still works -- `true` means `keep` and
+`false` means `prune` -- and logs a deprecation warning at startup. Setting it
+beside an `originals` that disagrees fails validation, because there is no
+honest way to pick.
 
 ### Example
 

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Grace/genai-interlingua/internal/dialect"
+	"github.com/Grace/genai-interlingua/internal/semconv"
 )
 
 // Explanation is one span's normalization, described rather than applied.
@@ -86,6 +87,31 @@ type Attribution struct {
 	// else in this repository shows it: the conformance table and
 	// docs/sources.md both aggregate values away entirely.
 	FromValue string `json:"fromValue,omitempty"`
+
+	// Field is what the value means: the semantic field the dialect read it
+	// into, as opposed to Key, which is only how the target spells that field.
+	// Two attributes with one spelling on two spans can mean different things,
+	// and two with different spellings can mean the same one; this is the
+	// column that tells those apart.
+	Field string `json:"field,omitempty"`
+
+	// When is the evidence the reading turned on -- traceloop.span.kind=tool --
+	// when the key alone was not enough to say what it meant.
+	When string `json:"when,omitempty"`
+
+	// BySpelling says the only evidence for Field was the source key's name, on
+	// a span no library claimed. See dialect.Interpretation.BySpelling.
+	BySpelling bool `json:"bySpelling,omitempty"`
+
+	// Inputs is every source attribute a derived value was rebuilt from.
+	Inputs []string `json:"inputs,omitempty"`
+
+	// Kind and SourceKind are the value's type after and before, string, int,
+	// double, bool or string[]. They differ when a transform changed the type as
+	// well as the value -- a scalar finish reason wrapped into a list -- which a
+	// display string alone cannot show.
+	Kind       string `json:"kind"`
+	SourceKind string `json:"sourceKind,omitempty"`
 }
 
 // LossDetail names a key that could not be carried, and why.
@@ -103,6 +129,12 @@ type LossDetail struct {
 	// second is a gap in the conventions, and only one of them is worth filing
 	// an issue about.
 	Stage string `json:"stage"`
+
+	// Candidates are the attributes an ambiguous value could have been, by the
+	// key each field takes at the newest target that defines it. The translator
+	// declined to choose between them, and saying which ones is the difference
+	// between an honest gap and an unexplained one.
+	Candidates []string `json:"candidates,omitempty"`
 }
 
 // Explain normalizes every span in an OTLP/JSON trace request and returns the
@@ -156,18 +188,25 @@ func explanationOf(s dialect.Span, r Result, opts Options) Explanation {
 	e.Removed = append(e.Removed, r.Remove...)
 
 	for _, key := range r.SetKeys() {
-		a := Attribution{Key: key, Value: displayOf(r.Set[key])}
+		a := Attribution{Key: key, Value: displayOf(r.Set[key]), Kind: valueKind(r.Set[key])}
 		switch {
 		case isOwn(key):
 			a.Own = true
 		default:
+			if f, ok := r.Fields[key]; ok {
+				a.Field = string(f)
+			}
 			origin, ok := r.Sources[key]
 			a.From = origin.Key
 			a.Derived = !ok
 			a.Lifted = origin.Lifted
-			if ok && !origin.Lifted {
+			a.When = origin.When
+			a.BySpelling = origin.BySpelling
+			a.Inputs = r.Inputs[key]
+			if ok {
 				if v, had := s.Attr(origin.Key); had {
-					if shown := displayOf(v); shown != a.Value {
+					a.SourceKind = valueKind(v)
+					if shown := displayOf(v); !origin.Lifted && shown != a.Value {
 						a.FromValue = shown
 					}
 				}
@@ -177,9 +216,11 @@ func explanationOf(s dialect.Span, r Result, opts Options) Explanation {
 	}
 
 	for _, l := range r.DialectLoss {
-		e.Lossy = append(e.Lossy, LossDetail{
-			Key: l.Key, Reason: string(l.Reason), Detail: l.Detail, Stage: "dialect",
-		})
+		d := LossDetail{Key: l.Key, Reason: string(l.Reason), Detail: l.Detail, Stage: "dialect"}
+		for _, f := range l.Candidates {
+			d.Candidates = append(d.Candidates, semconv.CanonicalKey(f))
+		}
+		e.Lossy = append(e.Lossy, d)
 	}
 	for _, l := range r.TargetLoss {
 		e.Lossy = append(e.Lossy, LossDetail{
@@ -221,6 +262,24 @@ func displayOf(v dialect.Value) string {
 		return strconv.FormatBool(v.Bool)
 	case dialect.KindStrSeq:
 		return strings.Join(v.StrSeq, ", ")
+	default:
+		return ""
+	}
+}
+
+// valueKind names a value's type the way the OTLP attribute types are named.
+func valueKind(v dialect.Value) string {
+	switch v.Kind {
+	case dialect.KindStr:
+		return "string"
+	case dialect.KindInt:
+		return "int"
+	case dialect.KindFloat:
+		return "double"
+	case dialect.KindBool:
+		return "bool"
+	case dialect.KindStrSeq:
+		return "string[]"
 	default:
 		return ""
 	}

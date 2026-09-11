@@ -66,7 +66,7 @@ const (
 	// AttrReplaced prefixes the value a rewrite replaced, so that nothing an
 	// emitter stated is destroyed without a record.
 	//
-	// preserve_original keeps a source attribute the mapping read, which covers
+	// Keeping originals keeps a source attribute the mapping read, which covers
 	// every rename: the emitter's key is left where it was, beside the
 	// conventions key carrying the same value. It cannot cover the case where
 	// the emitter already used the conventions' own key and a value outside its
@@ -87,17 +87,66 @@ type Options struct {
 	// Target is the schema version to render into.
 	Target semconv.Target
 
-	// PreserveOriginal keeps the emitter's own attributes on the span alongside
-	// the normalized ones. It defaults to true through DefaultOptions because
-	// the alternative is destroying the only copy of anything the mapping got
-	// wrong, and a normalizer that is sometimes wrong should not also be the
-	// last reader of its input.
-	PreserveOriginal bool
+	// Originals says what becomes of the attributes the emitter wrote once the
+	// normalized ones sit beside them. The zero value keeps them, exactly as
+	// OriginalsKeep does: an Options built by hand without a thought for this
+	// should not be the one that deletes something.
+	Originals Originals
+}
+
+// Originals is what happens to the emitter's own attributes after a span has
+// been normalized.
+type Originals string
+
+const (
+	// OriginalsKeep leaves every attribute the emitter wrote where it was,
+	// beside the normalized ones. It is the default because the alternative is
+	// removing the only copy of anything the mapping got wrong, and a normalizer
+	// that is sometimes wrong should not also be the last reader of its input.
+	OriginalsKeep Originals = "keep"
+
+	// OriginalsDedupe removes an attribute only where the span now carries its
+	// exact value under a conventions name: a plain rename, left behind as a
+	// duplicate. Anything whose value was rewritten, lifted out of a blob,
+	// rebuilt from several attributes, or listed in interlingua.lossy stays, so
+	// the span gets smaller without losing anything it stated.
+	OriginalsDedupe Originals = "dedupe"
+
+	// OriginalsPrune removes every attribute a dialect read, including the ones
+	// with no conventions name to go to. It gives the smallest spans and is the
+	// only mode that can destroy data: under it, a key named in interlingua.lossy
+	// is gone from the span rather than merely unreachable through the
+	// conventions' vocabulary.
+	OriginalsPrune Originals = "prune"
+)
+
+// AllOriginals lists the modes in order of how much they remove.
+var AllOriginals = []Originals{OriginalsKeep, OriginalsDedupe, OriginalsPrune}
+
+// ParseOriginals reads a mode by name. The empty string is keep, for the same
+// reason the zero Options is.
+func ParseOriginals(s string) (Originals, error) {
+	if s == "" {
+		return OriginalsKeep, nil
+	}
+	for _, o := range AllOriginals {
+		if string(o) == s {
+			return o, nil
+		}
+	}
+	return "", fmt.Errorf("unknown originals mode %q, want one of %v", s, AllOriginals)
+}
+
+// Validate reports an Options that cannot be run. It is the one check the CLI
+// and the processor share, so the two cannot disagree about what is legal.
+func (o Options) Validate() error {
+	_, err := ParseOriginals(string(o.Originals))
+	return err
 }
 
 // DefaultOptions is the frozen target with originals kept.
 func DefaultOptions() Options {
-	return Options{Target: semconv.DefaultTarget, PreserveOriginal: true}
+	return Options{Target: semconv.DefaultTarget, Originals: OriginalsKeep}
 }
 
 // Result describes the edit to make to a span: attributes to set, attributes to
@@ -112,10 +161,10 @@ type Result struct {
 	Set map[string]dialect.Value
 
 	// Remove is the attribute keys to delete. Mostly source keys the dialect
-	// consumed, which is empty unless the caller asked not to preserve
-	// originals -- keys the emitter wrote that the dialect never read are never
-	// in here, because nothing is deleted on the grounds that nobody looked at
-	// it.
+	// consumed, which is empty unless the caller chose OriginalsDedupe or
+	// OriginalsPrune -- keys the emitter wrote that the dialect never read are
+	// never in here, because nothing is deleted on the grounds that nobody
+	// looked at it.
 	//
 	// It also carries interlingua.* keys this normalization is deliberately not
 	// writing, so that a second pass over an already-normalized span does not
@@ -141,6 +190,17 @@ type Result struct {
 	// roughly double the attribute count to restate what interlingua.mapping
 	// already pins for the whole rule set.
 	Sources map[string]dialect.Origin
+
+	// Fields names the field each written key carries. The key is how the
+	// target spells it and the field is what it means, and the two are kept
+	// apart because they are not the same fact: two targets can spell one field
+	// two ways, and one spelling on two spans can have been read out of
+	// attributes that meant different things until a dialect said otherwise.
+	Fields map[string]semconv.Field
+
+	// Inputs names every source attribute a derived key was rebuilt from, for
+	// the keys Sources leaves out because no one attribute produced them.
+	Inputs map[string][]string
 
 	// DialectLoss is what the emitter said that the IR could not carry.
 	DialectLoss []dialect.Loss
@@ -209,7 +269,14 @@ func Span(s dialect.Span, opts Options) (Result, bool) {
 	if !ok {
 		return Result{}, false
 	}
+	return fromParsed(s, p, opts), true
+}
 
+// fromParsed renders a parse into the edit to make: everything in Span that does
+// not depend on which dialect produced the parse. It is separate so a test can
+// hand it a parse from a dialect that is not registered -- two dialects reading
+// one key two ways, say -- and see what the rest of the pipeline makes of each.
+func fromParsed(s dialect.Span, p dialect.Parsed, opts Options) Result {
 	prior, translated := priorProvenance(s)
 
 	r := Result{
@@ -289,13 +356,25 @@ func Span(s dialect.Span, opts Options) (Result, bool) {
 		}
 
 		r.Set[key] = v
+		if r.Fields == nil {
+			r.Fields = make(map[string]semconv.Field)
+		}
+		r.Fields[key] = f
 		if from, ok := p.Source[f]; ok {
 			if r.Sources == nil {
 				r.Sources = make(map[string]dialect.Origin)
 			}
 			r.Sources[key] = from
 		}
+		if inputs, ok := p.Inputs[f]; ok {
+			if r.Inputs == nil {
+				r.Inputs = make(map[string][]string)
+			}
+			r.Inputs[key] = inputs
+		}
 	}
+
+	r.TargetLoss = append(r.TargetLoss, unread(s, p, r, opts)...)
 
 	r.Set[AttrDialect] = dialect.String(string(r.Dialect))
 	r.Set[AttrConfidence] = dialect.Int(int64(r.Confidence))
@@ -321,8 +400,11 @@ func Span(s dialect.Span, opts Options) (Result, bool) {
 	}
 	r.Set[AttrLossyCount] = dialect.Int(int64(len(lossy)))
 
-	if !opts.PreserveOriginal {
+	switch opts.Originals {
+	case OriginalsPrune:
 		r.Remove = removals(p.Consumed, r.Set)
+	case OriginalsDedupe:
+		r.Remove = duplicates(s, r, p.Consumed)
 	}
 
 	// The count and the list are the pair that breaks when a span is normalized
@@ -343,7 +425,51 @@ func Span(s dialect.Span, opts Options) (Result, bool) {
 		r.Remove = append(r.Remove, AttrLossy)
 	}
 
-	return r, true
+	return r
+}
+
+// unread checks the attributes no dialect read that are spelled the way the
+// target spells a field.
+//
+// Spelling is not meaning, so nothing here reads such a key into anything: the
+// dialect that claimed the span did not say this key means what its name says,
+// and this does not say it on the dialect's behalf. What spelling does settle is
+// conformance. The key sits on the span under the target's own name, and a value
+// the target does not allow there makes the span non-conformant however it got
+// there. LangChain's gen_ai.operation.name=execute_task was passing through with
+// nothing recorded, beside an interlingua.target naming a schema it breaks. So
+// the value is checked, a disallowed one is named in the loss list, and the
+// attribute is left exactly as the emitter wrote it.
+func unread(s dialect.Span, p dialect.Parsed, r Result, opts Options) []Loss {
+	read := make(map[string]bool, len(p.Consumed))
+	for _, k := range p.Consumed {
+		read[k] = true
+	}
+	var out []Loss
+	for _, k := range s.Keys() {
+		if read[k] {
+			continue
+		}
+		if _, written := r.Set[k]; written {
+			continue
+		}
+		f, ok := semconv.FieldForKey(k)
+		if !ok {
+			continue
+		}
+		if key, ok := opts.Target.Key(f); !ok || key != k {
+			continue
+		}
+		if v := s.Attributes[k]; v.Kind == dialect.KindStr && !opts.Target.Accepts(f, v.Str) {
+			out = append(out, Loss{
+				Key:    k,
+				Reason: ReasonNoValue,
+				Detail: fmt.Sprintf("%q is not a %s value at %s; no dialect read this attribute, so it is left as the emitter wrote it",
+					v.Str, k, opts.Target),
+			})
+		}
+	}
+	return out
 }
 
 // provenance is what an earlier normalization left on a span.
@@ -407,6 +533,59 @@ func removals(consumed []string, set map[string]dialect.Value) []string {
 			continue
 		}
 		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// duplicates is the consumed source keys whose exact value the span now carries
+// under a conventions name, which is what OriginalsDedupe removes.
+//
+// Each condition is a way a removal could destroy something, and each one keeps
+// the key instead. A key written back under its own name is not a copy of
+// anything. A key named in the loss list had nowhere to go, so it is the only
+// copy. A key something was lifted out of is a container holding more than the
+// one value taken from it. A key that fed a rewrite -- OpenAI lowercased to
+// openai -- holds a spelling the emitter used and the span no longer does. A key
+// that fed a field rebuilt from several attributes has no Sources entry at all.
+// What is left is a value carried across unchanged, and removing that removes a
+// duplicate and nothing else.
+func duplicates(s dialect.Span, r Result, consumed []string) []string {
+	lossy := make(map[string]bool)
+	for _, k := range r.Lossy() {
+		lossy[k] = true
+	}
+	copies := make(map[string][]string)
+	for key, from := range r.Sources {
+		if !from.Lifted {
+			copies[from.Key] = append(copies[from.Key], key)
+		}
+	}
+
+	seen := make(map[string]bool, len(consumed))
+	var out []string
+	for _, k := range consumed {
+		if seen[k] {
+			continue
+		}
+		seen[k] = true
+		if _, ok := r.Set[k]; ok || lossy[k] || len(copies[k]) == 0 {
+			continue
+		}
+		old, had := s.Attributes[k]
+		if !had || old.Empty() {
+			continue
+		}
+		same := true
+		for _, key := range copies[k] {
+			if !r.Set[key].Equal(old) {
+				same = false
+				break
+			}
+		}
+		if same {
+			out = append(out, k)
+		}
 	}
 	sort.Strings(out)
 	return out

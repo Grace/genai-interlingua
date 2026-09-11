@@ -142,6 +142,83 @@ func TestDigestCoversEveryFieldOfEveryMappingType(t *testing.T) {
 			t.Errorf("Transform.%s is not written into canonical(); changing it would not move the digest", f.Name)
 		}
 	}
+
+	// Interpretation is held to the same rule, and it matters more there: it is
+	// where the meaning of the hand-written half lives, and a field on it that
+	// the digest ignored would be a change of meaning nothing could see.
+	base := renderInterpretation(Interpretation{Key: "a"})
+	it := reflect.TypeOf(Interpretation{})
+	for i := 0; i < it.NumField(); i++ {
+		f := it.Field(i)
+		in := Interpretation{Key: "a"}
+		v := reflect.ValueOf(&in).Elem().Field(i)
+		if !set(v) {
+			t.Fatalf("Interpretation.%s: test does not know how to vary a %s", f.Name, f.Type)
+		}
+		if renderInterpretation(in) == base {
+			t.Errorf("Interpretation.%s is not written into canonical(); changing it would not move the digest", f.Name)
+		}
+	}
+}
+
+// TestDigestMovesWhenAMeaningMoves is the requirement the Interpretation type
+// was added to meet. Reading "model" as the requested model and reading it as
+// the responding model are different mappings of the same key, and a digest
+// that treated them as one would certify two different translations as the
+// same.
+func TestDigestMovesWhenAMeaningMoves(t *testing.T) {
+	requested := Interpretation{Key: "model", Meaning: semconv.RequestModel}
+	responded := Interpretation{Key: "model", Meaning: semconv.ResponseModel}
+	base := canonical()
+	if digestOf(base+renderInterpretation(requested)) == digestOf(base+renderInterpretation(responded)) {
+		t.Error("the same key read into a different field left the digest where it was")
+	}
+
+	// And the real rendering carries the declarations, rather than only the
+	// test's own copy of them.
+	for _, want := range []string{
+		"means braintrust.span_attributes#type",
+		"means llm.model_name when=" + `"` + openInferenceResponded + `"` + " -> response.model",
+		"means traceloop.entity.name when=" + `"` + openLLMetryToolSpan + `"` + " -> tool.name",
+	} {
+		if !strings.Contains(base, want) {
+			t.Errorf("canonical() does not render the declared reading %q", want)
+		}
+	}
+}
+
+// TestDigestIgnoresWhatIsNotMeaning is the "and not otherwise" half for the
+// hand-written readings. The order they are declared in, and the prose a loss
+// is recorded with, change what a reader of the Go sees and nothing about what
+// a span becomes, so neither may move the digest.
+func TestDigestIgnoresWhatIsNotMeaning(t *testing.T) {
+	a := Interpretation{Key: "x", Meaning: semconv.RequestModel}
+	b := Interpretation{Key: "y", When: "z", Meaning: semconv.ResponseModel}
+
+	var forward, backward strings.Builder
+	writeInterpretations(&forward, declared{a, b})
+	writeInterpretations(&backward, declared{b, a})
+	if forward.String() != backward.String() {
+		t.Error("declaring the same readings in a different order changed the rendering")
+	}
+
+	if strings.Contains(canonical(), "the conventions carry input and output counts only") {
+		t.Error("a loss detail string is part of canonical(); rewording it would move the digest")
+	}
+}
+
+// declared is a dialect with nothing but declared readings, for rendering.
+type declared []Interpretation
+
+func (declared) Name() Name                          { return "declared" }
+func (declared) Score(Span) int                      { return 0 }
+func (declared) Parse(Span) Parsed                   { return Parsed{} }
+func (d declared) Interpretations() []Interpretation { return d }
+
+func renderInterpretation(i Interpretation) string {
+	var b strings.Builder
+	writeInterpretation(&b, i)
+	return b.String()
 }
 
 // set gives v a value different from its zero, and reports whether it knew how.
@@ -159,7 +236,11 @@ func set(v reflect.Value) bool {
 		if v.Type().Elem().Kind() != reflect.String {
 			return false
 		}
-		v.Set(reflect.ValueOf([]string{"x"}).Convert(v.Type()))
+		// Built element by element rather than converted, so a slice of a named
+		// string type -- []semconv.Field -- is handled as well as []string.
+		s := reflect.MakeSlice(v.Type(), 1, 1)
+		s.Index(0).Set(reflect.ValueOf("x").Convert(v.Type().Elem()))
+		v.Set(s)
 	case reflect.Map:
 		if v.Type().Key().Kind() != reflect.String || v.Type().Elem().Kind() != reflect.String {
 			return false

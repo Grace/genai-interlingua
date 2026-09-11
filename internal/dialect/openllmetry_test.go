@@ -77,6 +77,9 @@ func TestEntityNameNeedsSpanKindToMeanAnything(t *testing.T) {
 	if got, want := mustField(t, agent, semconv.AgentName).Str, "researcher"; got != want {
 		t.Errorf("agent name = %q, want %q", got, want)
 	}
+	if got := agent.Source[semconv.AgentName].When; got != openLLMetryAgentSpan {
+		t.Errorf("the agent reading records its evidence as %q, want %q", got, openLLMetryAgentSpan)
+	}
 
 	tool := (openLLMetry{}).Parse(spanOf(map[string]string{
 		"traceloop.span.kind":   "tool",
@@ -90,11 +93,23 @@ func TestEntityNameNeedsSpanKindToMeanAnything(t *testing.T) {
 		"traceloop.span.kind":   "task",
 		"traceloop.entity.name": "summarize",
 	}))
+	if got := tool.Source[semconv.ToolName].When; got != openLLMetryToolSpan {
+		t.Errorf("the tool reading records its evidence as %q, want %q", got, openLLMetryToolSpan)
+	}
 	if _, ok := task.Fields[semconv.AgentName]; ok {
 		t.Error("a task entity became an agent")
 	}
-	if got, want := lossFor(t, task, "traceloop.entity.name").Reason, ReasonAmbiguous; got != want {
+	if _, ok := task.Fields[semconv.ToolName]; ok {
+		t.Error("a task entity became a tool")
+	}
+	l := lossFor(t, task, "traceloop.entity.name")
+	if got, want := l.Reason, ReasonAmbiguous; got != want {
 		t.Errorf("loss reason = %s, want %s", got, want)
+	}
+	// Ambiguous between what, said on the record rather than left to the
+	// reader to reconstruct from the detail string.
+	if got := joinFields(l.Candidates); got != "agent.name,tool.name" {
+		t.Errorf("candidates are %q, want agent.name and tool.name", got)
 	}
 }
 

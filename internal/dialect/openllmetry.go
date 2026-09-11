@@ -40,6 +40,14 @@ var openLLMetrySpanKinds = map[string]string{
 	"tool":     "execute_tool",
 }
 
+// The evidence traceloop.entity.name is read under. It is one attribute naming
+// three different things, and the kind beside it is the only way to tell which.
+const (
+	openLLMetryAgentSpan = "traceloop.span.kind=agent"
+	openLLMetryToolSpan  = "traceloop.span.kind=tool"
+	openLLMetryOtherSpan = "traceloop.span.kind names neither an agent nor a tool"
+)
+
 // Score counts the attributes only OpenLLMetry writes. The traceloop namespace
 // is worth two because nothing else emits it. The legacy token counts are worth
 // one each because a mixed-vintage emitter can carry one of them without being
@@ -160,6 +168,25 @@ func (openLLMetry) Unstated() []semconv.Field {
 	}
 }
 
+// Interpretations are the readings Parse performs beyond the rule table. The
+// three for traceloop.entity.name are the ones worth reading: the same key is an
+// agent's name, a tool's name, or not enough to say, depending on the kind.
+func (openLLMetry) Interpretations() []Interpretation {
+	return []Interpretation{
+		{Key: "traceloop.span.kind", Meaning: semconv.OperationName, Values: openLLMetrySpanKinds},
+		{Key: "llm.request.type", Meaning: semconv.OperationName, Values: openLLMetryOperations},
+		{Key: "traceloop.entity.name", When: openLLMetryAgentSpan, Meaning: semconv.AgentName},
+		{Key: "traceloop.entity.name", When: openLLMetryToolSpan, Meaning: semconv.ToolName},
+		{Key: "traceloop.entity.name", When: openLLMetryOtherSpan,
+			Candidates: []semconv.Field{semconv.AgentName, semconv.ToolName}},
+		{Key: "gen_ai.prompt.*", Meaning: semconv.InputMessages},
+		{Key: "gen_ai.completion.*", Meaning: semconv.OutputMessages},
+		{Key: "gen_ai.completion.*.finish_reason", Meaning: semconv.ResponseFinishReasons, Values: finishReasons},
+		{Key: "gen_ai.response.finish_reasons", Meaning: semconv.ResponseFinishReasons, Values: finishReasons},
+		{Key: "llm.request.functions.*", Meaning: semconv.ToolDefinitions},
+	}
+}
+
 func (d openLLMetry) Parse(s Span) Parsed {
 	var p Parsed
 
@@ -237,15 +264,15 @@ func (d openLLMetry) Parse(s Span) Parsed {
 	if s.Has("traceloop.entity.name") {
 		switch kind {
 		case "agent":
-			p.Take(s, "traceloop.entity.name", semconv.AgentName)
+			p.takeWhen(s, "traceloop.entity.name", semconv.AgentName, openLLMetryAgentSpan)
 		case "tool":
-			p.Take(s, "traceloop.entity.name", semconv.ToolName)
+			p.takeWhen(s, "traceloop.entity.name", semconv.ToolName, openLLMetryToolSpan)
 		default:
 			detail := "no traceloop.span.kind to say what this name names"
 			if kind != "" {
 				detail = "traceloop.span.kind " + kind + " names no gen_ai entity"
 			}
-			p.Lose("traceloop.entity.name", ReasonAmbiguous, detail)
+			p.ambiguous("traceloop.entity.name", []semconv.Field{semconv.AgentName, semconv.ToolName}, detail)
 		}
 	}
 
@@ -274,19 +301,21 @@ func (d openLLMetry) Parse(s Span) Parsed {
 		}
 	}
 
-	p.Set(semconv.ToolDefinitions, d.toolDefinitions(s, &p))
+	p.rebuildWith(semconv.ToolDefinitions, func() Value { return d.toolDefinitions(s, &p) })
+	p.rebuildWith(semconv.InputMessages, func() Value {
+		return messagesValue(d.messages(s, "gen_ai.prompt", &p))
+	})
 
-	p.Set(semconv.InputMessages, messagesValue(d.messages(s, "gen_ai.prompt", &p)))
-
-	out := d.messages(s, "gen_ai.completion", &p)
-	p.Set(semconv.OutputMessages, messagesValue(out))
-	var reasons []string
-	for _, m := range out {
-		if m.FinishReason != "" {
-			reasons = append(reasons, m.FinishReason)
-		}
+	var out []message
+	inputs := p.rebuildWith(semconv.OutputMessages, func() Value {
+		out = d.messages(s, "gen_ai.completion", &p)
+		return messagesValue(out)
+	})
+	// Current OpenLLMetry writes the list itself, and the emitter's own
+	// statement outranks reasons read back out of reassembled completions.
+	if !p.takeFinishReasons(s, "gen_ai.response.finish_reasons") {
+		p.rebuild(semconv.ResponseFinishReasons, strSeq(reasonsOf(out)), withSuffix(inputs, ".finish_reason"))
 	}
-	p.Set(semconv.ResponseFinishReasons, strSeq(reasons))
 
 	// traceloop. and llm. are this emitter's own namespaces; gen_ai. and openai.
 	// are the conventions' and the vendor extension it writes into them.
@@ -308,7 +337,7 @@ func (openLLMetry) messages(s Span, prefix string, p *Parsed) []message {
 	var msgs []message
 	for _, i := range order {
 		g := groups[i]
-		m := message{Role: g["role"].Str, FinishReason: g["finish_reason"].Str}
+		m := message{Role: g["role"].Str, FinishReason: finishReason(g["finish_reason"].Str)}
 		if c := g["content"]; !c.Empty() {
 			m.Parts = append(m.Parts, textPart(c.Str))
 		}

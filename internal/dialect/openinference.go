@@ -50,6 +50,31 @@ var openInferenceProviders = map[string]string{
 	"xai":       "x_ai",
 }
 
+// openInferenceInvocationParameters are the members of llm.invocation_parameters
+// that have a field. model is the one the request asked for, which is not what
+// llm.model_name holds on a span that got an answer; see Parse.
+var openInferenceInvocationParameters = map[string]semconv.Field{
+	"model":             semconv.RequestModel,
+	"temperature":       semconv.RequestTemperature,
+	"max_tokens":        semconv.RequestMaxTokens,
+	"max_output_tokens": semconv.RequestMaxTokens,
+	"top_p":             semconv.RequestTopP,
+	"top_k":             semconv.RequestTopK,
+	"frequency_penalty": semconv.RequestFrequencyPenalty,
+	"presence_penalty":  semconv.RequestPresencePenalty,
+	"seed":              semconv.RequestSeed,
+	"n":                 semconv.RequestChoiceCount,
+	"stream":            semconv.RequestStream,
+	"stop":              semconv.RequestStopSequences,
+}
+
+// The evidence OpenInference's context-dependent readings turn on.
+const (
+	openInferenceToolSpan   = "openinference.span.kind=TOOL"
+	openInferenceResponded  = "the span carries a response (llm.output_messages or llm.token_count.completion)"
+	openInferenceNoResponse = "the span carries no response"
+)
+
 // Score counts OpenInference's signature attributes. Its span kind is worth two
 // because no other emitter names its taxonomy in one attribute; the llm.* keys
 // are worth one each because OpenLLMetry also writes into that namespace, just
@@ -105,14 +130,20 @@ func (openInference) Rules() []Rule {
 			Transform: Transform{Lower: true, Map: openInferenceProviders},
 		},
 
-		{Field: semconv.RequestModel, Keys: []string{"llm.model_name", "embedding.model_name"}},
+		// llm.model_name is not here, though it once was, as the request model.
+		// On a span that got an answer the OpenAI instrumentation writes the
+		// model that answered into it -- the capture asked for gpt-4o-mini and
+		// recorded gpt-4o-mini-2024-07-18 -- so its meaning turns on whether the
+		// span has a response, which a rule cannot see. Parse reads it.
+		{Field: semconv.RequestModel, Keys: []string{"embedding.model_name"}},
 
 		// The conventions make this a list because a request for several choices
 		// has one reason per choice; OpenInference carries a single value, so
 		// the list has one element rather than being synthesised from
-		// per-message reasons.
+		// per-message reasons. The value is OpenAI's spelling, respelled onto
+		// the conventions' through the table every dialect shares.
 		{Field: semconv.ResponseFinishReasons, Keys: []string{"llm.finish_reason"},
-			Transform: Transform{ToList: true}},
+			Transform: Transform{Map: finishReasons, ToList: true}},
 
 		{Field: semconv.UsageInputTokens, Keys: []string{"llm.token_count.prompt"}},
 		{Field: semconv.UsageOutputTokens, Keys: []string{"llm.token_count.completion"}},
@@ -159,6 +190,8 @@ func (openInference) Signature() []string {
 // on a sibling. The export carries the tool_call.function.arguments half only.
 func (openInference) Unstated() []semconv.Field {
 	return []semconv.Field{
+		semconv.RequestModel,
+		semconv.ResponseModel,
 		semconv.RequestTemperature,
 		semconv.RequestMaxTokens,
 		semconv.RequestTopP,
@@ -176,6 +209,29 @@ func (openInference) Unstated() []semconv.Field {
 		semconv.ToolCallResult,
 		semconv.RetrievalDocuments,
 	}
+}
+
+// Interpretations are the readings Parse performs beyond the rule table. The two
+// for llm.model_name are the reason this dialect needed them: one attribute that
+// names the model that answered on a span with an answer, and could name either
+// model on a span without one.
+func (openInference) Interpretations() []Interpretation {
+	in := []Interpretation{
+		{Key: "llm.model_name", When: openInferenceResponded, Meaning: semconv.ResponseModel},
+		{Key: "llm.model_name", When: openInferenceNoResponse,
+			Candidates: []semconv.Field{semconv.RequestModel, semconv.ResponseModel}},
+		{Key: "input.value", When: openInferenceToolSpan, Meaning: semconv.ToolCallArguments},
+		{Key: "output.value", When: openInferenceToolSpan, Meaning: semconv.ToolCallResult},
+		{Key: "llm.input_messages.*", Meaning: semconv.InputMessages},
+		{Key: "llm.output_messages.*", Meaning: semconv.OutputMessages},
+		{Key: "llm.tools.*", Meaning: semconv.ToolDefinitions},
+		{Key: "retrieval.documents.*", Meaning: semconv.RetrievalDocuments},
+	}
+	for _, member := range slices.Sorted(maps.Keys(openInferenceInvocationParameters)) {
+		in = append(in, Interpretation{Key: "llm.invocation_parameters#" + member,
+			Meaning: openInferenceInvocationParameters[member]})
+	}
+	return in
 }
 
 func (d openInference) Parse(s Span) Parsed {
@@ -214,6 +270,23 @@ func (d openInference) Parse(s Span) Parsed {
 		d.invocationParameters(v.Str, &p)
 	}
 
+	// llm.model_name is spelled like the model a request asked for, and on a
+	// span that got an answer it holds the model that gave it: the capture
+	// requested gpt-4o-mini and recorded gpt-4o-mini-2024-07-18 here. Reading it
+	// as the request model put the answering model's name under
+	// gen_ai.request.model and wrote no gen_ai.response.model at all. On a span
+	// with a response it is read as what it holds. On one without, nothing on
+	// the span says which of the two it is, so it is recorded as ambiguous
+	// between them rather than assigned to whichever reads better.
+	if s.Has("llm.model_name") {
+		if s.HasPrefix("llm.output_messages.") || s.Has("llm.token_count.completion") {
+			p.takeWhen(s, "llm.model_name", semconv.ResponseModel, openInferenceResponded)
+		} else {
+			p.ambiguous("llm.model_name", []semconv.Field{semconv.RequestModel, semconv.ResponseModel},
+				"no response on the span to say whether this names the model asked for or the one that answered")
+		}
+	}
+
 	if s.Has("tool.parameters") {
 		p.Lose("tool.parameters", ReasonNoField,
 			"gen_ai.tool.definitions describes the tools offered to the model, not the schema of the tool being executed")
@@ -223,8 +296,8 @@ func (d openInference) Parse(s Span) Parsed {
 	// has no dedicated attribute for the arguments a tool was actually invoked
 	// with. On any other kind they are a free-form blob with no schema.
 	if kind == "TOOL" {
-		p.Take(s, "input.value", semconv.ToolCallArguments)
-		p.Take(s, "output.value", semconv.ToolCallResult)
+		p.takeWhen(s, "input.value", semconv.ToolCallArguments, openInferenceToolSpan)
+		p.takeWhen(s, "output.value", semconv.ToolCallResult, openInferenceToolSpan)
 	} else {
 		for _, k := range []string{"input.value", "output.value"} {
 			if s.Has(k) {
@@ -238,10 +311,14 @@ func (d openInference) Parse(s Span) Parsed {
 		}
 	}
 
-	p.Set(semconv.ToolDefinitions, d.toolDefinitions(s, &p))
-	p.Set(semconv.InputMessages, messagesValue(d.messages(s, "llm.input_messages", &p)))
-	p.Set(semconv.OutputMessages, messagesValue(d.messages(s, "llm.output_messages", &p)))
-	p.Set(semconv.RetrievalDocuments, d.documents(s, &p))
+	p.rebuildWith(semconv.ToolDefinitions, func() Value { return d.toolDefinitions(s, &p) })
+	p.rebuildWith(semconv.InputMessages, func() Value {
+		return messagesValue(d.messages(s, "llm.input_messages", &p))
+	})
+	p.rebuildWith(semconv.OutputMessages, func() Value {
+		return messagesValue(d.messages(s, "llm.output_messages", &p))
+	})
+	p.rebuildWith(semconv.RetrievalDocuments, func() Value { return d.documents(s, &p) })
 
 	// embedding.embeddings.{i}.embedding.vector is a float sequence, and the
 	// conventions carry no attribute for the vector itself at any version.
@@ -268,24 +345,16 @@ func (openInference) invocationParameters(raw string, p *Parsed) {
 		p.Lose("llm.invocation_parameters", ReasonUnstructured, "value is not a JSON object")
 		return
 	}
-	lifted := map[string]semconv.Field{
-		"temperature":       semconv.RequestTemperature,
-		"max_tokens":        semconv.RequestMaxTokens,
-		"max_output_tokens": semconv.RequestMaxTokens,
-		"top_p":             semconv.RequestTopP,
-		"top_k":             semconv.RequestTopK,
-		"frequency_penalty": semconv.RequestFrequencyPenalty,
-		"presence_penalty":  semconv.RequestPresencePenalty,
-		"seed":              semconv.RequestSeed,
-		"n":                 semconv.RequestChoiceCount,
-		"stream":            semconv.RequestStream,
-		"stop":              semconv.RequestStopSequences,
-	}
 	var left []string
 	for _, k := range slices.Sorted(maps.Keys(m)) {
-		f, ok := lifted[k]
+		f, ok := openInferenceInvocationParameters[k]
 		if !ok {
 			left = append(left, k)
+			continue
+		}
+		// A field a rule already set -- embedding.model_name for the model -- is
+		// the emitter's own attribute and outranks the copy in the blob.
+		if _, already := p.Fields[f]; already {
 			continue
 		}
 		if v := jsonValue(m[k]); !v.Empty() {

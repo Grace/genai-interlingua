@@ -4,8 +4,8 @@
 # the braintrust mapping as that format can carry.
 #
 #     1 written here as rename_attributes
-#     4 need no rename: braintrust already writes the target's own attribute name
-#     8 cannot be expressed in this format at all
+#     2 need no rename: braintrust already writes the target's own attribute name
+#    10 cannot be expressed in this format at all
 #
 # Read the gap list below before using this. The transformations a schema
 # file supports are all changes of NAME: rename_attributes, rename_events,
@@ -17,7 +17,7 @@
 # names carrying values the target schema does not define. That is not a bug
 # in the generator; it is the shortfall, written out.
 
-# WHAT THIS FILE CANNOT SAY (8 mappings)
+# WHAT THIS FILE CANNOT SAY (10 mappings)
 #
 #   closed_value_set
 #     gen_ai.provider.name                     gen_ai.provider.name admits 15 values; a schema file cannot drop one it does not
@@ -25,7 +25,9 @@
 #   not_a_name
 #     gen_ai.evaluation.name                   produced by reading the span, not by renaming an attribute
 #     gen_ai.evaluation.score.value            produced by reading the span, not by renaming an attribute
+#     gen_ai.input.messages                    produced by reading the span, not by renaming an attribute
 #     gen_ai.operation.name                    produced by reading the span, not by renaming an attribute
+#     gen_ai.output.messages                   produced by reading the span, not by renaming an attribute
 #     gen_ai.usage.cache_read.input_tokens     produced by reading the span, not by renaming an attribute
 #     gen_ai.usage.input_tokens                produced by reading the span, not by renaming an attribute
 #     gen_ai.usage.output_tokens               produced by reading the span, not by renaming an attribute

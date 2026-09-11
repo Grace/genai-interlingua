@@ -19,20 +19,27 @@ import (
 	"github.com/Grace/genai-interlingua/internal/semconv"
 )
 
-// normalizePayload(payloadJSON, target, stripOriginal) -> {ok, out} | {ok, error}
+// normalizePayload(payloadJSON, target, originals) -> {ok, out} | {ok, error}
+//
+// originals is keep, dedupe or prune, by name, so the page asks for a mode the
+// same way the CLI and the processor config do.
 func normalizePayload(_ js.Value, args []js.Value) any {
 	if len(args) != 3 {
-		return fail("normalize(payload, target, stripOriginal) takes three arguments")
+		return fail("normalize(payload, target, originals) takes three arguments")
 	}
 
 	target, err := semconv.ParseTarget(args[1].String())
 	if err != nil {
 		return fail(err.Error())
 	}
+	originals, err := normalize.ParseOriginals(args[2].String())
+	if err != nil {
+		return fail(err.Error())
+	}
 
 	opts := normalize.DefaultOptions()
 	opts.Target = target
-	opts.PreserveOriginal = !args[2].Bool()
+	opts.Originals = originals
 
 	out, err := normalize.Payload([]byte(args[0].String()), opts)
 	if err != nil {

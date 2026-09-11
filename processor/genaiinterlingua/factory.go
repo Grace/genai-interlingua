@@ -31,8 +31,8 @@ func NewFactory() processor.Factory {
 func createDefaultConfig() component.Config {
 	defaults := normalize.DefaultOptions()
 	return &Config{
-		Target:           defaults.Target.String(),
-		PreserveOriginal: defaults.PreserveOriginal,
+		Target:    defaults.Target.String(),
+		Originals: string(defaults.Originals),
 	}
 }
 
@@ -42,9 +42,13 @@ func createTraces(
 	cfg component.Config,
 	next consumer.Traces,
 ) (processor.Traces, error) {
-	opts, err := cfg.(*Config).options()
+	c := cfg.(*Config)
+	opts, err := c.options()
 	if err != nil {
 		return nil, err
+	}
+	if c.PreserveOriginal != nil {
+		set.Logger.Warn("preserve_original is deprecated; use originals: keep or originals: prune")
 	}
 	p := &interlingua{opts: opts}
 

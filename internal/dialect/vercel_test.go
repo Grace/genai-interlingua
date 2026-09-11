@@ -206,12 +206,12 @@ func TestVercelDoesNotCarryRequestHeaders(t *testing.T) {
 }
 
 func TestVercelNormalizesFinishReasonSpelling(t *testing.T) {
-	// The SDK hyphenates what every other emitter here spells with an
-	// underscore. gen_ai.response.finish_reasons has no closed value set, so
-	// nothing downstream would catch this; it would just sit in a backend as a
-	// second spelling of one concept.
+	// The SDK hyphenates what the conventions' message schema spells tool_call
+	// and content_filter. gen_ai.response.finish_reasons has no closed value
+	// set, so nothing downstream would catch this; it would just sit in a
+	// backend as a second spelling of one concept.
 	for value, want := range map[string]string{
-		"tool-calls":     "tool_calls",
+		"tool-calls":     "tool_call",
 		"content-filter": "content_filter",
 		"stop":           "stop",
 		"length":         "length",
@@ -232,7 +232,7 @@ func TestVercelNormalizesFinishReasonsOnTheAdapterSpan(t *testing.T) {
 	s.Attributes["gen_ai.response.finish_reasons"] = StrSeq([]string{"tool-calls"})
 
 	got := mustField(t, mustParse(t, s), semconv.ResponseFinishReasons).StrSeq
-	if len(got) != 1 || got[0] != "tool_calls" {
-		t.Errorf("adapter finish reasons became %v, want [tool_calls]", got)
+	if len(got) != 1 || got[0] != "tool_call" {
+		t.Errorf("adapter finish reasons became %v, want [tool_call]", got)
 	}
 }

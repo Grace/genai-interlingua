@@ -111,7 +111,7 @@
                     "arrayValue": {
                       "values": [
                         {
-                          "stringValue": "tool_calls"
+                          "stringValue": "tool_call"
                         }
                       ]
                     }
@@ -180,7 +180,19 @@
                 {
                   "key": "interlingua.mapping",
                   "value": {
-                    "stringValue": "5fd7babe7b4ccda2"
+                    "stringValue": "731a97a6a88ed466"
+                  }
+                },
+                {
+                  "key": "interlingua.replaced.gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "tool_calls"
+                        }
+                      ]
+                    }
                   }
                 },
                 {

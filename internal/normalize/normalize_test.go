@@ -142,7 +142,7 @@ func TestStrippingOriginalsRemovesOnlyWhatWasReadAndNotRewritten(t *testing.T) {
 	s := chatSpan(map[string]dialect.Value{
 		"http.request.method": dialect.String("POST"),
 	})
-	opts := Options{Target: semconv.TargetV1_41_0, PreserveOriginal: false}
+	opts := Options{Target: semconv.TargetV1_41_0, Originals: OriginalsPrune}
 	r, ok := Span(s, opts)
 	if !ok {
 		t.Fatal("no dialect claimed the span")
@@ -171,11 +171,137 @@ func TestStrippingOriginalsRemovesOnlyWhatWasReadAndNotRewritten(t *testing.T) {
 // removing an original, so the invariant is stated as "no source key" rather
 // than "nothing at all".
 func TestOriginalsAreKeptByDefault(t *testing.T) {
-	r := mustNormalize(t, chatSpan(nil), semconv.TargetV1_41_0)
-	for _, k := range r.Remove {
-		if !strings.HasPrefix(k, "interlingua.") {
-			t.Errorf("the default normalization removed the source attribute %q", k)
+	// The zero Options as well as DefaultOptions: a caller who built one by hand
+	// and never thought about originals must not be the one who deletes them.
+	for name, opts := range map[string]Options{
+		"DefaultOptions": DefaultOptions(),
+		"zero Options":   {Target: semconv.TargetV1_41_0},
+	} {
+		r, ok := Span(chatSpan(nil), opts)
+		if !ok {
+			t.Fatalf("%s: no dialect claimed the span", name)
 		}
+		for _, k := range r.Remove {
+			if !strings.HasPrefix(k, "interlingua.") {
+				t.Errorf("%s removed the source attribute %q", name, k)
+			}
+		}
+	}
+}
+
+// Dedupe exists so a span can shed the copies a plain rename leaves behind
+// without shedding anything else, which makes every key it keeps a claim about
+// what removing that key would have destroyed.
+func TestDedupeRemovesOnlyExactCopies(t *testing.T) {
+	s := chatSpan(map[string]dialect.Value{
+		"gen_ai.usage.total_tokens": dialect.Int(439),
+		"http.request.method":       dialect.String("POST"),
+	})
+	r, ok := Span(s, Options{Target: semconv.TargetV1_41_0, Originals: OriginalsDedupe})
+	if !ok {
+		t.Fatal("no dialect claimed the span")
+	}
+
+	// 412 now sits at gen_ai.usage.input_tokens unchanged, so the old spelling
+	// is a duplicate.
+	if !slices.Contains(r.Remove, "gen_ai.usage.prompt_tokens") {
+		t.Errorf("dedupe kept gen_ai.usage.prompt_tokens, an exact copy; removals are %v", r.Remove)
+	}
+	for key, why := range map[string]string{
+		"gen_ai.system":             "its value OpenAI was rewritten to openai, so it is the only record of the emitter's spelling",
+		"gen_ai.request.model":      "it is written back under its own key",
+		"gen_ai.usage.total_tokens": "it has no conventions name and is listed in interlingua.lossy",
+		"http.request.method":       "no dialect read it",
+	} {
+		if slices.Contains(r.Remove, key) {
+			t.Errorf("dedupe removed %s, but %s", key, why)
+		}
+	}
+}
+
+func TestDedupeKeepsABlobSomethingWasLiftedOutOf(t *testing.T) {
+	// Every number in this metrics blob is lifted, and it still stays: a lift
+	// takes values out of a container, and the container is not a copy of any
+	// one of them.
+	s := dialect.Span{Name: "call", Attributes: map[string]dialect.Value{
+		"braintrust.span_attributes": dialect.String(`{"name":"call","type":"llm"}`),
+		"braintrust.metrics":         dialect.String(`{"prompt_tokens":412,"completion_tokens":27}`),
+	}}
+	r, ok := Span(s, Options{Target: semconv.TargetV1_41_0, Originals: OriginalsDedupe})
+	if !ok {
+		t.Fatal("no dialect claimed the span")
+	}
+	for _, key := range []string{"braintrust.metrics", "braintrust.span_attributes"} {
+		if slices.Contains(r.Remove, key) {
+			t.Errorf("dedupe removed %s, which values were lifted out of; removals are %v", key, r.Remove)
+		}
+	}
+	if _, ok := r.Set["gen_ai.usage.input_tokens"]; !ok {
+		t.Fatal("the metrics were not lifted, so this test checks nothing")
+	}
+}
+
+// Each attribute here is built to be kept by exactly one of duplicates'
+// conditions, so no condition can be dropped without this test noticing. The
+// fixture-driven tests cannot do that on their own: in the corpus a lossy key or
+// a lifted blob is nearly always also a key whose value no longer matches, and a
+// check that another check always backs up is a check nobody would miss.
+func TestDuplicatesKeepsEverythingThatIsNotAnExactCopy(t *testing.T) {
+	span := dialect.Span{Attributes: map[string]dialect.Value{
+		"copy":      dialect.Int(412),
+		"lost":      dialect.Int(412),
+		"blob":      dialect.Int(412),
+		"rewritten": dialect.String("OpenAI"),
+		"same":      dialect.String("gpt-4o-mini"),
+		"unwritten": dialect.Int(412),
+	}}
+	r := Result{
+		Set: map[string]dialect.Value{
+			"gen_ai.copy":      dialect.Int(412),
+			"gen_ai.lost":      dialect.Int(412),
+			"gen_ai.blob":      dialect.Int(412),
+			"gen_ai.rewritten": dialect.String("openai"),
+			"same":             dialect.String("gpt-4o-mini"),
+		},
+		Sources: map[string]dialect.Origin{
+			"gen_ai.copy":      {Key: "copy"},
+			"gen_ai.lost":      {Key: "lost"},
+			"gen_ai.blob":      {Key: "blob", Lifted: true},
+			"gen_ai.rewritten": {Key: "rewritten"},
+			"same":             {Key: "same"},
+		},
+		DialectLoss: []dialect.Loss{{Key: "lost", Reason: dialect.ReasonNoField}},
+	}
+
+	got := duplicates(span, r, []string{"copy", "lost", "blob", "rewritten", "same", "unwritten"})
+	if want := []string{"copy"}; !slices.Equal(got, want) {
+		t.Errorf("duplicates = %v, want %v:\n"+
+			"  lost is named in the loss list\n"+
+			"  blob was lifted, so it is a container rather than a copy\n"+
+			"  rewritten holds a spelling the span no longer carries\n"+
+			"  same is written back under its own key\n"+
+			"  unwritten was read but carried nowhere", got, want)
+	}
+}
+
+func TestOriginalsModesAreParsedByName(t *testing.T) {
+	for in, want := range map[string]Originals{
+		"":       OriginalsKeep,
+		"keep":   OriginalsKeep,
+		"dedupe": OriginalsDedupe,
+		"prune":  OriginalsPrune,
+	} {
+		if got, err := ParseOriginals(in); err != nil || got != want {
+			t.Errorf("ParseOriginals(%q) = %q, %v; want %q", in, got, err, want)
+		}
+	}
+	// strip is the old name, and an unknown mode is refused by naming the legal
+	// ones rather than falling back to anything.
+	if _, err := ParseOriginals("strip"); err == nil || !strings.Contains(err.Error(), "prune") {
+		t.Errorf("an unknown mode was not refused with the legal set: %v", err)
+	}
+	if err := (Options{Originals: "shrink"}).Validate(); err == nil {
+		t.Error("Validate accepted an unknown originals mode")
 	}
 }
 

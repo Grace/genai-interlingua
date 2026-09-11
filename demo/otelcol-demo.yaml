@@ -37,7 +37,7 @@ processors:
     # grep will not tell you this: at v1.41.0 the string is still on the span,
     # inside interlingua.lossy, which is the point rather than a nuisance.
     target: v1.41.0
-    preserve_original: true
+    originals: keep
   batch:
 
 exporters:

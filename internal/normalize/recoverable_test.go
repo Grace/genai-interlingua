@@ -5,6 +5,7 @@ package normalize
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/Grace/genai-interlingua/internal/dialect"
@@ -18,7 +19,7 @@ import (
 // disappears. That is not enough. Where a library already writes the
 // conventions' own attribute name but a value outside its value set, the rule
 // rewrites the value *in place* -- the key survives and the value does not, and
-// preserve_original cannot help because the name is identical, so there is no
+// keeping originals cannot help because the name is identical, so there is no
 // second attribute to leave alone.
 //
 // The Vercel AI SDK writes gen_ai.response.finish_reasons = ["tool-calls"] and
@@ -38,40 +39,50 @@ func TestEveryStatedValueIsStillRecoverable(t *testing.T) {
 		t.Fatalf("no fixtures under %s", testdata)
 	}
 
-	checked := 0
-	for _, input := range inputs {
-		name := filepath.Base(filepath.Dir(input))
-		data := mustReadFile(t, input)
+	// Dedupe is held to the same claim as keep, because never destroying what the
+	// emitter stated is the whole of its promise. It may remove a key only when
+	// the value is still on the span under a conventions name.
+	checked, deduped := 0, 0
+	for _, mode := range []Originals{OriginalsKeep, OriginalsDedupe} {
+		for _, input := range inputs {
+			name := filepath.Base(filepath.Dir(input))
+			data := mustReadFile(t, input)
 
-		for _, target := range semconv.Targets {
-			opts := DefaultOptions()
-			opts.Target = target
+			for _, target := range semconv.Targets {
+				opts := DefaultOptions()
+				opts.Target = target
+				opts.Originals = mode
 
-			out, err := Payload(data, opts)
-			if err != nil {
-				t.Fatalf("%s: normalize: %v", name, err)
-			}
-
-			before := bySpan(t, data)
-			after := bySpan(t, out)
-
-			for span, was := range before {
-				now, ok := after[span]
-				if !ok {
-					t.Errorf("%s at %s: span %q is gone", name, target, span)
-					continue
+				out, err := Payload(data, opts)
+				if err != nil {
+					t.Fatalf("%s: normalize: %v", name, err)
 				}
-				for key, old := range was {
-					checked++
-					if got, ok := now[key]; ok && sameValue(got, old) {
-						continue // still there, unchanged
+
+				before := bySpan(t, data)
+				after := bySpan(t, out)
+
+				for span, was := range before {
+					now, ok := after[span]
+					if !ok {
+						t.Errorf("%s at %s (originals %s): span %q is gone", name, target, mode, span)
+						continue
 					}
-					if recoverable(now, key, old) {
-						continue // replaced, and the replacement said so
+					for key, old := range was {
+						checked++
+						if got, ok := now[key]; ok && sameValue(got, old) {
+							continue // still there, unchanged
+						}
+						if recoverable(now, key, old) {
+							continue // replaced, and the replacement said so
+						}
+						if mode == OriginalsDedupe && copied(now, old) {
+							deduped++
+							continue // removed as a duplicate, and the duplicate is there
+						}
+						t.Errorf("%s at %s (originals %s): span %q stated %s = %s, and after "+
+							"normalization that value is neither at its own key nor recorded anywhere",
+							name, target, mode, span, key, show(old))
 					}
-					t.Errorf("%s at %s: span %q stated %s = %s, and after normalization "+
-						"that value is neither at its own key nor recorded anywhere",
-						name, target, span, key, show(old))
 				}
 			}
 		}
@@ -79,12 +90,26 @@ func TestEveryStatedValueIsStillRecoverable(t *testing.T) {
 	if checked == 0 {
 		t.Fatal("no attribute was checked; this test proves nothing")
 	}
+	if deduped == 0 {
+		t.Fatal("dedupe removed nothing across the corpus, so its half of this test proves nothing")
+	}
 }
 
 // recoverable reports whether the span records the value that used to be at key.
 func recoverable(now map[string]dialect.Value, key string, old dialect.Value) bool {
 	v, ok := now[AttrReplaced+key]
 	return ok && sameValue(v, old)
+}
+
+// copied reports whether the span carries this exact value under a conventions
+// name, which is the only thing that licenses dedupe to have removed it.
+func copied(now map[string]dialect.Value, old dialect.Value) bool {
+	for k, v := range now {
+		if strings.HasPrefix(k, "gen_ai.") && sameValue(v, old) {
+			return true
+		}
+	}
+	return false
 }
 
 func bySpan(t *testing.T, data []byte) map[string]map[string]dialect.Value {
