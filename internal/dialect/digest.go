@@ -44,11 +44,20 @@ import (
 // change.
 func Digest() string { return digest() }
 
-var digest = sync.OnceValue(func() string {
+var digest = sync.OnceValue(func() string { return digestOf(canonical()) })
+
+// digestOf is the hash itself, separated from the memoized Digest so that a
+// test can run the real function over a perturbed rendering.
+//
+// It was not separated at first, and the test that was supposed to prove the
+// digest moves when a mapping moves hashed strings with its own copy of
+// sha256 -- proving only that SHA-256 is injective, which was never in doubt.
+// A test that reimplements the thing it is testing agrees with itself.
+func digestOf(canonical string) string {
 	h := sha256.New()
-	fmt.Fprint(h, canonical())
+	fmt.Fprint(h, canonical)
 	return hex.EncodeToString(h.Sum(nil))[:16]
-})
+}
 
 // canonical renders every mapping in the package as text, in an order that does
 // not depend on map iteration or on registration order.

@@ -3,8 +3,6 @@
 package dialect
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"flag"
 	"os"
 	"reflect"
@@ -77,18 +75,25 @@ func TestDigestIsStableAcrossCalls(t *testing.T) {
 func TestDigestMovesWhenAMappingMoves(t *testing.T) {
 	base := canonical()
 
+	// Through digestOf, the function Digest itself calls. An earlier version of
+	// this test hashed with a private sha256 helper, which made it a proof that
+	// SHA-256 is injective and no kind of statement about this package.
+	if digestOf(base) != Digest() {
+		t.Fatal("digestOf(canonical()) and Digest() disagree; the test is not exercising the real digest")
+	}
+
 	moved := strings.Replace(base, "gen_ai.usage.input_tokens", "gen_ai.usage.prompt_tokens", 1)
 	if moved == base {
 		t.Fatal("no rule reads gen_ai.usage.input_tokens; this test no longer changes anything")
 	}
-	if sum(moved) == sum(base) {
+	if digestOf(moved) == digestOf(base) {
 		t.Error("a changed source key left the digest where it was")
 	}
 
 	// A target's value set widening changes what a span comes out as without
 	// any rule moving, so it has to move the digest too.
 	widened := base + "    enum chat,embeddings\n"
-	if sum(widened) == sum(base) {
+	if digestOf(widened) == digestOf(base) {
 		t.Error("a changed target enum left the digest where it was")
 	}
 }
@@ -177,11 +182,6 @@ func render(r Rule) string {
 	var b strings.Builder
 	writeRule(&b, r)
 	return b.String()
-}
-
-func sum(s string) string {
-	h := sha256.Sum256([]byte(s))
-	return hex.EncodeToString(h[:])[:16]
 }
 
 // update regenerates the golden above. Named and behaved like the flag the
