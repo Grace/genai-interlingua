@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { useEffect, useState } from 'react'
-import type { Attribution, Explanation, LossDetail } from './wasm'
+import type { Attribution, Explanation, LossDetail, Originals } from './wasm'
 import type { SpanNote } from './samples'
 import { groups, libraryOf, losses, REASONS, summary } from './groups'
 import { Provenance } from './Provenance'
@@ -24,12 +24,14 @@ export function SpanView({
   about,
   out,
   original,
+  originals,
 }: {
   span: Explanation
   /** What this span is, when demos/spans.json says. */
   about?: SpanNote | undefined
   out: string
   original: string
+  originals: Originals
 }) {
   const library = libraryOf(span.dialect)
   const { here, conventions } = losses(span)
@@ -88,6 +90,7 @@ export function SpanView({
           attr={picked}
           loss={pickedLoss}
           normalized={out}
+          originals={originals}
           onClose={() => setPinned(null)}
         />
       </div>
@@ -169,10 +172,13 @@ export function SpanView({
 
         <p className="aside">
           That the originals survive is the default, not a guarantee of the
-          format: run the translator with <code>preserve_original</code> off and
-          these keys really are removed from the span. It is why the attribute is
-          called <code>lossy</code> — the word is about what the translation could
-          not carry into the conventions, not about the span having been emptied.
+          format: run the translator with <code>originals: prune</code> and these
+          keys really are removed from the span. <code>originals: dedupe</code>
+          never removes them — it drops only a source key whose value a rename
+          copied verbatim, and one named in <code>interlingua.lossy</code> has
+          nowhere else to be read from. It is why the attribute is called{' '}
+          <code>lossy</code> — the word is about what the translation could not
+          carry into the conventions, not about the span having been emptied.
         </p>
       </div>
 
