@@ -4,15 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { explain, load, normalize, original, targets, type Explanation, type Originals } from './wasm'
 import { samples, type Sample } from './samples'
 import { SpanView } from './SpanView'
-
-/**
- * What this page asks the translator to do with the emitter's own keys.
- *
- * Named here rather than left to normalize's default, because the provenance
- * panel tells the reader which mode produced what they are looking at. A default
- * would put that sentence and the call that justifies it in two different files.
- */
-const ORIGINALS: Originals = 'keep'
+import { OriginalsControl } from './Originals'
 
 type State =
   | { status: 'loading' }
@@ -35,6 +27,10 @@ export function App() {
   const all = useMemo(() => samples(), [])
   const [sample, setSample] = useState<Sample | undefined>(all[0])
   const [selected, setSelected] = useState(0)
+  // What becomes of the emitter's own attributes. State rather than a
+  // constant, so the provenance panel's account of it describes a choice the
+  // reader made rather than one this file made for them.
+  const [originals, setOriginals] = useState<Originals>('keep')
 
   useEffect(() => {
     load('./genai-interlingua.wasm')
@@ -54,13 +50,13 @@ export function App() {
       return {
         ok: true,
         explanations: explain(json, target),
-        out: normalize(json, target, ORIGINALS),
+        out: normalize(json, target, originals),
         original: original(json),
       }
     } catch (e) {
       return { ok: false, error: String(e) }
     }
-  }, [state.status, sample, target])
+  }, [state.status, sample, target, originals])
 
   if (state.status === 'loading') {
     return <p className="notice">Loading the normalizer…</p>
@@ -163,13 +159,22 @@ export function App() {
         </nav>
       )}
 
+      {span && result?.ok && sample && (
+        <OriginalsControl
+          payload={JSON.stringify(sample.payload)}
+          target={target}
+          mode={originals}
+          onPick={setOriginals}
+        />
+      )}
+
       {span && result?.ok && (
         <SpanView
           span={span}
           about={sample?.spans[span.span]}
           out={result.out}
           original={result.original}
-          originals={ORIGINALS}
+          originals={originals}
         />
       )}
 
