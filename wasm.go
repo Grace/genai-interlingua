@@ -12,6 +12,7 @@
 package main
 
 import (
+	"encoding/json"
 	"syscall/js"
 
 	"github.com/Grace/genai-interlingua/internal/normalize"
@@ -40,6 +41,42 @@ func normalizePayload(_ js.Value, args []js.Value) any {
 	return map[string]any{"ok": true, "out": string(out)}
 }
 
+// interlinguaExplain(payloadJSON, target) -> {ok, explanations} | {ok, error}
+//
+// The account rather than the output: which dialect claimed each span, which
+// attribute every field was read from, what could not be carried and why. The
+// page renders this instead of deriving it by diffing two JSON blobs, because a
+// diff can only show that a key appeared -- it cannot say which key it came
+// from, and that is the question the inspector exists to answer.
+func explainPayload(_ js.Value, args []js.Value) any {
+	if len(args) != 2 {
+		return fail("explain(payload, target) takes two arguments")
+	}
+
+	target, err := semconv.ParseTarget(args[1].String())
+	if err != nil {
+		return fail(err.Error())
+	}
+
+	opts := normalize.DefaultOptions()
+	opts.Target = target
+
+	out, err := normalize.Explain([]byte(args[0].String()), opts)
+	if err != nil {
+		return fail(err.Error())
+	}
+
+	// Marshalled to JSON and handed over as a string rather than built as a
+	// js.Value tree. The shape is then the Go struct tags, in one place, and a
+	// field added to Explanation reaches the page without anything here being
+	// taught about it.
+	b, err := json.Marshal(out)
+	if err != nil {
+		return fail(err.Error())
+	}
+	return map[string]any{"ok": true, "explanations": string(b)}
+}
+
 // targets() -> [..] so the page's selector cannot drift from the enum.
 func targets(js.Value, []js.Value) any {
 	out := make([]any, 0, len(semconv.Targets))
@@ -53,6 +90,7 @@ func fail(msg string) any { return map[string]any{"ok": false, "error": msg} }
 
 func main() {
 	js.Global().Set("interlinguaNormalize", js.FuncOf(normalizePayload))
+	js.Global().Set("interlinguaExplain", js.FuncOf(explainPayload))
 	js.Global().Set("interlinguaTargets", js.FuncOf(targets))
 	select {} // keep the exports alive
 }
