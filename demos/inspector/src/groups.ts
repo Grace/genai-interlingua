@@ -145,6 +145,25 @@ export function losses(e: Explanation): { here: LossDetail[]; conventions: LossD
   }
 }
 
+/**
+ * What each loss reason means, for the tag beside a lost key.
+ *
+ * The codes are the Go side's, from internal/dialect/loss.go and
+ * internal/normalize/loss.go, and these sentences paraphrase the comments on
+ * those constants. The set is closed on purpose there, so a new code is a
+ * deliberate change; one missing from here renders as the bare code rather than
+ * as a guess.
+ */
+export const REASONS: Record<string, string> = {
+  no_field: 'the conventions have no attribute for this, at any version',
+  unstructured: 'a provider-shaped blob the translator records instead of parsing',
+  flattened: 'several values where the conventions hold one, so none was picked',
+  coerced: 'the value survived but its type did not',
+  ambiguous: 'more than one field could claim it, so it was recorded rather than guessed',
+  no_attribute: 'the conventions have this, but not at the target version chosen above',
+  no_value: 'the target has the attribute, but not this value for it',
+}
+
 /** Library names as a person would say them, keyed by the dialect the Go side reports. */
 export const LIBRARY: Record<string, string> = {
   openllmetry: 'OpenLLMetry',

@@ -12,6 +12,14 @@ Each fixture's PROVENANCE marker travels with it, so the page can say whether a
 span was captured from a real library or written by hand, rather than letting a
 reader assume the flattering answer.
 
+Each span also travels with its note from demos/spans.json: a short role and a
+sentence saying what the span is, because a name like scoring_span or
+ai.generateText.doGenerate means nothing to a reader who has not read the
+capture script. The notes are the one hand-written account here, so they are
+checked against the fixtures: a span with no note, or a note for a span no
+fixture carries, stops the build rather than reaching the page unexplained or
+describing something that is no longer there.
+
     ./demos/samples.py <output.js>
 """
 
@@ -32,30 +40,57 @@ LABELS = {
 }
 
 
+def span_names(payload: dict) -> set[str]:
+    return {
+        span["name"]
+        for rs in payload.get("resourceSpans", [])
+        for ss in rs.get("scopeSpans", [])
+        for span in ss.get("spans", [])
+    }
+
+
 def main() -> int:
     if len(sys.argv) != 2:
         print(__doc__, file=sys.stderr)
         return 2
 
     root = pathlib.Path(__file__).resolve().parent.parent
+    notes = json.loads((root / "demos" / "spans.json").read_text())
     out = {}
+    problems = []
 
     for d in sorted((root / "testdata").iterdir()):
         payload = d / "in.json"
         if not payload.is_file():
             continue
         marker = d / "PROVENANCE"
+        doc = json.loads(payload.read_text())
+        names = span_names(doc)
+        noted = notes.get(d.name, {})
+        for name in sorted(names - noted.keys()):
+            problems.append(f"{d.name}: span {name!r} has no note")
+        for name in sorted(noted.keys() - names):
+            problems.append(f"{d.name}: note for {name!r}, which the fixture does not carry")
         out[d.name] = {
             # A fixture with no label is listed under its directory name rather
             # than skipped: a new one should appear on the page the day it is
             # added, looking unfinished, instead of being silently absent.
             "label": LABELS.get(d.name, d.name),
             "origin": marker.read_text().strip() if marker.is_file() else "unrecorded",
-            "payload": json.loads(payload.read_text()),
+            "spans": {name: noted[name] for name in sorted(names & noted.keys())},
+            "payload": doc,
         }
+
+    for fixture in sorted(notes.keys() - out.keys()):
+        problems.append(f"{fixture}: notes for a fixture that does not exist")
 
     if not out:
         print("no fixtures found under testdata/", file=sys.stderr)
+        return 1
+    if problems:
+        print("demos/spans.json does not match the fixtures:", file=sys.stderr)
+        for p in problems:
+            print(f"  {p}", file=sys.stderr)
         return 1
 
     body = json.dumps(out, indent=2, sort_keys=True)

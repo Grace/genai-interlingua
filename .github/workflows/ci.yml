@@ -280,6 +280,13 @@ jobs:
       # whole tree, and one capture rendered a blank document. The types said the
       # field was an array and were believed -- a declaration about what crosses a
       # JSON boundary is a claim, not a check.
+      # The inspector shows a note beside every span name, from demos/spans.json.
+      # samples.py refuses to write when a fixture span has no note or a note
+      # names a span no fixture carries, so a re-capture that adds or renames a
+      # span fails here instead of reaching the page unexplained.
+      - name: span notes cover every fixture span
+        run: python3 demos/samples.py "$RUNNER_TEMP/samples.js"
+
       - name: typecheck and build
         working-directory: demos/inspector
         run: |

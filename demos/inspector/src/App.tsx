@@ -110,6 +110,14 @@ export function App() {
         </label>
       </div>
 
+      <p className="scenario">
+        Every sample records the same exchange: a support agent is asked “Where
+        is order A-1187?” and, in all but the hand-rolled Folk spellings span,
+        answers by calling a <code>lookup_order</code> tool. The captured ones
+        ran against a local stand-in for OpenAI, so no real model was called.
+        What differs is how each library wrote it down.
+      </p>
+
       {result && !result.ok && <p className="notice error">{result.error}</p>}
 
       {explanations.length === 0 && result?.ok && (
@@ -123,20 +131,33 @@ export function App() {
           <span className="label">
             {explanations.length} spans in this trace — pick one:
           </span>
-          {explanations.map((e, i) => (
-            <button
-              key={`${e.span}-${i}`}
-              className={i === selected ? 'on' : ''}
-              onClick={() => setSelected(i)}
-            >
-              {e.span}
-            </button>
-          ))}
+          {explanations.map((e, i) => {
+            // The role is on the button rather than only in a tooltip: the
+            // names alone do not say which span is the model call, and a
+            // tooltip is not there at all on a phone.
+            const about = sample?.spans[e.span]
+            return (
+              <button
+                key={`${e.span}-${i}`}
+                className={i === selected ? 'on' : ''}
+                onClick={() => setSelected(i)}
+                title={about?.note}
+              >
+                {e.span}
+                {about && <span className="role">{about.role}</span>}
+              </button>
+            )
+          })}
         </nav>
       )}
 
       {span && result?.ok && (
-        <SpanView span={span} out={result.out} original={result.original} />
+        <SpanView
+          span={span}
+          about={sample?.spans[span.span]}
+          out={result.out}
+          original={result.original}
+        />
       )}
     </>
   )

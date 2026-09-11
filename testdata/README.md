@@ -11,6 +11,35 @@ The pair of outputs per dialect is the interesting part. Every difference betwee
 after the GenAI conventions were split out of `open-telemetry/semantic-conventions`,
 and `docs/moving-target.md` has to be able to name each one.
 
+## What the fixtures record
+
+Every fixture is the same exchange: a support agent is asked "Where is order
+A-1187?" and, in all but `raw-folk/`, answers by calling a `lookup_order` tool.
+The captured ones run
+against a local mock of OpenAI (`testdata/capture/mockopenai.py`), so no model
+is involved and the answer never varies; what differs is only how each library
+writes it down.
+
+The agent is named `support_triage_agent`, and that one name lands differently
+in each library, which is itself worth seeing:
+
+| | where `support_triage_agent` appears |
+| --- | --- |
+| `openllmetry/` | the workflow span `support_triage_agent.workflow`, which *wraps* the model call; the call is its child, `openai.chat` |
+| `vercel/` | no span name at all -- `ai.telemetry.functionId` on all three spans, the tool call included |
+| `braintrust/` | the span that holds the model call, named directly |
+| `openllmetry-legacy/` | `traceloop.workflow.name` on the model call, and the service name `support-triage-agent` |
+
+`braintrust/` also carries `scoring_span`, which has no model call and no
+tokens: it is a grader's verdicts, recorded as a span of their own with type
+`score`. It holds three scores where the conventions hold one evaluation per
+span, and it exists to exercise the `flattened` loss described below.
+
+The inspector shows a short note beside every span name, from
+`demos/spans.json`. `demos/samples.py` refuses to build when a fixture span has
+no note or a note names a span no fixture carries, so re-capturing a fixture
+that adds or renames a span means updating that file too.
+
 ## Per-dialect notes
 
 `vercel/in.json` is one trace carrying all three span shapes the AI SDK emits,

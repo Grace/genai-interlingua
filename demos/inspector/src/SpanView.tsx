@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import type { Attribution, Explanation, LossDetail } from './wasm'
-import { groups, libraryOf, losses, summary } from './groups'
+import type { SpanNote } from './samples'
+import { groups, libraryOf, losses, REASONS, summary } from './groups'
 import { Diff } from './Diff'
 import { Flow } from './Flow'
 
@@ -19,10 +20,13 @@ import { Flow } from './Flow'
  */
 export function SpanView({
   span,
+  about,
   out,
   original,
 }: {
   span: Explanation
+  /** What this span is, when demos/spans.json says. */
+  about?: SpanNote | undefined
   out: string
   original: string
 }) {
@@ -35,6 +39,11 @@ export function SpanView({
         <h2>
           <code>{span.span}</code>
         </h2>
+        {about && (
+          <p className="about">
+            <span className="role">{about.role}</span> {about.note}
+          </p>
+        )}
         <p className="summary">{summary(span, library)}</p>
         <p className="detected">
           Detected as <strong>{library}</strong>, and translated to{' '}
@@ -120,6 +129,8 @@ export function SpanView({
           </>
         )}
 
+        {span.lossy.length > 0 && <Legend reasons={span.lossy.map((l) => l.reason)} />}
+
         <p className="aside">
           That the originals survive is the default, not a guarantee of the
           format: run the translator with <code>preserve_original</code> off and
@@ -163,11 +174,37 @@ function Losses({ items }: { items: LossDetail[] }) {
       {items.map((l, i) => (
         <li key={`${l.key}-${i}`}>
           <code>{l.key}</code>
-          <span className="reason">{l.reason.replace(/_/g, ' ')}</span>
+          <span className="reason" title={REASONS[l.reason]}>
+            {l.reason.replace(/_/g, ' ')}
+          </span>
           <p>{l.detail}</p>
         </li>
       ))}
     </ul>
+  )
+}
+
+/**
+ * The reason tags on this span, spelled out once below the lists.
+ *
+ * Only the tags that appear here, so the legend stays a gloss on what the reader
+ * is looking at rather than a glossary to scroll past. A code the page has no
+ * sentence for is left out rather than guessed at; its tag still shows.
+ */
+function Legend({ reasons }: { reasons: string[] }) {
+  const present = [...new Set(reasons)].filter((r) => REASONS[r])
+  if (present.length === 0) return null
+  return (
+    <dl className="legend" aria-label="What the reason tags mean">
+      {present.map((r) => (
+        <div key={r}>
+          <dt>
+            <span className="reason">{r.replace(/_/g, ' ')}</span>
+          </dt>
+          <dd>{REASONS[r]}</dd>
+        </div>
+      ))}
+    </dl>
   )
 }
 
