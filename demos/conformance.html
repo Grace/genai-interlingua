@@ -269,11 +269,14 @@
     <br><br>
     <b>There is already a first-party component for this.</b>
     <a href="https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/genainormalizerprocessor"><code>processor/genainormalizer</code></a>
-    has been in <code>opentelemetry-collector-contrib</code> since February 2026 and ships in the
-    <code>otelcol-contrib</code> binary you are probably already running. If OpenInference and
-    OpenLLMetry are the libraries you have, reach for it first &mdash; it needs no custom build and
-    this does. What is measured here and not there is the cost: that component does not record what
-    a mapping could not carry, and these 105 attributes are what that silence is hiding. The
+    landed in <code>opentelemetry-collector-contrib</code> in May 2026 &mdash; donated that
+    February &mdash; and ships in the <code>otelcol-contrib</code> binary you are probably already
+    running. If OpenInference and OpenLLMetry are the libraries you have, reach for it first: it
+    needs no custom build and this does. What is measured here and not there is the cost. It has
+    built-in tables for those two dialects, which is <b>31</b> of the 105 attributes above; it
+    normalizes them and records nothing about what it could not carry. The remaining 74 are on
+    dialects it does not claim &mdash; 53 of them LiteLLM&rsquo;s cost model &mdash; so they are a
+    gap in the conventions rather than in that component. The
     differences are being taken upstream rather than maintained in competition; the
     <a href="https://github.com/Grace/genai-interlingua#components-covering-similar-use-cases">comparison
     is in the README</a>, dated, because that component moves and a copy of it here would quietly
@@ -440,15 +443,28 @@ function renderDetect(){
       `<div class="pts">${pts}</div></div>`;
   }).join("");
 
+  // The runner-up for the margin is the best NON-fallback rival, because that is
+  // what the margin is computed against. But the caption has to account for the
+  // fallback lane too: it is on screen, it frequently out-scores the winner, and
+  // an earlier version of this sentence said "nothing else scored at all" on
+  // seven of the fifteen spans while a bar above it read 32.
   const second = ranked.filter(([n]) => !fb.has(n) && n !== row.winner)[0];
+  const topFallback = ranked.filter(([n]) => fb.has(n))[0];
+  const outscored = topFallback && topFallback[1] > row.scores[row.winner];
+
+  const rival = second && second[1] > 0
+    ? `ahead of <b>${second[0]}</b> at ${second[1]}`
+    : "and no other dialect scored at all";
+  const aside = outscored
+    ? ` <b>${topFallback[0]}</b> scored ${topFallback[1]} and still did not win: it is the ` +
+      `fallback tier, consulted only when nothing that recognises a library has claimed the span.`
+    : "";
+
   const verdict = row.margin === 0
     ? `<b>${row.winner}</b> claimed it from the fallback tier, so the margin is <b>0</b> &mdash; ` +
       `nothing that recognises a library claimed this span at all.`
-    : `<b>${row.winner}</b> wins with ${row.scores[row.winner]}, ` +
-      `${second && second[1] > 0
-          ? `ahead of <b>${second[0]}</b> at ${second[1]}`
-          : "and nothing else scored at all"}. ` +
-      `Margin <b>${row.margin}</b>, which is what the span carries as its confidence.`;
+    : `<b>${row.winner}</b> wins with ${row.scores[row.winner]}, ${rival}. ` +
+      `Margin <b>${row.margin}</b>, which is what the span carries as its confidence.${aside}`;
 
   host.innerHTML = `<div class="pick">${picks}</div><div class="race">${lanes}</div>` +
     `<div class="verdict">${verdict}</div>` +
