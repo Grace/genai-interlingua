@@ -251,3 +251,34 @@ func Payload(data []byte, opts Options) ([]byte, error) {
 	}
 	return append(out, '\n'), nil
 }
+
+// Reserialize decodes an OTLP/JSON trace request and re-encodes it unchanged,
+// through the same structs and the same encoder Payload uses.
+//
+// It exists so that a caller showing a before and an after can print both with
+// one serializer. Two encoders do not agree about field order -- this package's
+// structs put traceId before attributes, and an emitter's own JSON generally
+// does not -- so a diff of raw input against normalized output opens with a
+// block that moved because of the printer rather than because of the mapping.
+// That is a difference the translator did not make, sitting at the top of the
+// evidence, and it is worth ten lines to remove.
+//
+// The stronger reason is what it makes assertable. With originals preserved, no
+// attribute key is ever removed, and once both sides come off the same printer
+// that stops being a claim about the renderer and becomes a property of this
+// package: see TestNormalizationNeverRemovesAnAttribute.
+//
+// Keys, not values. A rule whose source key is already the conventions' own key
+// rewrites the value in place, so a diff of the two sides legitimately shows
+// removed lines; what it must never show is a key that went away.
+func Reserialize(data []byte) ([]byte, error) {
+	var p payload
+	if err := json.Unmarshal(data, &p); err != nil {
+		return nil, fmt.Errorf("decode OTLP JSON: %w", err)
+	}
+	out, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("encode OTLP JSON: %w", err)
+	}
+	return append(out, '\n'), nil
+}
