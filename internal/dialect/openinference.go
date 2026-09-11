@@ -289,7 +289,7 @@ func (openInference) invocationParameters(raw string, p *Parsed) {
 			continue
 		}
 		if v := jsonValue(m[k]); !v.Empty() {
-			p.Set(f, v)
+			p.liftFrom(f, v, "llm.invocation_parameters")
 		} else {
 			left = append(left, k)
 		}

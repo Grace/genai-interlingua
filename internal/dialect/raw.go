@@ -124,14 +124,14 @@ func (d raw) Parse(s Span) Parsed {
 		}
 		if f == semconv.ResponseFinishReasons {
 			if v, ok := s.Attr(k); ok {
-				p.Set(f, strSeq([]string{v.Str}))
+				p.setFrom(f, strSeq([]string{v.Str}), k)
 				p.Consumed = append(p.Consumed, k)
 			}
 			continue
 		}
 		if f == semconv.ProviderName {
 			if v, ok := s.Attr(k); ok {
-				p.Set(f, String(strings.ToLower(v.Str)))
+				p.setFrom(f, String(strings.ToLower(v.Str)), k)
 				p.Consumed = append(p.Consumed, k)
 			}
 			continue

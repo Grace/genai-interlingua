@@ -185,7 +185,7 @@ func (braintrust) spanAttributes(s Span, p *Parsed) {
 		return
 	}
 	if op, ok := braintrustSpanTypes[attrs.Type]; ok {
-		p.Set(semconv.OperationName, String(op))
+		p.liftFrom(semconv.OperationName, String(op), "braintrust.span_attributes")
 		return
 	}
 	p.Loss = append(p.Loss, Loss{Key: "braintrust.span_attributes", Reason: ReasonNoField,
@@ -230,7 +230,7 @@ func (braintrust) metrics(s Span, p *Parsed) {
 			continue
 		}
 		if val := jsonValue(m[k]); !val.Empty() {
-			p.Set(f, val)
+			p.liftFrom(f, val, "braintrust.metrics")
 		} else {
 			left = append(left, k)
 		}
@@ -270,8 +270,8 @@ func (braintrust) scores(s Span, p *Parsed) {
 				Detail: "score " + names[0] + " is not a number"})
 			return
 		}
-		p.Set(semconv.EvaluationName, String(names[0]))
-		p.Set(semconv.EvaluationScoreValue, value)
+		p.liftFrom(semconv.EvaluationName, String(names[0]), "braintrust.scores")
+		p.liftFrom(semconv.EvaluationScoreValue, value, "braintrust.scores")
 	default:
 		p.Loss = append(p.Loss, Loss{Key: "braintrust.scores", Reason: ReasonFlattened,
 			Detail: "the conventions carry one evaluation per span and this span has " +

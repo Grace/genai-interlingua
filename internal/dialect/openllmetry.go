@@ -212,7 +212,7 @@ func (d openLLMetry) Parse(s Span) Parsed {
 		kind = v.Str
 		p.Consumed = append(p.Consumed, "traceloop.span.kind")
 		if op, ok := openLLMetrySpanKinds[kind]; ok {
-			p.Set(semconv.OperationName, String(op))
+			p.setFrom(semconv.OperationName, String(op), "traceloop.span.kind")
 		} else {
 			p.Loss = append(p.Loss, Loss{Key: "traceloop.span.kind", Reason: ReasonNoField,
 				Detail: "no gen_ai.operation.name value for " + kind})
@@ -224,7 +224,7 @@ func (d openLLMetry) Parse(s Span) Parsed {
 	if v, ok := s.Attr("llm.request.type"); ok {
 		p.Consumed = append(p.Consumed, "llm.request.type")
 		if op, ok := openLLMetryOperations[v.Str]; ok {
-			p.Set(semconv.OperationName, String(op))
+			p.setFrom(semconv.OperationName, String(op), "llm.request.type")
 		} else {
 			p.Loss = append(p.Loss, Loss{Key: "llm.request.type", Reason: ReasonNoField,
 				Detail: "no gen_ai.operation.name value for " + v.Str})

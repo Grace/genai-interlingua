@@ -111,10 +111,45 @@ type Parsed struct {
 	Fields     map[semconv.Field]Value
 	Consumed   []string
 	Loss       []Loss
+
+	// Source names the attribute the value under each field was read from,
+	// for the fields where that question has a single answer. A field absent
+	// from this map is not an omission: it was derived rather than renamed,
+	// by a method that read several attributes or none, and naming any one of
+	// them as its source would be a guess presented as a record. The two cases
+	// are kept distinct here for the same reason interlingua.lossy keeps
+	// "could not carry" distinct from "was never asked to" -- a blank means
+	// nobody can say, and that is worth being able to report.
+	Source map[semconv.Field]Origin
+}
+
+// Origin is where one field's value came from.
+type Origin struct {
+	// Key is the source attribute.
+	Key string
+
+	// Lifted distinguishes a value taken out of a structured attribute from one
+	// read off a plain one.
+	//
+	// Both have a single source key, so both are attributable, but they are not
+	// the same act and a reader should not be shown them as if they were. A
+	// rename carries a value across: gen_ai.usage.prompt_tokens held 41 and
+	// gen_ai.usage.input_tokens holds 41. A lift reaches inside a document --
+	// braintrust.metrics is an entire JSON object and the field takes one
+	// number out of it -- so the source attribute's *value* is not the field's
+	// old value, it is the container it was in. Presenting the container as a
+	// before-value would show a reader a JSON blob turning into an integer and
+	// call it a transform.
+	Lifted bool
 }
 
 // Set records a field, ignoring empty values so that callers can pass the result
 // of a failed lookup straight through without guarding every call.
+//
+// It also clears any source recorded for the field. A plain Set is the derived
+// case by definition -- the caller had a value and no single key to attribute it
+// to -- so when one overwrites a value a rule had renamed, the rule's key stops
+// being true of what the field now holds and must not survive the overwrite.
 func (p *Parsed) Set(f semconv.Field, v Value) {
 	if v.Empty() {
 		return
@@ -123,6 +158,32 @@ func (p *Parsed) Set(f semconv.Field, v Value) {
 		p.Fields = make(map[semconv.Field]Value)
 	}
 	p.Fields[f] = v
+	delete(p.Source, f)
+}
+
+// setFrom records a field and the single source attribute it came from. The
+// source is recorded only if the value actually landed, so that a caller
+// passing an empty value through does not leave a key attributed to a field
+// that was never set.
+func (p *Parsed) setFrom(f semconv.Field, v Value, key string) {
+	p.setOrigin(f, v, Origin{Key: key})
+}
+
+// liftFrom is setFrom for a value taken out of a structured attribute. See
+// Origin.Lifted for why the two are not the same record.
+func (p *Parsed) liftFrom(f semconv.Field, v Value, key string) {
+	p.setOrigin(f, v, Origin{Key: key, Lifted: true})
+}
+
+func (p *Parsed) setOrigin(f semconv.Field, v Value, o Origin) {
+	p.Set(f, v)
+	if _, ok := p.Fields[f]; !ok {
+		return
+	}
+	if p.Source == nil {
+		p.Source = make(map[semconv.Field]Origin)
+	}
+	p.Source[f] = o
 }
 
 // Take reads key from span into field f, records the key as consumed, and
@@ -132,7 +193,7 @@ func (p *Parsed) Take(s Span, key string, f semconv.Field) bool {
 	if !ok {
 		return false
 	}
-	p.Set(f, v)
+	p.setFrom(f, v, key)
 	p.Consumed = append(p.Consumed, key)
 	return true
 }

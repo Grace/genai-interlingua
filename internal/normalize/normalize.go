@@ -103,6 +103,20 @@ type Result struct {
 	// time, and the span is still not a faithful carrier of it.
 	PriorLossy []string
 
+	// Sources maps an emitted attribute key back to the source attribute its
+	// value was read from, for the keys where that has a single answer. A key
+	// in Set but not here was derived rather than renamed: reassembled from
+	// several attributes, or read off the span's shape rather than any one of
+	// its values. That is reported as derived, not as unknown -- the mapping
+	// knows perfectly well what it did, it just cannot name one key as the
+	// origin, and inventing one would make an audit trail that lies.
+	//
+	// This is not written to the span. It is per-attribute detail for a caller
+	// that is explaining one span to a person; putting it on every span would
+	// roughly double the attribute count to restate what interlingua.mapping
+	// already pins for the whole rule set.
+	Sources map[string]dialect.Origin
+
 	// DialectLoss is what the emitter said that the IR could not carry.
 	DialectLoss []dialect.Loss
 
@@ -220,6 +234,12 @@ func Span(s dialect.Span, opts Options) (Result, bool) {
 		}
 
 		r.Set[key] = v
+		if from, ok := p.Source[f]; ok {
+			if r.Sources == nil {
+				r.Sources = make(map[string]dialect.Origin)
+			}
+			r.Sources[key] = from
+		}
 	}
 
 	r.Set[AttrDialect] = dialect.String(string(r.Dialect))

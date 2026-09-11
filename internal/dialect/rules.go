@@ -276,7 +276,7 @@ func (p *Parsed) applyRules(s Span, rules []Rule) {
 				p.Loss = append(p.Loss, Loss{Key: k, Reason: reason, Detail: detail})
 				break
 			}
-			p.Set(r.Field, out)
+			p.setFrom(r.Field, out, k)
 			break
 		}
 	}
