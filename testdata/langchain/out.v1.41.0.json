@@ -728,6 +728,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.replaced.gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "invoke_agent"
+                  }
+                },
+                {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "v1.41.0"

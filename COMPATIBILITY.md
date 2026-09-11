@@ -8,7 +8,7 @@ changes are made to your values without being recorded as losses at all.
 
 ## Reading a normalized span
 
-Every span this processor claims carries four attributes of its own:
+Every span this processor claims carries attributes of its own:
 
 | Attribute | Says |
 |---|---|
@@ -16,6 +16,31 @@ Every span this processor claims carries four attributes of its own:
 | `interlingua.dialect.confidence` | how much more evidence the winner had than the runner-up |
 | `interlingua.target` | which schema version the `gen_ai.*` keys belong to |
 | `interlingua.lossy` | the keys this span is not a faithful carrier of |
+| `interlingua.lossy.count` | how many, written even when it is zero |
+| `interlingua.hops` | how many times this span has been translated |
+| `interlingua.mapping` | a digest of the mappings that read it |
+| `interlingua.replaced.<key>` | the value a rewrite of `<key>` replaced, where there was one |
+
+`interlingua.mapping` identifies the *route*, as `interlingua.target` identifies
+the destination. It is derived from the rule tables, the detection gates and the
+targets' attribute tables — not from a build stamp, which would move on every
+commit including the ones a span cannot see. Two spans carrying the same digest
+were read by the same mappings. What it does not cover is stated in
+`dialect.Digest`: the half of each dialect that is Go rather than a table is
+covered only by the set of fields it declares it produces.
+
+`interlingua.replaced.<key>` exists because `preserve_original` cannot cover one
+case. It keeps the emitter's own attribute beside the conventions one, which
+works for every rename — but where a library already writes the conventions'
+*own* key with a value outside the value set, there is only one attribute, and
+writing the conforming value into it overwrites what the emitter said. The Vercel
+AI SDK writes `gen_ai.response.finish_reasons = ["tool-calls"]` where the
+conventions say `tool_calls`. That value used to be destroyed with nothing
+recording it. Now it is kept here, so nothing an emitter stated is unrecoverable.
+
+Where the emitter wrote a value this codec cannot represent — a kvlist, a bytes
+value, an empty or mixed array — there is nothing to keep, and the key is named
+in `interlingua.lossy` instead.
 
 `interlingua.lossy` is the one to alert on. If it is absent, everything the
 emitter said arrived intact. If it is present, the keys it names are the ones to
@@ -32,7 +57,34 @@ which is a real thing that happens when one library instruments another.
 **Nothing is destroyed by default.** `preserve_original: true` is the default, and
 under it the emitter's own attributes stay on the span beside the normalized
 ones. Every loss described below is a loss of *meaning carried into the target
-schema*, not a loss of data, unless you set `strip_original`.
+schema*, not a loss of data.
+
+### What keeping them costs
+
+Keeping both vocabularies means carrying both, and the cost is worth deciding
+rather than defaulting into, because it multiplies by ingest volume and
+retention. Measured over the nine captures in `testdata/`, comparing the input
+against the normalized span:
+
+| | attributes | bytes |
+|---|---:|---:|
+| `preserve_original: true` (default) | **+55%** | **+55%** |
+| `preserve_original: false` | **-10%** | **+3%** |
+
+The overhead is close to constant per span — the `interlingua.*` bookkeeping is
+the same handful of attributes whether a span carries ten or a hundred — so it
+falls hardest on sparse spans. Braintrust's, with fourteen attributes in, grows
+136%; LiteLLM's, with eighty-five, grows 11%.
+
+Turning originals off does **not** simply undo that. It removes the source
+attributes a dialect *read*, which is why the attribute count can end up below
+where it started — LiteLLM drops 56%, because its large `metadata.*` surface is
+read and then dropped. But a key named in `interlingua.lossy` was also read, so
+in that mode the loss list names facts that are gone from the span rather than
+merely unreachable through the conventions' names. `interlingua.replaced.<key>`
+survives either way, because it is written rather than read.
+
+Reproduce with `Reserialize` and `Payload`; both are in `internal/normalize`.
 
 ## Two vocabularies, because there are two culprits
 
@@ -114,8 +166,15 @@ is to get spans that conform to it, and a span carrying a value the registry doe
 not define is not conformant however useful the word is.
 
 *What to do about either:* switch to `-target genai-main` if you want the newer
-vocabulary, and read `docs/moving-target.md` first for what that costs you. The
-originals are still on the span either way.
+vocabulary, and read `docs/moving-target.md` first for what that costs you.
+
+The originals are still on the span at either target — that sentence is about
+the choice of target, and it is worth being exact because it is not a promise
+the format makes. With `preserve_original: false` the source attributes a
+dialect read are removed, and a key named in `interlingua.lossy` was read. So in
+that mode the loss list names facts that are genuinely gone from the span rather
+than merely unreachable through the conventions' vocabulary. What survives
+either way is `interlingua.replaced.<key>`, which is written rather than read.
 
 ## Changes that are not losses
 

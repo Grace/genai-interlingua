@@ -488,6 +488,18 @@
                   }
                 },
                 {
+                  "key": "interlingua.replaced.gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "tool-calls"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "genai-main"

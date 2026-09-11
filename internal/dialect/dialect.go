@@ -53,6 +53,27 @@ func StrSeq(s []string) Value { return Value{Kind: KindStrSeq, StrSeq: s} }
 // Empty reports whether the value carries no payload.
 func (v Value) Empty() bool { return v.Kind == KindEmpty }
 
+// Equal reports whether two values carry the same payload of the same kind.
+// A Value is not comparable with == because of StrSeq, and an int 1 and a
+// string "1" are different facts however they render.
+func (v Value) Equal(o Value) bool {
+	if v.Kind != o.Kind {
+		return false
+	}
+	if v.Kind == KindStrSeq {
+		if len(v.StrSeq) != len(o.StrSeq) {
+			return false
+		}
+		for i := range v.StrSeq {
+			if v.StrSeq[i] != o.StrSeq[i] {
+				return false
+			}
+		}
+		return true
+	}
+	return v.Str == o.Str && v.Int == o.Int && v.Float == o.Float && v.Bool == o.Bool
+}
+
 // Span is the input side: one OTLP span reduced to the parts a dialect needs.
 // Attributes are the flat key/value map OTLP already gives us; nothing here
 // knows about resources or scopes, because no dialect signature depends on them.

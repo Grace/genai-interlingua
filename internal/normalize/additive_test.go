@@ -4,6 +4,7 @@ package normalize
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/Grace/genai-interlingua/internal/semconv"
@@ -127,4 +128,59 @@ func keysBySpan(t *testing.T, data []byte) map[string]map[string]bool {
 		}
 	}
 	return out
+}
+
+// TestNoInputLineDisappears is the strongest form of the claim the inspector's
+// diff makes to a reader, and the cheapest to check.
+//
+// TestNormalizationNeverRemovesAnAttribute holds that no attribute KEY goes
+// away. That leaves room for a value to be rewritten under a key that stays,
+// which does happen -- the Vercel SDK writes gen_ai.response.finish_reasons =
+// ["tool-calls"] where the conventions say tool_calls -- and would show as a
+// removed line.
+//
+// It does not, because such a value is kept as interlingua.replaced.<key>. So
+// for this corpus the translation is purely additive at the level of rendered
+// text, and the page says so. If that stops being true, the page is making a
+// claim the code does not support, and this fails.
+//
+// Line sets rather than a diff algorithm: the question is whether a line that
+// was there is gone, not where it moved to. Both sides go through Reserialize so
+// that field ordering cannot be mistaken for a change.
+func TestNoInputLineDisappears(t *testing.T) {
+	inputs, err := filepath.Glob(filepath.Join(testdata, "*", "in.json"))
+	if err != nil {
+		t.Fatalf("glob fixtures: %v", err)
+	}
+	if len(inputs) == 0 {
+		t.Fatalf("no fixtures under %s", testdata)
+	}
+
+	for _, input := range inputs {
+		name := filepath.Base(filepath.Dir(input))
+		data := mustReadFile(t, input)
+
+		before, err := Reserialize(data)
+		if err != nil {
+			t.Fatalf("%s: reserialize: %v", name, err)
+		}
+		after, err := Payload(data, DefaultOptions())
+		if err != nil {
+			t.Fatalf("%s: normalize: %v", name, err)
+		}
+
+		have := map[string]int{}
+		for _, l := range strings.Split(string(after), "\n") {
+			have[l]++
+		}
+		for _, l := range strings.Split(string(before), "\n") {
+			if have[l] == 0 {
+				t.Errorf("%s: the line %q is in the span before normalization and not after; "+
+					"the inspector tells readers the diff is purely additive",
+					name, strings.TrimSpace(l))
+				continue
+			}
+			have[l]--
+		}
+	}
 }

@@ -62,6 +62,24 @@ const (
 	// that", which is the question a reader has when two spans that should
 	// agree do not. See dialect.Digest for what it covers and what it cannot.
 	AttrMapping = "interlingua.mapping"
+
+	// AttrReplaced prefixes the value a rewrite replaced, so that nothing an
+	// emitter stated is destroyed without a record.
+	//
+	// preserve_original keeps a source attribute the mapping read, which covers
+	// every rename: the emitter's key is left where it was, beside the
+	// conventions key carrying the same value. It cannot cover the case where
+	// the emitter already used the conventions' own key and a value outside its
+	// value set, because then there is only one attribute and writing the
+	// conforming value into it overwrites the stated one. The Vercel AI SDK
+	// writes gen_ai.response.finish_reasons = ["tool-calls"]; LangChain states
+	// an operation this translator reads differently. Both used to vanish.
+	//
+	// Prefixed rather than listed, because unlike interlingua.lossy -- which
+	// answers "which keys is this span not a faithful carrier of", a question
+	// about keys -- the useful question here is "what did this key say before",
+	// which needs the value beside the key to be answerable at all.
+	AttrReplaced = "interlingua.replaced."
 )
 
 // Options configures one normalization.
@@ -238,6 +256,36 @@ func Span(s dialect.Span, opts Options) (Result, bool) {
 				Detail: fmt.Sprintf("%q is not a %s value at %s", v.Str, key, opts.Target),
 			})
 			continue
+		}
+
+		// Recorded before the write, and only where the emitter itself stated
+		// this key: a value arriving under a key the span did not have is an
+		// addition, and there is nothing it replaced.
+		//
+		// Presence is read from the map rather than through Span.Attr, and the
+		// difference is the whole correctness of this block. Attr answers "is
+		// there a readable value here" and reports false for a value the OTLP
+		// codec cannot represent -- a kvlist, a bytes value, an empty array, an
+		// array of mixed types. This asks a different question: did the emitter
+		// write this key at all. Using Attr skipped the record for exactly the
+		// shapes a reader could never reconstruct from a string, while apply()
+		// still dropped the emitter's value because the key is in Set. The
+		// result was silent destruction of a structured value with
+		// interlingua.lossy.count reporting 0.
+		if old, had := s.Attributes[key]; had {
+			switch {
+			case old.Empty():
+				// Stated, unreadable to this codec, and about to be overwritten.
+				// There is no value to preserve, so the span says what happened
+				// instead of saying nothing.
+				r.DialectLoss = append(r.DialectLoss, dialect.Loss{
+					Key:    key,
+					Reason: dialect.ReasonUnstructured,
+					Detail: "the emitter wrote this key in a shape this codec cannot carry, and normalizing overwrote it",
+				})
+			case !old.Equal(v):
+				r.Set[AttrReplaced+key] = old
+			}
 		}
 
 		r.Set[key] = v

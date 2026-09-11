@@ -269,7 +269,7 @@ fails if it drifts.
 ## The provenance attributes are a published registry
 
 [`registry/`](registry/) is a Weaver semantic convention registry defining the
-nine `interlingua.*` attributes — which vocabulary a span arrived in, which one
+the `interlingua.*` attributes — which vocabulary a span arrived in, which one
 it left in, how confident the identification was, and what the trip cost.
 
 ```console
