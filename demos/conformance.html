@@ -1,3 +1,6 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>The Loss Landscape</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -105,11 +108,13 @@
                  font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:700}
 
   /* loss bars */
-  .bars{display:flex;flex-direction:column;gap:13px}
-  .bar-row{display:grid;grid-template-columns:112px 1fr 52px;align-items:center;gap:14px}
-  .bar-row .name{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink)}
-  .track{display:flex;height:22px;border-radius:3px;overflow:hidden;background:var(--grid)}
-  .track span{display:block}
+  .flow{margin:4px 0 18px}
+  .flow svg{display:block;width:100%;height:auto}
+  .flow .lnk{fill:none;opacity:.42;transition:opacity .12s}
+  .flow .lnk:hover{opacity:.85}
+  .flow .nd{rx:1.5}
+  .flow text{font-family:'IBM Plex Mono',monospace;font-size:11.5px;fill:var(--ink)}
+  .flow text.n{font-size:10.5px;fill:var(--faint)}
   .bar-row .tot{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;
                 text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
   .legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12.5px;color:var(--soft)}
@@ -171,7 +176,7 @@
 
   <section>
     <h2>What each dialect could not carry, and why</h2>
-    <div class="bars" id="bars"></div>
+    <div class="flow" id="flow"></div>
     <div class="legend" id="legend"></div>
     <p class="note">
       LiteLLM's 53 is not noise. It is an entire cost model &mdash; <code>gen_ai.cost.input_cost</code>,
@@ -308,28 +313,88 @@ function renderMatrix(){
     : `Pinning this target costs <b>${dead} ${dead === 1 ? "field" : "fields"}</b>, struck through below. They were parsed correctly and there is nowhere to put them.`;
 }
 
-function renderBars(){
-  const host = el("bars");
+// A two-column Sankey: what each dialect emitted that could not be carried, and
+// where it went. It replaces the stacked bars that were here, which showed the
+// same numbers and could only be read one way -- per dialect. Nothing totalled a
+// reason, so the fact that no_field is 90 of the 105 losses was invisible.
+//
+// Deliberately losses only. The richer diagram everybody asks for -- everything
+// emitted, splitting into carried and lost -- cannot be drawn honestly from this
+// file: fields[].dialects counts canonical fields covered, dialect_loss counts
+// source attributes with nowhere to go, and a dialect can read two keys into one
+// field or lift one key into two. Putting both on one scale would be the
+// denominator mistake docs/not-a-score.md exists to forbid, on the page that
+// argues for it.
+//
+// Hand-rolled rather than pulled from a library. Two columns need no iterative
+// layout -- node heights are proportional stacks and links are cubic beziers
+// between known offsets -- and this page has no dependencies, which is worth
+// more than the hundred lines it saves.
+function renderFlow(){
+  const host = el("flow");
   host.textContent = "";
-  const max = Math.max(...D.dialects.map(lossTotal));
-  for (const d of D.dialects){
-    const byReason = D.dialect_loss[d] || {};
-    const total = lossTotal(d);
-    const row = document.createElement("div");
-    row.className = "bar-row";
 
-    const track = Object.keys(REASON_COLOR)
-      .filter(r => byReason[r] && byReason[r].length)
-      .map(r => `<span style="flex:${byReason[r].length};background:var(${REASON_COLOR[r]})" ` +
-                `title="${d}: ${byReason[r].length} ${REASON_LABEL[r]} — ${byReason[r].join(", ")}"></span>`)
-      .join("");
+  const reasons = Object.keys(REASON_COLOR).filter(r =>
+    D.dialects.some(d => (D.dialect_loss[d] || {})[r]?.length));
+  const dialects = D.dialects.filter(d => lossTotal(d) > 0);
+  const total = dialects.reduce((a, d) => a + lossTotal(d), 0);
+  if (!total) return;
 
-    row.innerHTML =
-      `<div class="name">${d}</div>` +
-      `<div class="track" style="width:${max ? total / max * 100 : 0}%">${track}</div>` +
-      `<div class="tot">${total}</div>`;
-    host.appendChild(row);
+  // PADL fits the longest dialect name (openinference) and PADR the longest
+  // reason; GAP is set by the labels rather than by taste, because the two
+  // smallest reasons -- flattened and ambiguous -- have nodes a few pixels tall
+  // and their centred labels collide at anything tighter.
+  const W = 760, PADL = 132, PADR = 124, NW = 9, GAP = 14, H0 = 34;
+  const inner = W - PADL - PADR;
+  // Height follows the data: every unit of loss is the same number of pixels in
+  // both columns, which is the only way the two sides are comparable.
+  const unit = 2.15;
+  const colH = d => d.length ? total * unit + (d.length - 1) * GAP : 0;
+  const H = Math.max(colH(dialects), colH(reasons)) + H0 * 2;
+
+  const stack = (keys, sizeOf) => {
+    let y = (H - (keys.reduce((a, k) => a + sizeOf(k), 0) * unit + (keys.length - 1) * GAP)) / 2;
+    const out = {};
+    for (const k of keys){ const h = Math.max(1.5, sizeOf(k) * unit); out[k] = {y, h, cur: y}; y += h + GAP; }
+    return out;
+  };
+  const L = stack(dialects, lossTotal);
+  const R = stack(reasons, r => D.dialects.reduce((a, d) => a + ((D.dialect_loss[d] || {})[r] || []).length, 0));
+
+  const esc = t => String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+  const parts = [];
+
+  // Links first so the nodes sit on top of them.
+  for (const d of dialects){
+    const by = D.dialect_loss[d] || {};
+    for (const r of reasons){
+      const keys = by[r] || [];
+      if (!keys.length) continue;
+      const h = keys.length * unit;
+      const y0 = L[d].cur + h / 2, y1 = R[r].cur + h / 2;
+      L[d].cur += h; R[r].cur += h;
+      const x0 = PADL + NW, x1 = PADL + inner - NW, mx = (x0 + x1) / 2;
+      parts.push(`<path class="lnk" d="M${x0},${y0} C${mx},${y0} ${mx},${y1} ${x1},${y1}" ` +
+        `stroke="var(${REASON_COLOR[r]})" stroke-width="${Math.max(1, h)}">` +
+        `<title>${esc(d)} — ${keys.length} ${esc(REASON_LABEL[r])}\n${esc(keys.join("\n"))}</title></path>`);
+    }
   }
+
+  for (const d of dialects){
+    parts.push(`<rect class="nd" x="${PADL}" y="${L[d].y}" width="${NW}" height="${L[d].h}" fill="var(--soft)"></rect>` +
+      `<text x="${PADL - 10}" y="${L[d].y + L[d].h / 2}" text-anchor="end" dominant-baseline="middle">${esc(d)}` +
+      `<tspan class="n" dx="6">${lossTotal(d)}</tspan></text>`);
+  }
+  for (const r of reasons){
+    const n = D.dialects.reduce((a, d) => a + ((D.dialect_loss[d] || {})[r] || []).length, 0);
+    parts.push(`<rect class="nd" x="${PADL + inner - NW}" y="${R[r].y}" width="${NW}" height="${R[r].h}" fill="var(${REASON_COLOR[r]})"></rect>` +
+      `<text x="${PADL + inner + 10}" y="${R[r].y + R[r].h / 2}" dominant-baseline="middle">${esc(REASON_LABEL[r])}` +
+      `<tspan class="n" dx="6">${n}</tspan></text>`);
+  }
+
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${Math.round(H)}" role="img" ` +
+    `aria-label="Sankey: ${total} source attributes across ${dialects.length} libraries that could not be carried, by reason">` +
+    parts.join("") + `</svg>`;
 
   el("legend").innerHTML = [
     ["no_field","the conventions have no attribute for it"],
@@ -374,7 +439,7 @@ fetch("conformance.json")
   .then(data => {
     D = data;
     target = D.targets[D.targets.length - 1];
-    renderHead(); renderHeader(); renderMatrix(); renderBars(); renderPinning(); renderProvenance();
+    renderHead(); renderHeader(); renderMatrix(); renderFlow(); renderPinning(); renderProvenance();
   })
   .catch(e => {
     el("switchMsg").innerHTML =
