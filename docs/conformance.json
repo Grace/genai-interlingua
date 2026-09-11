@@ -661,5 +661,262 @@
         ]
       }
     }
-  }
+  },
+  "detection": [
+    {
+      "fixture": "braintrust",
+      "span": "support_triage_agent",
+      "scores": {
+        "braintrust": 3,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 0,
+        "raw": 4,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "braintrust",
+      "margin": 3
+    },
+    {
+      "fixture": "braintrust",
+      "span": "scoring_span",
+      "scores": {
+        "braintrust": 3,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 0,
+        "raw": 0,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "braintrust",
+      "margin": 3
+    },
+    {
+      "fixture": "langchain",
+      "span": "execute_task ChatPromptTemplate",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 2,
+        "raw": 4,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "openllmetry",
+      "margin": 2
+    },
+    {
+      "fixture": "langchain",
+      "span": "ChatOpenAI.chat",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 3,
+        "raw": 32,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "openllmetry",
+      "margin": 3
+    },
+    {
+      "fixture": "langchain",
+      "span": "RunnableSequence.workflow",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 2,
+        "raw": 8,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "openllmetry",
+      "margin": 2
+    },
+    {
+      "fixture": "litellm",
+      "span": "litellm_request",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 5,
+        "openinference": 0,
+        "openllmetry": 3,
+        "raw": 24,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "litellm",
+      "margin": 2
+    },
+    {
+      "fixture": "openinference",
+      "span": "ChatCompletion",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 7,
+        "openllmetry": 0,
+        "raw": 0,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "openinference",
+      "margin": 7
+    },
+    {
+      "fixture": "openllmetry-legacy",
+      "span": "openai.chat",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 7,
+        "raw": 12,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "openllmetry",
+      "margin": 7
+    },
+    {
+      "fixture": "openllmetry",
+      "span": "openai.chat",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 3,
+        "raw": 30,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "openllmetry",
+      "margin": 3
+    },
+    {
+      "fixture": "openllmetry",
+      "span": "support_triage_agent.workflow",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 2,
+        "raw": 0,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "openllmetry",
+      "margin": 2
+    },
+    {
+      "fixture": "raw-folk",
+      "span": "call_model",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 0,
+        "raw": 8,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "raw",
+      "margin": 0
+    },
+    {
+      "fixture": "raw",
+      "span": "chat gpt-4o-mini",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 0,
+        "raw": 26,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "raw",
+      "margin": 0
+    },
+    {
+      "fixture": "vercel",
+      "span": "ai.generateText.doGenerate",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 0,
+        "raw": 18,
+        "vercel": 8
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "vercel",
+      "margin": 8
+    },
+    {
+      "fixture": "vercel",
+      "span": "ai.generateText",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 0,
+        "raw": 0,
+        "vercel": 7
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "vercel",
+      "margin": 7
+    },
+    {
+      "fixture": "vercel",
+      "span": "ai.toolCall",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 0,
+        "raw": 0,
+        "vercel": 4
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "vercel",
+      "margin": 4
+    }
+  ]
 }

@@ -108,6 +108,29 @@
                  font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:700}
 
   /* loss bars */
+  .detect{margin:4px 0 16px}
+  .detect .pick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+  .detect .pick button{font:inherit;font-size:12px;font-family:'IBM Plex Mono',monospace;
+    padding:4px 9px;border:1px solid var(--rule);background:var(--panel);color:var(--soft);
+    border-radius:3px;cursor:pointer}
+  .detect .pick button[aria-pressed="true"]{border-color:var(--accent);color:var(--ink)}
+  .detect .race{display:flex;flex-direction:column;gap:9px}
+  .detect .lane{display:grid;grid-template-columns:118px 1fr 46px;align-items:center;gap:12px}
+  .detect .lane .who{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--soft);
+    text-align:right}
+  .detect .lane.win .who,.detect .lane.win .pts{color:var(--ink);font-weight:600}
+  .detect .lane .bar{height:18px;background:var(--grid);border-radius:3px;overflow:hidden}
+  .detect .lane .bar i{display:block;height:100%;background:var(--soft);
+    transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .detect .lane.win .bar i{background:var(--accent)}
+  .detect .lane.out .bar i{background:repeating-linear-gradient(45deg,
+    var(--rule),var(--rule) 4px,transparent 4px,transparent 8px)}
+  .detect .lane .pts{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--soft)}
+  .detect .verdict{margin-top:14px;font-size:13px;color:var(--soft)}
+  .detect .verdict b{color:var(--ink)}
+  .detect .replay{margin-top:12px;font:inherit;font-size:12px;padding:4px 10px;
+    border:1px solid var(--rule);background:var(--panel);color:var(--soft);border-radius:3px;
+    cursor:pointer}
   .flow{margin:4px 0 18px}
   .flow svg{display:block;width:100%;height:auto}
   .flow .lnk{fill:none;opacity:.42;transition:opacity .12s}
@@ -151,6 +174,20 @@
 
   <section>
     <div class="figures" id="figures"></div>
+  </section>
+
+  <section>
+    <h2>How a span is recognised</h2>
+    <div class="detect" id="detect"></div>
+    <p class="note">
+      <b>This is the only part that is an algorithm.</b> Everything else on this page is a
+      census &mdash; what these fixtures were observed to carry, counted. This is computed per
+      span: each dialect counts the attributes only it would write, the highest total wins, and
+      the number stamped on the span as <code>interlingua.dialect.confidence</code> is
+      <b>winner &minus; runner-up</b>. An integer margin, not a probability, because there is no
+      denominator to make one out of.
+    </p>
+    <p class="note" id="detectWhy"></p>
   </section>
 
   <section>
@@ -352,6 +389,98 @@ function renderMatrix(){
     : `Pinning this target costs <b>${dead} ${dead === 1 ? "field" : "fields"}</b>, struck through below. They were parsed correctly and there is nowhere to put them.`;
 }
 
+// The scoring race, per span. The only computed thing on this page.
+//
+// Rendered at rest: the resolved state is on screen before anybody interacts,
+// because a reader who never presses replay should still get the answer, and a
+// panel that starts empty waiting on a click is a panel most people never see.
+// Replay re-runs the transition rather than revealing hidden content.
+//
+// The fallback tier is drawn as excluded rather than as losing, because that is
+// what it is. raw scores 32 on one LangChain span and does not win it: matching
+// on the shape of a key is not the same evidence as matching on a namespace
+// nobody else writes, so raw is consulted only when nothing that knows what it
+// is looking at has claimed the span -- and it reports a margin of zero when it
+// does win.
+// Opens on the span where the library and the dialect disagree, because that is
+// the case that explains the mechanism rather than merely exercising it: it
+// shows the fallback out-scoring the winner without winning, and a fixture
+// recognised as something other than the library it came from. Every other span
+// is one click away, so this is a starting point rather than a selection.
+let detectAt = -1;
+
+function defaultDetection(rows){
+  const i = rows.findIndex(r => r.winner !== r.fixture && !(r.fallback || []).includes(r.winner));
+  return i < 0 ? 0 : i;
+}
+
+function renderDetect(){
+  const rows = D.detection || [];
+  const host = el("detect");
+  if (!rows.length){ host.textContent = ""; el("detectWhy").textContent = ""; return; }
+  if (detectAt < 0 || detectAt >= rows.length) detectAt = defaultDetection(rows);
+  const row = rows[detectAt];
+  const fb = new Set(row.fallback || []);
+  const max = Math.max(1, ...Object.values(row.scores));
+
+  const picks = rows.map((r, i) =>
+    `<button type="button" aria-pressed="${i === detectAt}" data-i="${i}">${r.fixture}` +
+    `<span class="dim"> ${r.span.length > 22 ? r.span.slice(0, 21) + "\u2026" : r.span}</span></button>`).join("");
+
+  const ranked = Object.entries(row.scores)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+  const lanes = ranked.map(([name, pts]) => {
+    const cls = name === row.winner ? "win" : fb.has(name) ? "out" : "";
+    const title = fb.has(name)
+      ? `${name} is the fallback tier: scored ${pts}, and not eligible to win unless nothing else claims the span`
+      : `${name} counted ${pts}`;
+    return `<div class="lane ${cls}"><div class="who">${name}${fb.has(name) ? " *" : ""}</div>` +
+      `<div class="bar" title="${title}"><i style="width:${pts / max * 100}%"></i></div>` +
+      `<div class="pts">${pts}</div></div>`;
+  }).join("");
+
+  const second = ranked.filter(([n]) => !fb.has(n) && n !== row.winner)[0];
+  const verdict = row.margin === 0
+    ? `<b>${row.winner}</b> claimed it from the fallback tier, so the margin is <b>0</b> &mdash; ` +
+      `nothing that recognises a library claimed this span at all.`
+    : `<b>${row.winner}</b> wins with ${row.scores[row.winner]}, ` +
+      `${second && second[1] > 0
+          ? `ahead of <b>${second[0]}</b> at ${second[1]}`
+          : "and nothing else scored at all"}. ` +
+      `Margin <b>${row.margin}</b>, which is what the span carries as its confidence.`;
+
+  host.innerHTML = `<div class="pick">${picks}</div><div class="race">${lanes}</div>` +
+    `<div class="verdict">${verdict}</div>` +
+    `<button class="replay" type="button">Replay the count</button>`;
+
+  host.querySelectorAll(".pick button").forEach(b =>
+    b.addEventListener("click", () => { detectAt = +b.dataset.i; renderDetect(); animateDetect(); }));
+  host.querySelector(".replay").addEventListener("click", animateDetect);
+
+  // The one finding worth saying out loud, and only where it is true.
+  const surprising = row.winner !== row.fixture && !fb.has(row.winner);
+  el("detectWhy").innerHTML = surprising
+    ? `This fixture came from <code>${row.fixture}</code> and is recognised as ` +
+      `<code>${row.winner}</code>. That is not a misdetection: LangChain is instrumented by ` +
+      `Traceloop, so what reaches the collector is OpenLLMetry's vocabulary. The library you ` +
+      `installed and the dialect your telemetry speaks are different questions.`
+    : `Every dialect is scored against every span. The bars marked <code>*</code> are the ` +
+      `fallback tier, which is consulted only when nothing else claims the span &mdash; which ` +
+      `is why one of them can out-score the winner without winning.`;
+}
+
+function animateDetect(){
+  const bars = [...el("detect").querySelectorAll(".bar i")];
+  const widths = bars.map(b => b.style.width);
+  bars.forEach(b => { b.style.width = "0%"; });
+  // One frame at zero so the transition has somewhere to come from.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    bars.forEach((b, i) => { b.style.transitionDelay = (i * 70) + "ms"; b.style.width = widths[i]; });
+    setTimeout(() => bars.forEach(b => { b.style.transitionDelay = ""; }), bars.length * 70 + 600);
+  }));
+}
+
 // A two-column Sankey: what each dialect emitted that could not be carried, and
 // where it went. It replaces the stacked bars that were here, which showed the
 // same numbers and could only be read one way -- per dialect. Nothing totalled a
@@ -478,7 +607,7 @@ fetch("conformance.json")
   .then(data => {
     D = data;
     target = D.targets[D.targets.length - 1];
-    renderHead(); renderHeader(); renderMatrix(); renderFlow(); renderPinning(); renderProvenance();
+    renderHead(); renderHeader(); renderMatrix(); renderDetect(); renderFlow(); renderPinning(); renderProvenance();
   })
   .catch(e => {
     el("switchMsg").innerHTML =
