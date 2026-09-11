@@ -77,6 +77,24 @@ func explainPayload(_ js.Value, args []js.Value) any {
 	return map[string]any{"ok": true, "explanations": string(b)}
 }
 
+// interlinguaOriginal(payloadJSON) -> {ok, out} | {ok, error}
+//
+// The span as it arrived, printed by the same encoder that prints the
+// normalized one. A page showing a before and an after needs both sides off one
+// printer or the diff opens with a block that moved because of field ordering
+// rather than because of the mapping -- a difference the translator did not
+// make, sitting at the top of the evidence.
+func originalPayload(_ js.Value, args []js.Value) any {
+	if len(args) != 1 {
+		return fail("original(payload) takes one argument")
+	}
+	out, err := normalize.Reserialize([]byte(args[0].String()))
+	if err != nil {
+		return fail(err.Error())
+	}
+	return map[string]any{"ok": true, "out": string(out)}
+}
+
 // targets() -> [..] so the page's selector cannot drift from the enum.
 func targets(js.Value, []js.Value) any {
 	out := make([]any, 0, len(semconv.Targets))
@@ -91,6 +109,7 @@ func fail(msg string) any { return map[string]any{"ok": false, "error": msg} }
 func main() {
 	js.Global().Set("interlinguaNormalize", js.FuncOf(normalizePayload))
 	js.Global().Set("interlinguaExplain", js.FuncOf(explainPayload))
+	js.Global().Set("interlinguaOriginal", js.FuncOf(originalPayload))
 	js.Global().Set("interlinguaTargets", js.FuncOf(targets))
 	select {} // keep the exports alive
 }

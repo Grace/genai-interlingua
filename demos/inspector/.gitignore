@@ -1,0 +1,5 @@
+node_modules/
+
+# Built by npm run build and deployed by demos/build.sh. The source is
+# src/; a committed bundle would be a second copy that goes stale.
+inspector.js
