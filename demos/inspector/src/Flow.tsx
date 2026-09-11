@@ -73,8 +73,9 @@ export function Flow({ span, library }: { span: Explanation; library: string }) 
       </svg>
       <figcaption>
         Left, what {library} wrote. Middle, what the translator did with it.
-        Right, where it ended up — including the two ways a fact can fail to land.
-        Every band is one attribute; hover for its name.
+        Right, where it ended up. Red bands had no standard name to move to, so
+        they stay on the span under the library’s own names. Every band is one
+        attribute; hover for its name.
       </figcaption>
     </figure>
   )
@@ -173,11 +174,15 @@ function build(span: Explanation) {
 
   for (const l of span.lossy) {
     const from = node(`src:${l.key}`, short(l.key), l.key, 0, 'lost')
-    const mid = node('mid:lost', 'not carried', 'could not be carried into the conventions', 1, 'lost')
+    // "kept as-is" rather than anything that sounds like deletion: the page
+    // explains with the default options, under which a key with no standard name
+    // stays on the span exactly as the library wrote it. What it lacks is a
+    // gen_ai.* name, not a place on the span.
+    const mid = node('mid:lost', 'no standard name', 'no gen_ai.* attribute to carry it into', 1, 'lost')
     const to =
       l.stage === 'dialect'
-        ? node('dst:nofield', 'no conventions attribute', 'the conventions have no attribute for this', 2, 'lost')
-        : node('dst:notarget', `not in ${span.target}`, `carried, but ${span.target} has no attribute for it`, 2, 'lost')
+        ? node('dst:nofield', 'kept as-is', 'still on the span under its own name, and listed in interlingua.lossy', 2, 'lost')
+        : node('dst:notarget', `not in ${span.target}`, `the conventions have it but ${span.target} does not; kept as-is on the span`, 2, 'lost')
     link(from, mid, 'lost')
     link(mid, to, 'lost')
   }
