@@ -158,6 +158,17 @@
     <div class="flow" id="flow"></div>
     <div class="legend" id="legend"></div>
     <p class="note">
+      <b>None of these is a spelling problem.</b> Renaming
+      <code>prompt_tokens</code> to <code>gen_ai.usage.input_tokens</code> is the part that
+      looks like the work and is the part a lookup table can do. Every band above is the
+      other kind: <b>no field</b> means the conventions have no <em>concept</em> for it,
+      not merely no name for it; <b>unstructured</b> is a blob the schema cannot type;
+      <b>flattened</b> is structure that existed in the source and has no canonical form;
+      and <b>ambiguous</b> is one attribute that could have meant two different fields,
+      recorded rather than guessed at. Matching names is not matching meaning, and this
+      is where the difference is measured.
+    </p>
+    <p class="note">
       <b>Lost to the vocabulary, not deleted.</b> Under the default
       <code>originals: keep</code> every attribute above is still on the span, under the
       name its library gave it. What it lacks is a <code>gen_ai.*</code> name, so a query
@@ -218,6 +229,18 @@
     &mdash; an OpenTelemetry Collector processor and CLI, Apache-2.0. Every span it emits carries
     <code>interlingua.lossy</code>: the keys that span is not a faithful carrier of, on the span
     itself, so the loss above is queryable in production rather than only on this page.
+    <br><br>
+    <b>There is already a first-party component for this.</b>
+    <a href="https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/genainormalizerprocessor"><code>processor/genainormalizer</code></a>
+    has been in <code>opentelemetry-collector-contrib</code> since February 2026 and ships in the
+    <code>otelcol-contrib</code> binary you are probably already running. If OpenInference and
+    OpenLLMetry are the libraries you have, reach for it first &mdash; it needs no custom build and
+    this does. What is measured here and not there is the cost: that component does not record what
+    a mapping could not carry, and these 105 attributes are what that silence is hiding. The
+    differences are being taken upstream rather than maintained in competition; the
+    <a href="https://github.com/Grace/genai-interlingua#components-covering-similar-use-cases">comparison
+    is in the README</a>, dated, because that component moves and a copy of it here would quietly
+    go stale.
     <br><br>
     Every figure here is an aggregate over fixtures. The question underneath it &mdash; why one
     particular value means what it claims, which source attribute produced it, and what the
