@@ -58,6 +58,21 @@ fi
 # distributed from. Copying them here rather than placing them by hand once means
 # they cannot drift from the license this repository actually carries -- which is
 # the same reason this script exists at all.
+# The conformance page and the data it renders, together and from here.
+#
+# The page carries no numbers of its own: it fetches conformance.json, which
+# TestConformanceTable generates from the fixtures and CI fails on when it
+# drifts. Copying a rendered table into a page by hand would put a second,
+# unguarded copy of these facts in a repository nobody runs the tests in, and it
+# would go quietly wrong the first time a fixture changed -- which is the exact
+# failure this repository exists to measure, so it is not one to commit here.
+#
+# Both files move in one step for the same reason the WASM and its shim do: a
+# page and a data file that can arrive separately will eventually disagree.
+echo "copying conformance.html and conformance.json"
+cp demos/conformance.html "$OUT/conformance.html"
+cp docs/conformance.json "$OUT/conformance.json"
+
 echo "copying LICENSE and NOTICE"
 cp LICENSE "$OUT/LICENSE"
 cp NOTICE "$OUT/NOTICE"
@@ -95,6 +110,7 @@ fi
 echo
 echo "built:"
 ls -lh "$OUT/genai-interlingua.wasm" "$OUT/wasm_exec.js" \
+       "$OUT/conformance.html" "$OUT/conformance.json" \
        "$OUT/LICENSE" "$OUT/NOTICE" "$OUT/LICENSE.go" | awk '{print "  " $9 "  " $5}'
 echo
 echo "the .wasm is committed to the blog repository, so commit it there."

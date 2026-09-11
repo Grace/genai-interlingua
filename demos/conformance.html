@@ -1,0 +1,384 @@
+<title>The Loss Landscape</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+
+<style>
+  :root {
+    --ground:#f6f7f9; --panel:#fff; --ink:#10151b; --soft:#4c5865; --faint:#7e8a97;
+    --rule:#e0e5ea; --grid:#eef1f4;
+    --carry:#0f8a7e; --carry-soft:#d6efeb;
+    --miss:#e6eaee;
+    --lost:#c2410c;
+    --r-nofield:#c2410c; --r-unstruct:#7c3aed; --r-flat:#0369a1; --r-ambig:#b91c5c;
+    --warn:#b45309; --warn-wash:#fdf3e3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:#0c1117; --panel:#141b23; --ink:#e7edf3; --soft:#9fadbb; --faint:#6f7d8b;
+      --rule:#222c36; --grid:#1a232c;
+      --carry:#2dd4bf; --carry-soft:#0f2e2c;
+      --miss:#1c252e;
+      --lost:#fb923c;
+      --r-nofield:#fb923c; --r-unstruct:#a78bfa; --r-flat:#38bdf8; --r-ambig:#f472b6;
+      --warn:#fbbf24; --warn-wash:#2a1f0c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0c1117; --panel:#141b23; --ink:#e7edf3; --soft:#9fadbb; --faint:#6f7d8b;
+    --rule:#222c36; --grid:#1a232c;
+    --carry:#2dd4bf; --carry-soft:#0f2e2c;
+    --miss:#1c252e;
+    --lost:#fb923c;
+    --r-nofield:#fb923c; --r-unstruct:#a78bfa; --r-flat:#38bdf8; --r-ambig:#f472b6;
+    --warn:#fbbf24; --warn-wash:#2a1f0c;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground); color:var(--ink);
+    font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;
+    font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1060px;margin:0 auto;padding:44px 22px 80px;display:flex;flex-direction:column;gap:44px}
+
+  .kicker{font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:600;color:var(--carry)}
+  h1{font-size:clamp(30px,4.6vw,46px);line-height:1.05;letter-spacing:-.025em;margin:.25em 0 0;font-weight:700;text-wrap:balance}
+  .lede{color:var(--soft);max-width:66ch;margin-top:14px}
+  .lede b{color:var(--ink);font-weight:600}
+
+  h2{font-size:12px;letter-spacing:.15em;text-transform:uppercase;font-weight:700;color:var(--faint);
+     margin:0 0 4px;padding-bottom:9px;border-bottom:1px solid var(--rule)}
+  section{display:flex;flex-direction:column;gap:16px}
+  .note{font-size:13.5px;color:var(--faint);max-width:74ch}
+
+  /* headline figures */
+  .figures{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--rule);
+           border:1px solid var(--rule);border-radius:5px;overflow:hidden}
+  .fig{background:var(--panel);padding:18px 18px 16px}
+  .fig .n{font-size:34px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}
+  .fig .n.hot{color:var(--lost)}
+  .fig .l{font-size:12.5px;color:var(--soft);margin-top:7px;line-height:1.35}
+
+  /* target switch */
+  .switch{display:flex;flex-wrap:wrap;align-items:center;gap:14px;background:var(--panel);
+          border:1px solid var(--rule);border-radius:5px;padding:14px 16px}
+  .seg{display:inline-flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+  .seg button{
+    font:600 13px/1 'IBM Plex Mono',monospace; padding:9px 14px; border:0; cursor:pointer;
+    background:transparent; color:var(--soft);
+  }
+  .seg button[aria-pressed="true"]{background:var(--carry);color:#fff}
+  :root[data-theme="dark"] .seg button[aria-pressed="true"],
+  :root:not([data-theme="light"]) .seg button[aria-pressed="true"]{color:#06201e}
+  @media (prefers-color-scheme: light){:root:not([data-theme="dark"]) .seg button[aria-pressed="true"]{color:#fff}}
+  .switch .msg{font-size:13.5px;color:var(--soft);flex:1;min-width:240px}
+  .switch .msg b{color:var(--warn)}
+
+  /* the matrix */
+  .matrix-scroll{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--panel)}
+  table.matrix{border-collapse:collapse;width:100%;font-size:13px}
+  table.matrix th,table.matrix td{border-bottom:1px solid var(--grid);padding:0}
+  table.matrix thead th{
+    position:sticky;top:0;background:var(--panel);z-index:2;
+    font-size:11px;letter-spacing:.04em;font-weight:600;color:var(--soft);
+    padding:12px 6px;text-align:center;white-space:nowrap;border-bottom:1px solid var(--rule);
+  }
+  table.matrix thead th.field{text-align:left;padding-left:16px;min-width:290px}
+  table.matrix tbody td.field{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink);
+    padding:7px 6px 7px 16px;white-space:nowrap;
+  }
+  td.cell{text-align:center;width:74px}
+  .dot{display:inline-block;width:15px;height:15px;border-radius:3px;background:var(--miss)}
+  .dot.on{background:var(--carry)}
+  tr.dead td.field{color:var(--faint);text-decoration:line-through;text-decoration-thickness:1px}
+  tr.dead .dot.on{background:var(--miss);outline:1px dashed var(--lost);outline-offset:-1px}
+  tr.flips td.field::after{
+    content:"changes with target"; margin-left:10px; font-family:'IBM Plex Sans',sans-serif;
+    font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--warn);
+    background:var(--warn-wash);padding:2px 6px;border-radius:3px;
+  }
+  tfoot td{padding:10px 6px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:12px;
+           font-weight:600;color:var(--soft);border-top:1px solid var(--rule)}
+  tfoot td.field{text-align:left;padding-left:16px;font-family:'IBM Plex Sans',sans-serif;
+                 font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:700}
+
+  /* loss bars */
+  .bars{display:flex;flex-direction:column;gap:13px}
+  .bar-row{display:grid;grid-template-columns:112px 1fr 52px;align-items:center;gap:14px}
+  .bar-row .name{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink)}
+  .track{display:flex;height:22px;border-radius:3px;overflow:hidden;background:var(--grid)}
+  .track span{display:block}
+  .bar-row .tot{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;
+                text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12.5px;color:var(--soft)}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+  .legend dfn{font-style:normal;color:var(--faint)}
+
+  /* pinning cost */
+  .pin{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
+  .pin .card{background:var(--panel);border:1px solid var(--rule);border-radius:5px;padding:16px 18px}
+  .pin .card h3{margin:0 0 4px;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600}
+  .pin .card p{margin:0 0 10px;font-size:13px;color:var(--faint)}
+  .pin ul{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+  .pin li{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--soft)}
+  .pin li b{color:var(--lost);font-weight:600}
+  .pin .none{color:var(--carry);font-family:'IBM Plex Sans',sans-serif;font-size:13px}
+
+  footer{border-top:1px solid var(--rule);padding-top:18px;font-size:13px;color:var(--faint);max-width:78ch}
+  code{font-family:'IBM Plex Mono',monospace;font-size:.9em;color:var(--carry)}
+  a{color:var(--carry)}
+
+  @media (max-width:640px){
+    .wrap{padding:30px 14px 60px;gap:34px}
+    .bar-row{grid-template-columns:92px 1fr 44px;gap:9px}
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="kicker">genai-interlingua &middot; measured, not asserted</div>
+    <h1>What translation costs</h1>
+    <p class="lede" id="lede"></p>
+  </header>
+
+  <section>
+    <div class="figures" id="figures"></div>
+  </section>
+
+  <section>
+    <h2>Field coverage, and the cost of pinning</h2>
+    <div class="switch">
+      <div class="seg" id="targets" role="group" aria-label="Normalization target"></div>
+      <div class="msg" id="switchMsg"></div>
+    </div>
+
+    <div class="matrix-scroll">
+      <table class="matrix">
+        <thead><tr id="matrixHead"></tr></thead>
+        <tbody id="rows"></tbody>
+        <tfoot><tr id="matrixFoot"></tr></tfoot>
+      </table>
+    </div>
+    <p class="note">
+      A filled cell means that dialect's fixtures carried the field. A blank is silence, not a
+      denial: the emitter may have had nothing to put there, or the fixture may not exercise it.
+      Read a mark as evidence.
+    </p>
+  </section>
+
+  <section>
+    <h2>What each dialect could not carry, and why</h2>
+    <div class="bars" id="bars"></div>
+    <div class="legend" id="legend"></div>
+    <p class="note">
+      LiteLLM's 53 is not noise. It is an entire cost model &mdash; <code>gen_ai.cost.input_cost</code>,
+      <code>output_cost</code>, <code>margin_percent</code>, <code>discount_amount</code> &mdash; plus
+      every <code>user_api_key_*</code> field it records about who spent what. The conventions have no
+      home for any of it, which is a finding about the conventions rather than about LiteLLM.
+    </p>
+  </section>
+
+  <section>
+    <h2>The cost of pinning a target</h2>
+    <div class="pin" id="pin"></div>
+    <p class="note">
+      Both are defensible. Neither is correct. What is not defensible is making the choice silently
+      &mdash; which is what a normalizer with a hardcoded attribute table does, and why the target here
+      is a flag rather than a constant.
+    </p>
+  </section>
+
+  <footer>
+    Every number on this page is generated from fixtures by <code>TestConformanceTable</code>, and CI
+    fails when the table and the fixtures disagree. Rows are named by the key the field takes at
+    <code>genai-main</code>; <code>gen_ai.usage.cache_write.input_tokens</code> is spelled
+    <code>cache_creation</code> at v1.41.0. Provenance, per dialect:
+    <span id="provenance"></span>. A captured fixture is a claim about what that library really emits,
+    recorded by running it; a hand-built one is a claim this repository makes about the library,
+    checked only against itself.
+    <br><br>
+    The normalizer is <a href="https://github.com/Grace/genai-interlingua">genai-interlingua</a>
+    &mdash; an OpenTelemetry Collector processor and CLI, Apache-2.0. Every span it emits carries
+    <code>interlingua.lossy</code>: the keys that span is not a faithful carrier of, on the span
+    itself, so the loss above is queryable in production rather than only on this page.
+  </footer>
+</div>
+
+<script>
+// Every number on this page comes from docs/conformance.json, which
+// TestConformanceTable generates from the fixtures and CI fails on when it
+// drifts. Nothing here is typed by hand -- a chart built by copying the table
+// would go quietly wrong the first time a fixture changed, which is the failure
+// this whole repository is about.
+const REASON_COLOR = {
+  no_field:"--r-nofield", unstructured:"--r-unstruct",
+  flattened:"--r-flat", ambiguous:"--r-ambig",
+};
+const REASON_LABEL = {
+  no_field:"no field", unstructured:"unstructured",
+  flattened:"flattened", ambiguous:"ambiguous",
+};
+
+let D = null, target = null;
+
+const el = id => document.getElementById(id);
+const lossTotal = d => Object.values(D.dialect_loss[d] || {}).reduce((a, v) => a + v.length, 0);
+
+function renderHead(){
+  const fields = D.fields.length;
+  const dialects = D.dialects.length;
+  const lost = D.dialects.reduce((a, d) => a + lossTotal(d), 0);
+  const worst = D.dialects.map(d => [d, lossTotal(d)]).sort((a,b) => b[1]-a[1])[0];
+
+  el("figures").innerHTML =
+    fig(dialects, "dialects, from spans captured off the real libraries") +
+    fig(fields, "canonical <code>gen_ai.*</code> fields any of them reached") +
+    fig(lost, "source attributes that could not be carried", true) +
+    fig(worst[1], `of them from ${worst[0]} alone`, true);
+
+  el("lede").innerHTML =
+    `${dialects} instrumentation libraries emit telemetry for the same model call, in ` +
+    `${dialects} vocabularies. Normalizing them into one <code>gen_ai.*</code> model is the easy ` +
+    `half. The half nobody reports is what fails to survive the trip &mdash; <b>${lost} attributes ` +
+    `across these ${dialects} dialects have nowhere in the conventions to go</b>, and a normalizer ` +
+    `that drops them silently is worse than none, because you will trust the result.`;
+}
+const fig = (n, label, hot) =>
+  `<div class="fig"><div class="n${hot ? " hot" : ""}">${n}</div><div class="l">${label}</div></div>`;
+
+function renderHeader(){
+  const tr = el("matrixHead");
+  tr.innerHTML = `<th class="field">Field</th>` +
+    D.dialects.map(d => `<th>${d}</th>`).join("");
+  el("matrixFoot").innerHTML = `<td class="field">Fields carried</td>` +
+    D.dialects.map(d => `<td id="f-${d}"></td>`).join("");
+
+  const seg = el("targets");
+  seg.innerHTML = D.targets.map(t =>
+    `<button data-target="${t}" aria-pressed="${t === target}">-target ${t}</button>`).join("");
+  for (const b of seg.querySelectorAll("button")){
+    b.addEventListener("click", () => { target = b.dataset.target; syncTargets(); renderMatrix(); });
+  }
+}
+function syncTargets(){
+  for (const b of el("targets").querySelectorAll("button")){
+    b.setAttribute("aria-pressed", String(b.dataset.target === target));
+  }
+}
+
+function renderMatrix(){
+  const tb = el("rows");
+  tb.textContent = "";
+  const carried = Object.fromEntries(D.dialects.map(d => [d, 0]));
+  let dead = 0;
+
+  for (const f of D.fields){
+    const live = f.targets[target];
+    const flips = new Set(Object.values(f.targets)).size > 1;
+    if (!live) dead++;
+    const tr = document.createElement("tr");
+    if (!live) tr.className = "dead"; else if (flips) tr.className = "flips";
+
+    const name = document.createElement("td");
+    name.className = "field";
+    name.textContent = f.name;
+    tr.appendChild(name);
+
+    for (const d of D.dialects){
+      const v = f.dialects[d];
+      if (v && live) carried[d]++;
+      const td = document.createElement("td");
+      td.className = "cell";
+      const dot = document.createElement("span");
+      dot.className = v ? "dot on" : "dot";
+      dot.title = `${f.name} — ${d}: ` +
+        (v ? (live ? "carried" : "parsed, but this target cannot express it") : "not demonstrated");
+      td.appendChild(dot);
+      tr.appendChild(td);
+    }
+    tb.appendChild(tr);
+  }
+  for (const d of D.dialects) el("f-" + d).textContent = carried[d];
+
+  el("switchMsg").innerHTML = dead === 0
+    ? "This target expresses every field these dialects produced. Whether it is one you can <em>name</em> is a separate question, and the reason the flag exists."
+    : `Pinning this target costs <b>${dead} ${dead === 1 ? "field" : "fields"}</b>, struck through below. They were parsed correctly and there is nowhere to put them.`;
+}
+
+function renderBars(){
+  const host = el("bars");
+  host.textContent = "";
+  const max = Math.max(...D.dialects.map(lossTotal));
+  for (const d of D.dialects){
+    const byReason = D.dialect_loss[d] || {};
+    const total = lossTotal(d);
+    const row = document.createElement("div");
+    row.className = "bar-row";
+
+    const track = Object.keys(REASON_COLOR)
+      .filter(r => byReason[r] && byReason[r].length)
+      .map(r => `<span style="flex:${byReason[r].length};background:var(${REASON_COLOR[r]})" ` +
+                `title="${d}: ${byReason[r].length} ${REASON_LABEL[r]} — ${byReason[r].join(", ")}"></span>`)
+      .join("");
+
+    row.innerHTML =
+      `<div class="name">${d}</div>` +
+      `<div class="track" style="width:${max ? total / max * 100 : 0}%">${track}</div>` +
+      `<div class="tot">${total}</div>`;
+    host.appendChild(row);
+  }
+
+  el("legend").innerHTML = [
+    ["no_field","the conventions have no attribute for it"],
+    ["unstructured","a blob the schema cannot type"],
+    ["flattened","indexed keys folded into one document"],
+    ["ambiguous","more than one field could claim it"],
+  ].map(([r, why]) =>
+    `<span><i style="background:var(${REASON_COLOR[r]})"></i>${REASON_LABEL[r]} <dfn>&mdash; ${why}</dfn></span>`
+  ).join("");
+}
+
+function renderPinning(){
+  const host = el("pin");
+  host.textContent = "";
+  for (const t of D.targets){
+    const perDialect = D.target_loss[t] || {};
+    const items = [];
+    for (const [d, reasons] of Object.entries(perDialect)){
+      for (const [reason, keys] of Object.entries(reasons)){
+        items.push(`<li>${d} &mdash; <b>${reason.replace(/_/g, " ")}</b> for ` +
+          keys.map(k => `<code>${k}</code>`).join(", ") + `</li>`);
+      }
+    }
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML =
+      `<h3>${t}</h3>` +
+      `<ul>${items.join("") ||
+        '<li class="none">Everything these dialects parsed, it can express.</li>'}</ul>`;
+    host.appendChild(card);
+  }
+}
+
+function renderProvenance(){
+  el("provenance").innerHTML = D.dialects
+    .map(d => `${d} <span style="color:var(--faint)">(${(D.provenance[d] || []).join(", ")})</span>`)
+    .join(" &middot; ");
+}
+
+fetch("conformance.json")
+  .then(r => { if (!r.ok) throw new Error(`conformance.json: ${r.status}`); return r.json(); })
+  .then(data => {
+    D = data;
+    target = D.targets[D.targets.length - 1];
+    renderHead(); renderHeader(); renderMatrix(); renderBars(); renderPinning(); renderProvenance();
+  })
+  .catch(e => {
+    el("switchMsg").innerHTML =
+      `<b>Could not load conformance.json.</b> This page renders generated data and carries none of ` +
+      `its own, so there is nothing to show without it. (${e.message})`;
+  });
+</script>
