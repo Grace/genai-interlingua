@@ -1,12 +1,13 @@
 # Comments
 
-Three of these are posted. One is held.
+Four of these are posted. One is held.
 
 | | target | status |
 | --- | --- | --- |
 | [collector-contrib-29289.md](collector-contrib-29289.md) | [#29289](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/29289) — how should OTTL handle looping? | **posted 2026-09-08** |
 | [weaver-613.md](weaver-613.md) | [#613](https://github.com/open-telemetry/weaver/issues/613) — which transformations should a v2.0 schema format permit? | **posted 2026-09-08** |
 | [weaver-614.md](weaver-614.md) | [#614](https://github.com/open-telemetry/weaver/issues/614) — which language should express them? | **posted 2026-09-08** |
+| [collector-contrib-48607.md](collector-contrib-48607.md) | [#48607](https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/48607) — should the semconv target-types map be generated at build time? | **posted 2026-09-09** |
 | [spec-schemas-readme.md](spec-schemas-readme.md) | `opentelemetry-specification` — a Stable spec page still describes a publishing model OTEP 4815 discontinued | held; the "ask first" step is not done |
 
 Each file keeps the posted text verbatim. A revision prompted by a thread belongs in a reply
