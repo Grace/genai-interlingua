@@ -24,7 +24,7 @@
           {
             "key": "service.instance.id",
             "value": {
-              "stringValue": "f8c23f0f-9de0-4af9-a80e-b8ae33c09e8b"
+              "stringValue": "f51a5ebf-ea50-4cde-b4b5-e026c7c41cbe"
             }
           },
           {
@@ -42,13 +42,13 @@
           },
           "spans": [
             {
-              "traceId": "6d063eab821e3b0554ca3f58087069cd",
-              "spanId": "39f8243faea70e00",
+              "traceId": "f901bc9b93f32786e5c3d7603105d56e",
+              "spanId": "2cb92d1db9540ef5",
               "flags": 256,
-              "name": "support_triage",
+              "name": "support_triage_agent",
               "kind": "SPAN_KIND_INTERNAL",
-              "startTimeUnixNano": "1788791462011552000",
-              "endTimeUnixNano": "1788791462234235000",
+              "startTimeUnixNano": "1789123126232720000",
+              "endTimeUnixNano": "1789123126535647000",
               "attributes": [
                 {
                   "key": "braintrust.input_json",
@@ -95,7 +95,7 @@
                 {
                   "key": "braintrust.span_attributes",
                   "value": {
-                    "stringValue": "{\"type\": \"llm\", \"name\": \"support_triage\"}"
+                    "stringValue": "{\"type\": \"llm\", \"name\": \"support_triage_agent\"}"
                   }
                 },
                 {
@@ -243,7 +243,7 @@
           {
             "key": "service.instance.id",
             "value": {
-              "stringValue": "f8c23f0f-9de0-4af9-a80e-b8ae33c09e8b"
+              "stringValue": "f51a5ebf-ea50-4cde-b4b5-e026c7c41cbe"
             }
           },
           {
@@ -261,13 +261,13 @@
           },
           "spans": [
             {
-              "traceId": "d7e0b60abf31dd5459358df206e2eca9",
-              "spanId": "223a2b562e226a6e",
+              "traceId": "b1bee5e166a8594c4103d05e8d12ab68",
+              "spanId": "7232b78a274c8545",
               "flags": 256,
-              "name": "grade",
+              "name": "scoring_span",
               "kind": "SPAN_KIND_INTERNAL",
-              "startTimeUnixNano": "1788791462238186000",
-              "endTimeUnixNano": "1788791462238223000",
+              "startTimeUnixNano": "1789123126540008000",
+              "endTimeUnixNano": "1789123126540047000",
               "attributes": [
                 {
                   "key": "braintrust.scores",
@@ -278,7 +278,7 @@
                 {
                   "key": "braintrust.span_attributes",
                   "value": {
-                    "stringValue": "{\"type\": \"score\", \"name\": \"grade\"}"
+                    "stringValue": "{\"type\": \"score\", \"name\": \"scoring_span\"}"
                   }
                 },
                 {

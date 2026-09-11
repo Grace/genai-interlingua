@@ -24,7 +24,7 @@
           {
             "key": "service.instance.id",
             "value": {
-              "stringValue": "2cec90cb-b604-4252-aa04-6e23db22089c"
+              "stringValue": "33a9a3cb-5a7c-4139-a4c0-be847616f12d"
             }
           },
           {
@@ -43,14 +43,14 @@
           },
           "spans": [
             {
-              "traceId": "5f90e0fae91e2682e8f9c444b888ab2b",
-              "spanId": "8ed2ac9258fd12cf",
-              "parentSpanId": "e0d3487f0a1b761d",
+              "traceId": "94d178dcee3abcd02e1c666bd4d23d2a",
+              "spanId": "a655f94fa46ed655",
+              "parentSpanId": "7ba832e1dd776d9d",
               "flags": 256,
               "name": "openai.chat",
               "kind": "SPAN_KIND_CLIENT",
-              "startTimeUnixNano": "1788795791003811000",
-              "endTimeUnixNano": "1788795791027364000",
+              "startTimeUnixNano": "1789123129326646000",
+              "endTimeUnixNano": "1789123129353698000",
               "attributes": [
                 {
                   "key": "gen_ai.operation.name",
@@ -61,7 +61,7 @@
                 {
                   "key": "traceloop.workflow.name",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {
@@ -199,7 +199,7 @@
                 {
                   "key": "gen_ai.workflow.name",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {
@@ -287,7 +287,7 @@
           {
             "key": "service.instance.id",
             "value": {
-              "stringValue": "2cec90cb-b604-4252-aa04-6e23db22089c"
+              "stringValue": "33a9a3cb-5a7c-4139-a4c0-be847616f12d"
             }
           },
           {
@@ -305,18 +305,18 @@
           },
           "spans": [
             {
-              "traceId": "5f90e0fae91e2682e8f9c444b888ab2b",
-              "spanId": "e0d3487f0a1b761d",
+              "traceId": "94d178dcee3abcd02e1c666bd4d23d2a",
+              "spanId": "7ba832e1dd776d9d",
               "flags": 256,
-              "name": "support_triage.workflow",
+              "name": "support_triage_agent.workflow",
               "kind": "SPAN_KIND_INTERNAL",
-              "startTimeUnixNano": "1788795791003727000",
-              "endTimeUnixNano": "1788795791031764000",
+              "startTimeUnixNano": "1789123129326528000",
+              "endTimeUnixNano": "1789123129359121000",
               "attributes": [
                 {
                   "key": "traceloop.workflow.name",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {
@@ -328,7 +328,7 @@
                 {
                   "key": "traceloop.entity.name",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {
@@ -352,7 +352,7 @@
                 {
                   "key": "gen_ai.workflow.name",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {

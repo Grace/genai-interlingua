@@ -6,7 +6,7 @@
           {
             "key": "service.name",
             "value": {
-              "stringValue": "support-triage"
+              "stringValue": "support-triage-agent"
             }
           },
           {
@@ -162,7 +162,7 @@
                 {
                   "key": "traceloop.workflow.name",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {
@@ -306,7 +306,7 @@
                 {
                   "key": "gen_ai.workflow.name",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {

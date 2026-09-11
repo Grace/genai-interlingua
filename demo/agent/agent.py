@@ -44,7 +44,7 @@ TOOLS = [
 ]
 
 
-@workflow(name="support_triage")
+@workflow(name="support_triage_agent")
 def triage(question):
     return client.chat.completions.create(
         model="gpt-4o-mini",

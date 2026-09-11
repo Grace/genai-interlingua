@@ -60,7 +60,7 @@ func TestRawDoesNotDiluteAPositiveIdentification(t *testing.T) {
 		"gen_ai.system":              "OpenAI",
 		"llm.request.type":           "chat",
 		"gen_ai.usage.prompt_tokens": "412",
-		"traceloop.workflow.name":    "support_triage",
+		"traceloop.workflow.name":    "support_triage_agent",
 	})
 
 	d, margin, ok := Detect(s)

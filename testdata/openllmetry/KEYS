@@ -5,7 +5,7 @@
 
 [spans]
 openai.chat
-support_triage.workflow
+support_triage_agent.workflow
 
 [attributes]
 gen_ai.input.messages

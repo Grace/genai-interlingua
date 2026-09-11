@@ -3,7 +3,7 @@
     {
       "resource": {
         "attributes": [
-          { "key": "service.name", "value": { "stringValue": "support-triage" } },
+          { "key": "service.name", "value": { "stringValue": "support-triage-agent" } },
           { "key": "telemetry.sdk.language", "value": { "stringValue": "python" } }
         ]
       },
@@ -75,7 +75,7 @@
                 { "key": "gen_ai.usage.completion_tokens", "value": { "intValue": "27" } },
                 { "key": "gen_ai.usage.cache_creation_input_tokens", "value": { "intValue": "1024" } },
                 { "key": "gen_ai.usage.total_tokens", "value": { "intValue": "439" } },
-                { "key": "traceloop.workflow.name", "value": { "stringValue": "support_triage" } },
+                { "key": "traceloop.workflow.name", "value": { "stringValue": "support_triage_agent" } },
                 { "key": "traceloop.prompt.key", "value": { "stringValue": "order_status" } },
                 { "key": "traceloop.prompt.version", "value": { "intValue": "3" } },
                 {

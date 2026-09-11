@@ -5,8 +5,8 @@
 # releases, because a library changing what it emits is the drift this
 # harness exists to notice. This file records what it was, so that a
 # change in KEYS can be told apart from a change in nothing.
-# captured: 2026-09-07T15:44:14Z
+# captured: 2026-09-11T10:38:49Z
 
 httpx==0.28.1
-openai==3.8.0
+openai==3.13.0
 traceloop-sdk==0.62.3

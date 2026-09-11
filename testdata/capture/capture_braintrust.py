@@ -80,7 +80,7 @@ TOOLS = [
 def main():
     # The model call span. One score, which is the case the conventions can
     # actually express: gen_ai.evaluation.name plus gen_ai.evaluation.score.value.
-    with tracer.start_as_current_span("support_triage") as span:
+    with tracer.start_as_current_span("support_triage_agent") as span:
         completion = client.chat.completions.create(
             model="gpt-4o-mini", messages=MESSAGES, tools=TOOLS,
             temperature=0.7, top_p=0.95, max_tokens=1024,
@@ -99,18 +99,19 @@ def main():
         span.set_attribute("braintrust.scores", json.dumps({"correctness": 1.0}))
         span.set_attribute("braintrust.metadata", json.dumps({"model": completion.model}))
         span.set_attribute("braintrust.tags", json.dumps(["support", "triage"]))
-        span.set_attribute("braintrust.span_attributes", json.dumps({"type": "llm", "name": "support_triage"}))
+        span.set_attribute("braintrust.span_attributes", json.dumps({"type": "llm", "name": "support_triage_agent"}))
         span.set_attribute("gen_ai.request.model", "gpt-4o-mini")
         span.set_attribute("gen_ai.response.model", completion.model)
 
     # A second span carrying several scores, which the conventions cannot
     # express: one evaluation per span. This is the ReasonFlattened path, and a
-    # fixture that never exercises it proves nothing about it.
-    with tracer.start_as_current_span("grade") as span:
+    # fixture that never exercises it proves nothing about it. There is no model
+    # call on this span: it is a grader's verdicts, recorded as their own span.
+    with tracer.start_as_current_span("scoring_span") as span:
         span.set_attribute("braintrust.scores", json.dumps({
             "correctness": 1.0, "helpfulness": 0.8, "tone": 0.9,
         }))
-        span.set_attribute("braintrust.span_attributes", json.dumps({"type": "score", "name": "grade"}))
+        span.set_attribute("braintrust.span_attributes", json.dumps({"type": "score", "name": "scoring_span"}))
 
     provider.force_flush()
     print("braintrust: done", flush=True)

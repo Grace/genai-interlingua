@@ -41,7 +41,7 @@ await generateText({
       execute: async ({ order_id }) => ({ order_id, status: 'in transit' }),
     }),
   },
-  experimental_telemetry: { isEnabled: true, functionId: 'support_triage' },
+  experimental_telemetry: { isEnabled: true, functionId: 'support_triage_agent' },
 })
 
 await provider.forceFlush()
