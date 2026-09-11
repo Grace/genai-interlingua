@@ -154,6 +154,27 @@
   </section>
 
   <section>
+    <h2>What each dialect could not carry, and why</h2>
+    <div class="flow" id="flow"></div>
+    <div class="legend" id="legend"></div>
+    <p class="note">
+      <b>Lost to the vocabulary, not deleted.</b> Under the default
+      <code>originals: keep</code> every attribute above is still on the span, under the
+      name its library gave it. What it lacks is a <code>gen_ai.*</code> name, so a query
+      written in the conventions&rsquo; vocabulary will not find it and one written in the
+      library&rsquo;s will. <code>originals: dedupe</code> removes only exact copies a rename
+      already made redundant. Only <code>originals: prune</code> takes them off the span,
+      and that is a choice somebody has to make.
+    </p>
+    <p class="note">
+      LiteLLM's 53 is not noise. It is an entire cost model &mdash; <code>gen_ai.cost.input_cost</code>,
+      <code>output_cost</code>, <code>margin_percent</code>, <code>discount_amount</code> &mdash; plus
+      every <code>user_api_key_*</code> field it records about who spent what. The conventions have no
+      home for any of it, which is a finding about the conventions rather than about LiteLLM.
+    </p>
+  </section>
+
+  <section>
     <h2>Field coverage, and the cost of pinning</h2>
     <div class="switch">
       <div class="seg" id="targets" role="group" aria-label="Normalization target"></div>
@@ -171,18 +192,6 @@
       A filled cell means that dialect's fixtures carried the field. A blank is silence, not a
       denial: the emitter may have had nothing to put there, or the fixture may not exercise it.
       Read a mark as evidence.
-    </p>
-  </section>
-
-  <section>
-    <h2>What each dialect could not carry, and why</h2>
-    <div class="flow" id="flow"></div>
-    <div class="legend" id="legend"></div>
-    <p class="note">
-      LiteLLM's 53 is not noise. It is an entire cost model &mdash; <code>gen_ai.cost.input_cost</code>,
-      <code>output_cost</code>, <code>margin_percent</code>, <code>discount_amount</code> &mdash; plus
-      every <code>user_api_key_*</code> field it records about who spent what. The conventions have no
-      home for any of it, which is a finding about the conventions rather than about LiteLLM.
     </p>
   </section>
 
@@ -209,6 +218,13 @@
     &mdash; an OpenTelemetry Collector processor and CLI, Apache-2.0. Every span it emits carries
     <code>interlingua.lossy</code>: the keys that span is not a faithful carrier of, on the span
     itself, so the loss above is queryable in production rather than only on this page.
+    <br><br>
+    Every figure here is an aggregate over fixtures. The question underneath it &mdash; why one
+    particular value means what it claims, which source attribute produced it, and what the
+    translator declined to guess &mdash; is what the
+    <a href="inspector/">normalization inspector</a> answers, one attribute at a time. Matching
+    names is not the same as matching meaning, and <code>ambiguous</code> above is the band where
+    that difference is measured rather than argued.
   </footer>
 </div>
 
