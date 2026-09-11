@@ -212,6 +212,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "5fd7babe7b4ccda2"
+                  }
+                },
+                {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "genai-main"
@@ -505,6 +511,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "5fd7babe7b4ccda2"
+                  }
+                },
+                {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "genai-main"
@@ -707,6 +719,12 @@
                   "key": "interlingua.lossy.count",
                   "value": {
                     "intValue": "8"
+                  }
+                },
+                {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "5fd7babe7b4ccda2"
                   }
                 },
                 {

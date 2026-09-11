@@ -137,6 +137,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "5fd7babe7b4ccda2"
+                  }
+                },
+                {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "v1.41.0"
@@ -476,6 +482,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "5fd7babe7b4ccda2"
+                  }
+                },
+                {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "v1.41.0"
@@ -730,6 +742,12 @@
                   "key": "interlingua.lossy.count",
                   "value": {
                     "intValue": "6"
+                  }
+                },
+                {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "5fd7babe7b4ccda2"
                   }
                 },
                 {

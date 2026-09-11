@@ -55,6 +55,13 @@ const (
 	AttrLossy      = "interlingua.lossy"
 	AttrLossyCount = "interlingua.lossy.count"
 	AttrHops       = "interlingua.hops"
+
+	// AttrMapping identifies the mappings that read the span, as distinct from
+	// the schema version they wrote it to. AttrTarget answers "what is this
+	// span supposed to be"; this answers "which build of the translator decided
+	// that", which is the question a reader has when two spans that should
+	// agree do not. See dialect.Digest for what it covers and what it cannot.
+	AttrMapping = "interlingua.mapping"
 )
 
 // Options configures one normalization.
@@ -245,6 +252,7 @@ func Span(s dialect.Span, opts Options) (Result, bool) {
 	r.Set[AttrDialect] = dialect.String(string(r.Dialect))
 	r.Set[AttrConfidence] = dialect.Int(int64(r.Confidence))
 	r.Set[AttrTarget] = dialect.String(string(opts.Target))
+	r.Set[AttrMapping] = dialect.String(dialect.Digest())
 	r.Set[AttrHops] = dialect.Int(int64(prior.hops + 1))
 	// The list and its length are both written, and the length is written even
 	// when it is zero.
