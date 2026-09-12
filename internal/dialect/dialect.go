@@ -398,31 +398,61 @@ type fallback interface{ isFallback() }
 //
 // The second return is false when nothing claims the span at all: it carries no
 // GenAI evidence and should pass through untouched rather than be labeled.
-func Detect(s Span) (Dialect, int, bool) {
-	var best Dialect
-	var fallbacks []Dialect
-	high, second := 0, 0
+// Score is one dialect's evidence tally for one span, and whether it was
+// counted in the fallback tier.
+//
+// Exported so the tally can be shown rather than only asserted. A detector that
+// reports a winner and keeps its reasoning private asks to be trusted, which is
+// the thing this repository declines to do everywhere else.
+type Score struct {
+	Dialect  Name
+	Points   int
+	Fallback bool
+}
 
+// Scores returns every dialect's tally for a span, in registry order.
+//
+// Detect is written in terms of this rather than beside it, so the number a
+// reader is shown and the number that decided the winner cannot drift apart.
+func Scores(s Span) []Score {
+	out := make([]Score, 0, len(registry))
 	for _, d := range registry {
-		if f, ok := d.(fallback); ok {
-			fallbacks = append(fallbacks, f.(Dialect))
+		_, isFallback := d.(fallback)
+		out = append(out, Score{Dialect: d.Name(), Points: d.Score(s), Fallback: isFallback})
+	}
+	return out
+}
+
+func Detect(s Span) (Dialect, int, bool) {
+	byName := make(map[Name]Dialect, len(registry))
+	for _, d := range registry {
+		byName[d.Name()] = d
+	}
+
+	var best Dialect
+	high, second := 0, 0
+	for _, sc := range Scores(s) {
+		if sc.Fallback {
 			continue
 		}
-		n := d.Score(s)
 		switch {
-		case n > high:
-			best, high, second = d, n, high
-		case n > second:
-			second = n
+		case sc.Points > high:
+			best, high, second = byName[sc.Dialect], sc.Points, high
+		case sc.Points > second:
+			second = sc.Points
 		}
 	}
 	if best != nil {
 		return best, high - second, true
 	}
 
-	for _, d := range fallbacks {
-		if n := d.Score(s); n > high {
-			best, high = d, n
+	// The fallback tier is consulted only when nothing that knows what it is
+	// looking at claimed the span, and it reports a margin of zero when it wins:
+	// matching on shape is not the same kind of evidence as matching on a
+	// namespace, and the span should say so.
+	for _, sc := range Scores(s) {
+		if sc.Fallback && sc.Points > high {
+			best, high = byName[sc.Dialect], sc.Points
 		}
 	}
 	if best == nil {

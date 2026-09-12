@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-import { useState } from 'react'
-import type { Attribution, Explanation, LossDetail } from './wasm'
+import { useEffect, useState } from 'react'
+import type { Attribution, Explanation, LossDetail, Originals } from './wasm'
 import type { SpanNote } from './samples'
 import { groups, libraryOf, losses, REASONS, summary } from './groups'
+import { Provenance } from './Provenance'
 import { Diff } from './Diff'
 import { Flow } from './Flow'
 
@@ -23,15 +24,33 @@ export function SpanView({
   about,
   out,
   original,
+  originals,
 }: {
   span: Explanation
   /** What this span is, when demos/spans.json says. */
   about?: SpanNote | undefined
   out: string
   original: string
+  originals: Originals
 }) {
   const library = libraryOf(span.dialect)
   const { here, conventions } = losses(span)
+
+  // Keyed by attribute name rather than by index, and cleared when the span or
+  // the target changes: a pin that outlived its subject would describe one span
+  // while pointing at another.
+  const [pinned, setPinned] = useState<{ key: string; loss: boolean } | null>(null)
+  useEffect(() => setPinned(null), [span.span, span.target])
+
+  const pick = (key: string, loss: boolean) =>
+    setPinned((p) => (p && p.key === key && p.loss === loss ? null : { key, loss }))
+
+  const picked = pinned && !pinned.loss
+    ? span.attributes.find((a) => a.key === pinned.key)
+    : undefined
+  const pickedLoss = pinned && pinned.loss
+    ? span.lossy.find((l) => l.key === pinned.key)
+    : undefined
 
   return (
     <section>
@@ -59,7 +78,22 @@ export function SpanView({
         </p>
       </div>
 
-      <Flow span={span} library={library} />
+      <div className={pinned ? 'stage pinned' : 'stage'}>
+        <Flow
+          span={span}
+          library={library}
+          pinned={pinned?.key ?? null}
+          onPick={pick}
+        />
+        <Provenance
+          span={span}
+          attr={picked}
+          loss={pickedLoss}
+          normalized={out}
+          originals={originals}
+          onClose={() => setPinned(null)}
+        />
+      </div>
 
       {groups(span).map((g) => (
         <div className="group" key={g.kind}>
@@ -76,7 +110,12 @@ export function SpanView({
             </thead>
             <tbody>
               {g.rows.map((a) => (
-                <Row key={a.key} a={a} />
+                <Row
+                  key={a.key}
+                  a={a}
+                  picked={pinned?.key === a.key && !pinned.loss}
+                  onPick={() => pick(a.key, false)}
+                />
               ))}
             </tbody>
           </table>
@@ -113,7 +152,7 @@ export function SpanView({
               A gap in the conventions, or in this translator. Either way the span
               names it rather than passing over it in silence.
             </p>
-            <Losses items={here} />
+            <Losses items={here} pick={pick} pinned={pinned} />
           </>
         )}
 
@@ -125,7 +164,7 @@ export function SpanView({
               the version pinned above has no attribute for it. This is the
               argument for choosing the other target.
             </p>
-            <Losses items={conventions} />
+            <Losses items={conventions} pick={pick} pinned={pinned} />
           </>
         )}
 
@@ -133,10 +172,13 @@ export function SpanView({
 
         <p className="aside">
           That the originals survive is the default, not a guarantee of the
-          format: run the translator with <code>preserve_original</code> off and
-          these keys really are removed from the span. It is why the attribute is
-          called <code>lossy</code> — the word is about what the translation could
-          not carry into the conventions, not about the span having been emptied.
+          format: run the translator with <code>originals: prune</code> and these
+          keys really are removed from the span. <code>originals: dedupe</code>
+          never removes them — it drops only a source key whose value a rename
+          copied verbatim, and one named in <code>interlingua.lossy</code> has
+          nowhere else to be read from. It is why the attribute is called{' '}
+          <code>lossy</code> — the word is about what the translation could not
+          carry into the conventions, not about the span having been emptied.
         </p>
       </div>
 
@@ -168,11 +210,17 @@ export function SpanView({
   )
 }
 
-function Losses({ items }: { items: LossDetail[] }) {
+function Losses({
+  items, pick, pinned,
+}: {
+  items: LossDetail[]
+  pick: (key: string, loss: boolean) => void
+  pinned: { key: string; loss: boolean } | null
+}) {
   return (
     <ul className="loss">
       {items.map((l, i) => (
-        <li key={`${l.key}-${i}`}>
+        <li key={`${l.key}-${i}`} className={pinned?.key === l.key && pinned.loss ? 'picked' : undefined} onClick={() => pick(l.key, true)}>
           <code>{l.key}</code>
           <span className="reason" title={REASONS[l.reason]}>
             {l.reason.replace(/_/g, ' ')}
@@ -211,11 +259,13 @@ function Legend({ reasons }: { reasons: string[] }) {
 /** How much of a value fits on a row before it stops being readable. */
 const CUTOFF = 90
 
-function Row({ a }: { a: Attribution }) {
+function Row({
+  a, picked, onPick,
+}: { a: Attribution; picked?: boolean; onPick?: () => void }) {
   const [open, setOpen] = useState(false)
 
   return (
-    <tr>
+    <tr className={picked ? 'picked' : undefined} onClick={onPick}>
       <td>
         {a.own ? (
           <code>{a.key}</code>

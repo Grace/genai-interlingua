@@ -1,3 +1,6 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>The Loss Landscape</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -105,11 +108,36 @@
                  font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:700}
 
   /* loss bars */
-  .bars{display:flex;flex-direction:column;gap:13px}
-  .bar-row{display:grid;grid-template-columns:112px 1fr 52px;align-items:center;gap:14px}
-  .bar-row .name{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink)}
-  .track{display:flex;height:22px;border-radius:3px;overflow:hidden;background:var(--grid)}
-  .track span{display:block}
+  .detect{margin:4px 0 16px}
+  .detect .pick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+  .detect .pick button{font:inherit;font-size:12px;font-family:'IBM Plex Mono',monospace;
+    padding:4px 9px;border:1px solid var(--rule);background:var(--panel);color:var(--soft);
+    border-radius:3px;cursor:pointer}
+  .detect .pick button[aria-pressed="true"]{border-color:var(--accent);color:var(--ink)}
+  .detect .race{display:flex;flex-direction:column;gap:9px}
+  .detect .lane{display:grid;grid-template-columns:118px 1fr 46px;align-items:center;gap:12px}
+  .detect .lane .who{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--soft);
+    text-align:right}
+  .detect .lane.win .who,.detect .lane.win .pts{color:var(--ink);font-weight:600}
+  .detect .lane .bar{height:18px;background:var(--grid);border-radius:3px;overflow:hidden}
+  .detect .lane .bar i{display:block;height:100%;background:var(--soft);
+    transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .detect .lane.win .bar i{background:var(--accent)}
+  .detect .lane.out .bar i{background:repeating-linear-gradient(45deg,
+    var(--rule),var(--rule) 4px,transparent 4px,transparent 8px)}
+  .detect .lane .pts{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--soft)}
+  .detect .verdict{margin-top:14px;font-size:13px;color:var(--soft)}
+  .detect .verdict b{color:var(--ink)}
+  .detect .replay{margin-top:12px;font:inherit;font-size:12px;padding:4px 10px;
+    border:1px solid var(--rule);background:var(--panel);color:var(--soft);border-radius:3px;
+    cursor:pointer}
+  .flow{margin:4px 0 18px}
+  .flow svg{display:block;width:100%;height:auto}
+  .flow .lnk{fill:none;opacity:.42;transition:opacity .12s}
+  .flow .lnk:hover{opacity:.85}
+  .flow .nd{rx:1.5}
+  .flow text{font-family:'IBM Plex Mono',monospace;font-size:11.5px;fill:var(--ink)}
+  .flow text.n{font-size:10.5px;fill:var(--faint)}
   .bar-row .tot{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;
                 text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
   .legend{display:flex;flex-wrap:wrap;gap:16px;font-size:12.5px;color:var(--soft)}
@@ -149,6 +177,52 @@
   </section>
 
   <section>
+    <h2>How a span is recognised</h2>
+    <div class="detect" id="detect"></div>
+    <p class="note">
+      <b>This is the only part that is an algorithm.</b> Everything else on this page is a
+      census &mdash; what these fixtures were observed to carry, counted. This is computed per
+      span: each dialect counts the attributes only it would write, the highest total wins, and
+      the number stamped on the span as <code>interlingua.dialect.confidence</code> is
+      <b>winner &minus; runner-up</b>. An integer margin, not a probability, because there is no
+      denominator to make one out of.
+    </p>
+    <p class="note" id="detectWhy"></p>
+  </section>
+
+  <section>
+    <h2>What each dialect could not carry, and why</h2>
+    <div class="flow" id="flow"></div>
+    <div class="legend" id="legend"></div>
+    <p class="note">
+      <b>None of these is a spelling problem.</b> Renaming
+      <code>prompt_tokens</code> to <code>gen_ai.usage.input_tokens</code> is the part that
+      looks like the work and is the part a lookup table can do. Every band above is the
+      other kind: <b>no field</b> means the conventions have no <em>concept</em> for it,
+      not merely no name for it; <b>unstructured</b> is a blob the schema cannot type;
+      <b>flattened</b> is structure that existed in the source and has no canonical form;
+      and <b>ambiguous</b> is one attribute that could have meant two different fields,
+      recorded rather than guessed at. Matching names is not matching meaning, and this
+      is where the difference is measured.
+    </p>
+    <p class="note">
+      <b>Lost to the vocabulary, not deleted.</b> Under the default
+      <code>originals: keep</code> every attribute above is still on the span, under the
+      name its library gave it. What it lacks is a <code>gen_ai.*</code> name, so a query
+      written in the conventions&rsquo; vocabulary will not find it and one written in the
+      library&rsquo;s will. <code>originals: dedupe</code> removes only exact copies a rename
+      already made redundant. Only <code>originals: prune</code> takes them off the span,
+      and that is a choice somebody has to make.
+    </p>
+    <p class="note">
+      LiteLLM's 53 is not noise. It is an entire cost model &mdash; <code>gen_ai.cost.input_cost</code>,
+      <code>output_cost</code>, <code>margin_percent</code>, <code>discount_amount</code> &mdash; plus
+      every <code>user_api_key_*</code> field it records about who spent what. The conventions have no
+      home for any of it, which is a finding about the conventions rather than about LiteLLM.
+    </p>
+  </section>
+
+  <section>
     <h2>Field coverage, and the cost of pinning</h2>
     <div class="switch">
       <div class="seg" id="targets" role="group" aria-label="Normalization target"></div>
@@ -166,18 +240,6 @@
       A filled cell means that dialect's fixtures carried the field. A blank is silence, not a
       denial: the emitter may have had nothing to put there, or the fixture may not exercise it.
       Read a mark as evidence.
-    </p>
-  </section>
-
-  <section>
-    <h2>What each dialect could not carry, and why</h2>
-    <div class="bars" id="bars"></div>
-    <div class="legend" id="legend"></div>
-    <p class="note">
-      LiteLLM's 53 is not noise. It is an entire cost model &mdash; <code>gen_ai.cost.input_cost</code>,
-      <code>output_cost</code>, <code>margin_percent</code>, <code>discount_amount</code> &mdash; plus
-      every <code>user_api_key_*</code> field it records about who spent what. The conventions have no
-      home for any of it, which is a finding about the conventions rather than about LiteLLM.
     </p>
   </section>
 
@@ -204,6 +266,28 @@
     &mdash; an OpenTelemetry Collector processor and CLI, Apache-2.0. Every span it emits carries
     <code>interlingua.lossy</code>: the keys that span is not a faithful carrier of, on the span
     itself, so the loss above is queryable in production rather than only on this page.
+    <br><br>
+    <b>There is already a first-party component for this.</b>
+    <a href="https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/genainormalizerprocessor"><code>processor/genainormalizer</code></a>
+    landed in <code>opentelemetry-collector-contrib</code> in May 2026 &mdash; donated that
+    February &mdash; and ships in the <code>otelcol-contrib</code> binary you are probably already
+    running. If OpenInference and OpenLLMetry are the libraries you have, reach for it first: it
+    needs no custom build and this does. What is measured here and not there is the cost. It has
+    built-in tables for those two dialects, which is <b>31</b> of the 105 attributes above; it
+    normalizes them and records nothing about what it could not carry. The remaining 74 are on
+    dialects it does not claim &mdash; 53 of them LiteLLM&rsquo;s cost model &mdash; so they are a
+    gap in the conventions rather than in that component. The
+    differences are being taken upstream rather than maintained in competition; the
+    <a href="https://github.com/Grace/genai-interlingua#components-covering-similar-use-cases">comparison
+    is in the README</a>, dated, because that component moves and a copy of it here would quietly
+    go stale.
+    <br><br>
+    Every figure here is an aggregate over fixtures. The question underneath it &mdash; why one
+    particular value means what it claims, which source attribute produced it, and what the
+    translator declined to guess &mdash; is what the
+    <a href="inspector/">normalization inspector</a> answers, one attribute at a time. Matching
+    names is not the same as matching meaning, and <code>ambiguous</code> above is the band where
+    that difference is measured rather than argued.
   </footer>
 </div>
 
@@ -308,28 +392,193 @@ function renderMatrix(){
     : `Pinning this target costs <b>${dead} ${dead === 1 ? "field" : "fields"}</b>, struck through below. They were parsed correctly and there is nowhere to put them.`;
 }
 
-function renderBars(){
-  const host = el("bars");
+// The scoring race, per span. The only computed thing on this page.
+//
+// Rendered at rest: the resolved state is on screen before anybody interacts,
+// because a reader who never presses replay should still get the answer, and a
+// panel that starts empty waiting on a click is a panel most people never see.
+// Replay re-runs the transition rather than revealing hidden content.
+//
+// The fallback tier is drawn as excluded rather than as losing, because that is
+// what it is. raw scores 32 on one LangChain span and does not win it: matching
+// on the shape of a key is not the same evidence as matching on a namespace
+// nobody else writes, so raw is consulted only when nothing that knows what it
+// is looking at has claimed the span -- and it reports a margin of zero when it
+// does win.
+// Opens on the span where the library and the dialect disagree, because that is
+// the case that explains the mechanism rather than merely exercising it: it
+// shows the fallback out-scoring the winner without winning, and a fixture
+// recognised as something other than the library it came from. Every other span
+// is one click away, so this is a starting point rather than a selection.
+let detectAt = -1;
+
+function defaultDetection(rows){
+  const i = rows.findIndex(r => r.winner !== r.fixture && !(r.fallback || []).includes(r.winner));
+  return i < 0 ? 0 : i;
+}
+
+function renderDetect(){
+  const rows = D.detection || [];
+  const host = el("detect");
+  if (!rows.length){ host.textContent = ""; el("detectWhy").textContent = ""; return; }
+  if (detectAt < 0 || detectAt >= rows.length) detectAt = defaultDetection(rows);
+  const row = rows[detectAt];
+  const fb = new Set(row.fallback || []);
+  const max = Math.max(1, ...Object.values(row.scores));
+
+  const picks = rows.map((r, i) =>
+    `<button type="button" aria-pressed="${i === detectAt}" data-i="${i}">${r.fixture}` +
+    `<span class="dim"> ${r.span.length > 22 ? r.span.slice(0, 21) + "\u2026" : r.span}</span></button>`).join("");
+
+  const ranked = Object.entries(row.scores)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+  const lanes = ranked.map(([name, pts]) => {
+    const cls = name === row.winner ? "win" : fb.has(name) ? "out" : "";
+    const title = fb.has(name)
+      ? `${name} is the fallback tier: scored ${pts}, and not eligible to win unless nothing else claims the span`
+      : `${name} counted ${pts}`;
+    return `<div class="lane ${cls}"><div class="who">${name}${fb.has(name) ? " *" : ""}</div>` +
+      `<div class="bar" title="${title}"><i style="width:${pts / max * 100}%"></i></div>` +
+      `<div class="pts">${pts}</div></div>`;
+  }).join("");
+
+  // The runner-up for the margin is the best NON-fallback rival, because that is
+  // what the margin is computed against. But the caption has to account for the
+  // fallback lane too: it is on screen, it frequently out-scores the winner, and
+  // an earlier version of this sentence said "nothing else scored at all" on
+  // seven of the fifteen spans while a bar above it read 32.
+  const second = ranked.filter(([n]) => !fb.has(n) && n !== row.winner)[0];
+  const topFallback = ranked.filter(([n]) => fb.has(n))[0];
+  const outscored = topFallback && topFallback[1] > row.scores[row.winner];
+
+  const rival = second && second[1] > 0
+    ? `ahead of <b>${second[0]}</b> at ${second[1]}`
+    : "and no other dialect scored at all";
+  const aside = outscored
+    ? ` <b>${topFallback[0]}</b> scored ${topFallback[1]} and still did not win: it is the ` +
+      `fallback tier, consulted only when nothing that recognises a library has claimed the span.`
+    : "";
+
+  const verdict = row.margin === 0
+    ? `<b>${row.winner}</b> claimed it from the fallback tier, so the margin is <b>0</b> &mdash; ` +
+      `nothing that recognises a library claimed this span at all.`
+    : `<b>${row.winner}</b> wins with ${row.scores[row.winner]}, ${rival}. ` +
+      `Margin <b>${row.margin}</b>, which is what the span carries as its confidence.${aside}`;
+
+  host.innerHTML = `<div class="pick">${picks}</div><div class="race">${lanes}</div>` +
+    `<div class="verdict">${verdict}</div>` +
+    `<button class="replay" type="button">Replay the count</button>`;
+
+  host.querySelectorAll(".pick button").forEach(b =>
+    b.addEventListener("click", () => { detectAt = +b.dataset.i; renderDetect(); animateDetect(); }));
+  host.querySelector(".replay").addEventListener("click", animateDetect);
+
+  // The one finding worth saying out loud, and only where it is true.
+  const surprising = row.winner !== row.fixture && !fb.has(row.winner);
+  el("detectWhy").innerHTML = surprising
+    ? `This fixture came from <code>${row.fixture}</code> and is recognised as ` +
+      `<code>${row.winner}</code>. That is not a misdetection: LangChain is instrumented by ` +
+      `Traceloop, so what reaches the collector is OpenLLMetry's vocabulary. The library you ` +
+      `installed and the dialect your telemetry speaks are different questions.`
+    : `Every dialect is scored against every span. The bars marked <code>*</code> are the ` +
+      `fallback tier, which is consulted only when nothing else claims the span &mdash; which ` +
+      `is why one of them can out-score the winner without winning.`;
+}
+
+function animateDetect(){
+  const bars = [...el("detect").querySelectorAll(".bar i")];
+  const widths = bars.map(b => b.style.width);
+  bars.forEach(b => { b.style.width = "0%"; });
+  // One frame at zero so the transition has somewhere to come from.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    bars.forEach((b, i) => { b.style.transitionDelay = (i * 70) + "ms"; b.style.width = widths[i]; });
+    setTimeout(() => bars.forEach(b => { b.style.transitionDelay = ""; }), bars.length * 70 + 600);
+  }));
+}
+
+// A two-column Sankey: what each dialect emitted that could not be carried, and
+// where it went. It replaces the stacked bars that were here, which showed the
+// same numbers and could only be read one way -- per dialect. Nothing totalled a
+// reason, so the fact that no_field is 90 of the 105 losses was invisible.
+//
+// Deliberately losses only. The richer diagram everybody asks for -- everything
+// emitted, splitting into carried and lost -- cannot be drawn honestly from this
+// file: fields[].dialects counts canonical fields covered, dialect_loss counts
+// source attributes with nowhere to go, and a dialect can read two keys into one
+// field or lift one key into two. Putting both on one scale would be the
+// denominator mistake docs/not-a-score.md exists to forbid, on the page that
+// argues for it.
+//
+// Hand-rolled rather than pulled from a library. Two columns need no iterative
+// layout -- node heights are proportional stacks and links are cubic beziers
+// between known offsets -- and this page has no dependencies, which is worth
+// more than the hundred lines it saves.
+function renderFlow(){
+  const host = el("flow");
   host.textContent = "";
-  const max = Math.max(...D.dialects.map(lossTotal));
-  for (const d of D.dialects){
-    const byReason = D.dialect_loss[d] || {};
-    const total = lossTotal(d);
-    const row = document.createElement("div");
-    row.className = "bar-row";
 
-    const track = Object.keys(REASON_COLOR)
-      .filter(r => byReason[r] && byReason[r].length)
-      .map(r => `<span style="flex:${byReason[r].length};background:var(${REASON_COLOR[r]})" ` +
-                `title="${d}: ${byReason[r].length} ${REASON_LABEL[r]} — ${byReason[r].join(", ")}"></span>`)
-      .join("");
+  const reasons = Object.keys(REASON_COLOR).filter(r =>
+    D.dialects.some(d => (D.dialect_loss[d] || {})[r]?.length));
+  const dialects = D.dialects.filter(d => lossTotal(d) > 0);
+  const total = dialects.reduce((a, d) => a + lossTotal(d), 0);
+  if (!total) return;
 
-    row.innerHTML =
-      `<div class="name">${d}</div>` +
-      `<div class="track" style="width:${max ? total / max * 100 : 0}%">${track}</div>` +
-      `<div class="tot">${total}</div>`;
-    host.appendChild(row);
+  // PADL fits the longest dialect name (openinference) and PADR the longest
+  // reason; GAP is set by the labels rather than by taste, because the two
+  // smallest reasons -- flattened and ambiguous -- have nodes a few pixels tall
+  // and their centred labels collide at anything tighter.
+  const W = 760, PADL = 132, PADR = 124, NW = 9, GAP = 14, H0 = 34;
+  const inner = W - PADL - PADR;
+  // Height follows the data: every unit of loss is the same number of pixels in
+  // both columns, which is the only way the two sides are comparable.
+  const unit = 2.15;
+  const colH = d => d.length ? total * unit + (d.length - 1) * GAP : 0;
+  const H = Math.max(colH(dialects), colH(reasons)) + H0 * 2;
+
+  const stack = (keys, sizeOf) => {
+    let y = (H - (keys.reduce((a, k) => a + sizeOf(k), 0) * unit + (keys.length - 1) * GAP)) / 2;
+    const out = {};
+    for (const k of keys){ const h = Math.max(1.5, sizeOf(k) * unit); out[k] = {y, h, cur: y}; y += h + GAP; }
+    return out;
+  };
+  const L = stack(dialects, lossTotal);
+  const R = stack(reasons, r => D.dialects.reduce((a, d) => a + ((D.dialect_loss[d] || {})[r] || []).length, 0));
+
+  const esc = t => String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+  const parts = [];
+
+  // Links first so the nodes sit on top of them.
+  for (const d of dialects){
+    const by = D.dialect_loss[d] || {};
+    for (const r of reasons){
+      const keys = by[r] || [];
+      if (!keys.length) continue;
+      const h = keys.length * unit;
+      const y0 = L[d].cur + h / 2, y1 = R[r].cur + h / 2;
+      L[d].cur += h; R[r].cur += h;
+      const x0 = PADL + NW, x1 = PADL + inner - NW, mx = (x0 + x1) / 2;
+      parts.push(`<path class="lnk" d="M${x0},${y0} C${mx},${y0} ${mx},${y1} ${x1},${y1}" ` +
+        `stroke="var(${REASON_COLOR[r]})" stroke-width="${Math.max(1, h)}">` +
+        `<title>${esc(d)} — ${keys.length} ${esc(REASON_LABEL[r])}\n${esc(keys.join("\n"))}</title></path>`);
+    }
   }
+
+  for (const d of dialects){
+    parts.push(`<rect class="nd" x="${PADL}" y="${L[d].y}" width="${NW}" height="${L[d].h}" fill="var(--soft)"></rect>` +
+      `<text x="${PADL - 10}" y="${L[d].y + L[d].h / 2}" text-anchor="end" dominant-baseline="middle">${esc(d)}` +
+      `<tspan class="n" dx="6">${lossTotal(d)}</tspan></text>`);
+  }
+  for (const r of reasons){
+    const n = D.dialects.reduce((a, d) => a + ((D.dialect_loss[d] || {})[r] || []).length, 0);
+    parts.push(`<rect class="nd" x="${PADL + inner - NW}" y="${R[r].y}" width="${NW}" height="${R[r].h}" fill="var(${REASON_COLOR[r]})"></rect>` +
+      `<text x="${PADL + inner + 10}" y="${R[r].y + R[r].h / 2}" dominant-baseline="middle">${esc(REASON_LABEL[r])}` +
+      `<tspan class="n" dx="6">${n}</tspan></text>`);
+  }
+
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${Math.round(H)}" role="img" ` +
+    `aria-label="Sankey: ${total} source attributes across ${dialects.length} libraries that could not be carried, by reason">` +
+    parts.join("") + `</svg>`;
 
   el("legend").innerHTML = [
     ["no_field","the conventions have no attribute for it"],
@@ -374,7 +623,7 @@ fetch("conformance.json")
   .then(data => {
     D = data;
     target = D.targets[D.targets.length - 1];
-    renderHead(); renderHeader(); renderMatrix(); renderBars(); renderPinning(); renderProvenance();
+    renderHead(); renderHeader(); renderMatrix(); renderDetect(); renderFlow(); renderPinning(); renderProvenance();
   })
   .catch(e => {
     el("switchMsg").innerHTML =

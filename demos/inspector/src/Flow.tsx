@@ -20,7 +20,19 @@ import { kindOf, summary, type Kind } from './groups'
  * cannot disagree about what happened to a row. That is the same reason the page
  * runs the real normalizer instead of a JavaScript copy of the mappings.
  */
-export function Flow({ span, library }: { span: Explanation; library: string }) {
+export function Flow({
+  span, library, pinned, onPick,
+}: {
+  span: Explanation
+  library: string
+  // The attribute currently pinned, so the diagram can show which path the
+  // panel beside it is explaining. Null when nothing is pinned.
+  pinned?: string | null
+  // Called with the attribute or lost key a reader clicked. The diagram does
+  // not own the selection: the tables pick the same things, and two sources of
+  // truth for "what is selected" is how they end up disagreeing.
+  onPick?: (key: string, loss: boolean) => void
+}) {
   const graph = useMemo(() => build(span), [span])
 
   if (!graph) return null
@@ -47,7 +59,20 @@ export function Flow({ span, library }: { span: Explanation; library: string }) 
         </g>
         <g>
           {nodes.map((n, i) => (
-            <g key={i}>
+            // The class and the handler sit on the group rather than the rect
+            // so the label is part of the same target. The rect is thirteen
+            // pixels wide; the name beside it is what a reader aims at, and a
+            // dimmed rect next to a full-strength label reads as a rendering
+            // fault rather than as emphasis.
+            <g
+              key={i}
+              className={[
+                n.pick ? 'pickable' : '',
+                pinned && n.pick === pinned ? 'picked' : '',
+                pinned && n.pick && n.pick !== pinned ? 'dimmed' : '',
+              ].filter(Boolean).join(' ')}
+              onClick={n.pick ? () => onPick?.(n.pick as string, n.lost === true) : undefined}
+            >
               <rect
                 className={`node ${n.tone}`}
                 x={n.x0}
@@ -75,7 +100,8 @@ export function Flow({ span, library }: { span: Explanation; library: string }) 
         Left, what {library} wrote. Middle, what the translator did with it.
         Right, where it ended up. Red bands had no standard name to move to, so
         they stay on the span under the library’s own names. Every band is one
-        attribute; hover for its name.
+        attribute. <strong>Click any name</strong> to see where its value came
+        from — and, for a red one, why it had nowhere to go.
       </figcaption>
     </figure>
   )
@@ -96,6 +122,13 @@ interface Node {
   full: string
   column: 0 | 1 | 2
   tone: Tone
+  // The attribute or lost key this node stands for, where it stands for one.
+  // The middle column groups many attributes under one outcome and the two
+  // sinks on the right are categories, so neither carries a pick.
+  pick?: string
+  // Whether pick names a key in interlingua.lossy rather than one that was
+  // carried, which decides which panel a click opens.
+  lost?: boolean
   // filled in by d3-sankey
   x0?: number
   x1?: number
@@ -140,11 +173,22 @@ function build(span: Explanation) {
   const index = new Map<string, number>()
   const links: Link[] = []
 
-  const node = (name: string, label: string, full: string, column: 0 | 1 | 2, tone: Tone) => {
+  const node = (
+    name: string, label: string, full: string, column: 0 | 1 | 2, tone: Tone,
+    pick?: string, lost?: boolean,
+  ) => {
     const at = index.get(name)
     if (at !== undefined) return at
     index.set(name, nodes.length)
-    nodes.push({ name, label, full, column, tone })
+    const n: Node = { name, label, full, column, tone }
+    // Only where the node stands for exactly one attribute. A source key two
+    // rules both read would otherwise pick whichever was built first and be
+    // silently wrong about the other.
+    if (pick !== undefined) {
+      n.pick = pick
+      n.lost = lost === true
+    }
+    nodes.push(n)
     return nodes.length - 1
   }
   const link = (source: number, target: number, tone: Tone) => {
@@ -163,17 +207,17 @@ function build(span: Explanation) {
 
     const from = a.derived
       ? node('src:derived', 'several attributes', 'no single source attribute', 0, 'rebuilt')
-      : node(`src:${a.from}`, short(a.from ?? ''), a.from ?? '', 0, tone)
+      : node(`src:${a.from}`, short(a.from ?? ''), a.from ?? '', 0, tone, a.key, false)
 
     const mid = node(`mid:${kind}`, MIDDLE[kind][0], MIDDLE[kind][1], 1, tone)
-    const to = node(`dst:${a.key}`, short(a.key), a.key, 2, tone)
+    const to = node(`dst:${a.key}`, short(a.key), a.key, 2, tone, a.key, false)
 
     link(from, mid, tone)
     link(mid, to, tone)
   }
 
   for (const l of span.lossy) {
-    const from = node(`src:${l.key}`, short(l.key), l.key, 0, 'lost')
+    const from = node(`src:${l.key}`, short(l.key), l.key, 0, 'lost', l.key, true)
     // "kept as-is" rather than anything that sounds like deletion: the page
     // explains with the default options, under which a key with no standard name
     // stays on the span exactly as the library wrote it. What it lacks is a

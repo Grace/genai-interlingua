@@ -65,7 +65,19 @@ body {
   font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-main { max-width: 58rem; margin: 0 auto; }
+/* Two measures on one page, because they are two different things.
+   The tool is an instrument and wants room: a Sankey squeezed into an article
+   column is a diagram of a diagram. The prose below it is read left to right by
+   a person and wants roughly 65 characters, which is what 48rem buys. Reading
+   the page top to bottom you meet the product first and the explanation only if
+   you want it. */
+main { max-width: 90rem; margin: 0 auto; padding: 0 .5rem; }
+.essay { max-width: 48rem; margin: 4rem auto 0; padding-top: 2rem; border-top: 1px solid var(--line); }
+.essay header { padding-bottom: 0; border-bottom: 0; }
+
+.masthead { display: flex; flex-wrap: wrap; align-items: baseline; gap: .75rem 1.25rem; margin-bottom: 1.5rem; }
+.masthead h1 { margin: 0; font-size: 1.5rem; letter-spacing: -.015em; }
+.masthead p { margin: 0; color: var(--ink-dim); font-size: .95rem; }
 
 code { font-family: var(--mono); font-size: .9em; }
 
@@ -329,6 +341,48 @@ details pre {
   fill: var(--ink-dim);
 }
 .flow .nodelabel.lost { fill: var(--loss); }
+
+/* ---- the stage: diagram, and the panel explaining a pinned path ---- */
+
+.stage { display: grid; grid-template-columns: 1fr; gap: 1.25rem; align-items: start; }
+.stage.pinned { grid-template-columns: minmax(0, 1fr) 24rem; }
+@media (max-width: 68rem) { .stage.pinned { grid-template-columns: 1fr; } }
+
+.flow .pickable { cursor: pointer; }
+.flow .picked .node { stroke: var(--ink); stroke-width: 2px; }
+/* Dimmed rather than hidden: the rest of the span is still context for the one
+   path being explained, and removing it would answer a narrower question than
+   the reader asked. */
+.flow .dimmed { opacity: .28; }
+
+.prov {
+  position: relative;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 1.1rem 1.25rem 1.25rem; font-size: .84rem;
+}
+.prov h3 { margin: 0 0 .2rem; font-size: .95rem; }
+.prov .qq { margin: 0 0 1rem; font-family: var(--mono); font-size: .82rem; color: var(--dst); word-break: break-all; }
+.prov dl { margin: 0; }
+.prow { padding: .5rem 0; border-top: 1px solid var(--rule-soft); }
+.prow:first-child { border-top: 0; padding-top: 0; }
+.prow dt { font-size: .66rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); margin-bottom: .22rem; }
+.prow dd { margin: 0; color: var(--ink-dim); line-height: 1.5; }
+.prow dd code { color: var(--ink); word-break: break-all; }
+.prov .foot { margin: 1rem 0 0; padding-top: .8rem; border-top: 1px solid var(--rule-soft);
+  font-size: .78rem; color: var(--ink-faint); }
+.prov .close {
+  position: absolute; top: .55rem; right: .6rem; width: 1.6rem; height: 1.6rem;
+  font-size: 1.1rem; line-height: 1; padding: 0; border: 1px solid var(--line);
+  border-radius: 6px; background: var(--bg); color: var(--ink-faint); cursor: pointer;
+}
+.prov .close:hover { color: var(--ink); border-color: var(--ink-faint); }
+
+.group tbody tr { cursor: pointer; }
+.group tbody tr:hover { background: var(--rule-soft); }
+.group tbody tr.picked { background: var(--dst-bg); }
+
+ul.loss li { cursor: pointer; }
+ul.loss li.picked code { text-decoration: underline; }
 
 /* ---- the diff ---- */
 

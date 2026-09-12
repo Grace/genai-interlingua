@@ -1,9 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { useEffect, useMemo, useState } from 'react'
-import { explain, load, normalize, original, targets, type Explanation } from './wasm'
+import { explain, load, normalize, original, targets, type Explanation, type Originals } from './wasm'
 import { samples, type Sample } from './samples'
 import { SpanView } from './SpanView'
+
+/**
+ * What this page asks the translator to do with the emitter's own keys.
+ *
+ * Named here rather than left to normalize's default, because the provenance
+ * panel tells the reader which mode produced what they are looking at. A default
+ * would put that sentence and the call that justifies it in two different files.
+ */
+const ORIGINALS: Originals = 'keep'
 
 type State =
   | { status: 'loading' }
@@ -45,7 +54,7 @@ export function App() {
       return {
         ok: true,
         explanations: explain(json, target),
-        out: normalize(json, target),
+        out: normalize(json, target, ORIGINALS),
         original: original(json),
       }
     } catch (e) {
@@ -72,7 +81,10 @@ export function App() {
 
   return (
     <>
-      <Intro />
+      <div className="masthead">
+        <h1>Interlingua</h1>
+        <p>Explain exactly what happened to your telemetry.</p>
+      </div>
 
       <div className="controls" role="group" aria-label="What to inspect">
         <label>
@@ -157,8 +169,13 @@ export function App() {
           about={sample?.spans[span.span]}
           out={result.out}
           original={result.original}
+          originals={ORIGINALS}
         />
       )}
+
+      <div className="essay">
+        <Intro />
+      </div>
     </>
   )
 }
