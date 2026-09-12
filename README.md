@@ -665,11 +665,28 @@ Apple M1 Pro, `go test -bench . -benchmem`:
 
 | | ns/op | allocs/op | B/op |
 | --- | --- | --- | --- |
-| Decline a non-GenAI span (library) | 943 | **1** | 16 |
-| Decline a non-GenAI span (Collector) | 2,331 | 3 | 832 |
-| Normalize a GenAI span (library) | 15,091 | 88 | 18,840 |
-| Normalize a 2-span batch (Collector) | 39,472 | 216 | 37,592 |
-| Full CLI path: decode, normalize, encode | 116,368 | 316 | 76,530 |
+| Decline a non-GenAI span (library) | 960 | **1** | 16 |
+| Decline a non-GenAI span (Collector) | 2,580 | 3 | 832 |
+| Normalize a GenAI span (library) | 19,752 | 109 | 24,928 |
+| Normalize a 2-span batch (Collector) | 46,702 | 254 | 47,272 |
+| Full CLI path: decode, normalize, encode | 121,268 | 353 | 86,738 |
+
+Medians of repeated runs rather than a single pass, because the ns/op column
+moves a few percent between runs and the allocation columns do not move at all.
+The declining row is the one that matters for a pipeline where most spans are
+not GenAI, and it is one allocation.
+
+Recording what a translation did costs something, and these numbers are after
+paying it. Benchmarking either side of the commit that added them, declaring what
+each dialect reads a key as and keeping what could not be carried cost eleven
+allocations and 3,800 bytes on the normalizing row — 98 to 109, 21,128 B to
+24,928 B. The rest of the distance from the figures this table used to carry
+accumulated before that, unmeasured, which is its own argument for re-running
+these rather than copying them forward.
+
+That is the trade this repository keeps making on purpose: a translation layer
+that cannot tell you what it did is the failure mode, and bookkeeping is not
+free.
 
 **Read the first two rows first.** Almost every span in a real pipeline is an
 HTTP handler or a database call, so the cost of *declining* is paid constantly

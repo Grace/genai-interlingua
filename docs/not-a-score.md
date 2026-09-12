@@ -73,7 +73,7 @@ information wearing a more confident costume.
 
 "LangChain 67%, OpenLLMetry 78%" reads as a league table, and the first
 maintainer who disputes it is *right*, because the number was never about their
-library. Losing that argument costs the findings that are real — the 108 source
+library. Losing that argument costs the findings that are real — the 105 source
 attributes across six dialects that have nowhere in the conventions to go, and
 the 53 from LiteLLM alone. Those are facts about the conventions, and they are
 worth more than a leaderboard.

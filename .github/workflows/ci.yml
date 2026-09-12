@@ -76,7 +76,7 @@ jobs:
       - name: regenerating is a no-op
         run: |
           go test ./internal/normalize -update
-          if ! git diff --exit-code -- testdata/ docs/conformance.md; then
+          if ! git diff --exit-code -- testdata/ docs/conformance.md docs/conformance.json; then
             echo "::error::-update was not idempotent; generated output is unstable"
             exit 1
           fi
