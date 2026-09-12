@@ -193,6 +193,21 @@ func (liteLLM) Unstated() []semconv.Field {
 	}
 }
 
+// Interpretations are the readings Parse performs beyond the rule table: the
+// conventions' own message attributes where LiteLLM writes them, and the
+// traceloop-shaped runs it falls back to, read by OpenLLMetry's reassembly.
+func (liteLLM) Interpretations() []Interpretation {
+	return []Interpretation{
+		{Key: "gen_ai.input.messages", Meaning: semconv.InputMessages},
+		{Key: "gen_ai.output.messages", Meaning: semconv.OutputMessages},
+		{Key: "gen_ai.prompt.*", Meaning: semconv.InputMessages},
+		{Key: "gen_ai.completion.*", Meaning: semconv.OutputMessages},
+		{Key: "gen_ai.completion.*.finish_reason", Meaning: semconv.ResponseFinishReasons, Values: finishReasons},
+		{Key: "gen_ai.response.finish_reasons", Meaning: semconv.ResponseFinishReasons, Values: finishReasons},
+		{Key: "llm.request.functions.*", Meaning: semconv.ToolDefinitions},
+	}
+}
+
 func (d liteLLM) Parse(s Span) Parsed {
 	var p Parsed
 
@@ -221,7 +236,7 @@ func (d liteLLM) Parse(s Span) Parsed {
 	// The two emitters genuinely share this vocabulary; duplicating the parser
 	// would let the two copies drift apart over exactly the attributes that
 	// make detection hard in the first place.
-	p.Set(semconv.ToolDefinitions, openLLMetry{}.toolDefinitions(s, &p))
+	p.rebuildWith(semconv.ToolDefinitions, func() Value { return openLLMetry{}.toolDefinitions(s, &p) })
 
 	d.losses(s, &p)
 
@@ -231,23 +246,31 @@ func (d liteLLM) Parse(s Span) Parsed {
 // messages prefers the conventions' own JSON attributes, which LiteLLM writes
 // directly, and falls back to the indexed traceloop attributes an older build
 // or a non-semconv configuration produces.
+//
+// The finish reasons are read from the emitter's own attribute wherever it
+// writes one, whichever message path the span takes. LiteLLM writes that
+// attribute as a JSON array encoded into a string, which used to pass through
+// unread beside an interlingua.target it does not conform to.
 func (liteLLM) messages(s Span, p *Parsed) {
 	if !p.Take(s, "gen_ai.input.messages", semconv.InputMessages) {
-		p.Set(semconv.InputMessages, messagesValue(openLLMetry{}.messages(s, "gen_ai.prompt", p)))
+		p.rebuildWith(semconv.InputMessages, func() Value {
+			return messagesValue(openLLMetry{}.messages(s, "gen_ai.prompt", p))
+		})
 	}
+
+	stated := p.takeFinishReasons(s, "gen_ai.response.finish_reasons")
 
 	if p.Take(s, "gen_ai.output.messages", semconv.OutputMessages) {
 		return
 	}
-	out := openLLMetry{}.messages(s, "gen_ai.completion", p)
-	p.Set(semconv.OutputMessages, messagesValue(out))
-	var reasons []string
-	for _, m := range out {
-		if m.FinishReason != "" {
-			reasons = append(reasons, m.FinishReason)
-		}
+	var out []message
+	inputs := p.rebuildWith(semconv.OutputMessages, func() Value {
+		out = openLLMetry{}.messages(s, "gen_ai.completion", p)
+		return messagesValue(out)
+	})
+	if !stated {
+		p.rebuild(semconv.ResponseFinishReasons, strSeq(reasonsOf(out)), withSuffix(inputs, ".finish_reason"))
 	}
-	p.Set(semconv.ResponseFinishReasons, strSeq(reasons))
 }
 
 // losses records what LiteLLM says that the conventions do not name. The

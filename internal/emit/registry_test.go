@@ -55,17 +55,25 @@ func TestRegistryDefinesEveryAttributeWeWrite(t *testing.T) {
 		normalize.AttrLossy,
 		normalize.AttrLossyCount,
 		normalize.AttrHops,
+		normalize.AttrMapping,
+		normalize.AttrReplaced,
 		ottl.AttrExport,
 		ottl.AttrExportUnsupported,
 		ottl.AttrExportPartial,
 	}
 
 	for _, key := range written {
-		if !defined[key] {
+		// A constant ending in "." is a prefix rather than a whole key: the code
+		// writes interlingua.replaced.<key>, and a Weaver registry declares that
+		// shape as a template attribute named without the trailing dot. Compare
+		// the two on the registry's spelling, or a templated attribute looks
+		// undefined to this check and orphaned to the one below it.
+		lookup := strings.TrimSuffix(key, ".")
+		if !defined[lookup] {
 			t.Errorf("this repository writes %s, and registry/model/translation.yaml does not define it"+
 				"\n    anything resolving the published registry cannot look the attribute up", key)
 		}
-		delete(defined, key)
+		delete(defined, lookup)
 	}
 
 	var orphans []string

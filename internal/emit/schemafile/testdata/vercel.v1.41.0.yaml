@@ -34,7 +34,7 @@
 #     gen_ai.tool.definitions                  produced by reading the span, not by renaming an attribute
 #
 #   scalar_to_list
-#     gen_ai.response.finish_reasons           translates 2 values through a lookup table; wraps a scalar in a list, changing the type
+#     gen_ai.response.finish_reasons           translates 4 values through a lookup table; wraps a scalar in a list, changing the type
 #
 #   value_transform
 #     gen_ai.operation.name                    strips the suffix .doGenerate or .doStream or .doEmbed; translates 7 values through a lookup table

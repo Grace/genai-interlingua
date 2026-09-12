@@ -5,7 +5,7 @@
 #
 #     8 written here as rename_attributes
 #     0 need no rename: openinference already writes the target's own attribute name
-#    23 cannot be expressed in this format at all
+#    24 cannot be expressed in this format at all
 #
 # Read the gap list below before using this. The transformations a schema
 # file supports are all changes of NAME: rename_attributes, rename_events,
@@ -17,10 +17,9 @@
 # names carrying values the target schema does not define. That is not a bug
 # in the generator; it is the shortfall, written out.
 
-# WHAT THIS FILE CANNOT SAY (23 mappings)
+# WHAT THIS FILE CANNOT SAY (24 mappings)
 #
 #   ambiguous_precedence
-#     gen_ai.request.model                     llm.model_name wins over embedding.model_name, and attribute_map cannot say so
 #     gen_ai.tool.name                         tool_call.function.name wins over tool.name, and attribute_map cannot say so
 #
 #   no_attribute
@@ -33,6 +32,7 @@
 #     gen_ai.request.choice.count              produced by reading the span, not by renaming an attribute
 #     gen_ai.request.frequency_penalty         produced by reading the span, not by renaming an attribute
 #     gen_ai.request.max_tokens                produced by reading the span, not by renaming an attribute
+#     gen_ai.request.model                     produced by reading the span, not by renaming an attribute
 #     gen_ai.request.presence_penalty          produced by reading the span, not by renaming an attribute
 #     gen_ai.request.seed                      produced by reading the span, not by renaming an attribute
 #     gen_ai.request.stop_sequences            produced by reading the span, not by renaming an attribute
@@ -40,13 +40,14 @@
 #     gen_ai.request.temperature               produced by reading the span, not by renaming an attribute
 #     gen_ai.request.top_k                     produced by reading the span, not by renaming an attribute
 #     gen_ai.request.top_p                     produced by reading the span, not by renaming an attribute
+#     gen_ai.response.model                    produced by reading the span, not by renaming an attribute
 #     gen_ai.retrieval.documents               produced by reading the span, not by renaming an attribute
 #     gen_ai.tool.call.arguments               produced by reading the span, not by renaming an attribute
 #     gen_ai.tool.call.result                  produced by reading the span, not by renaming an attribute
 #     gen_ai.tool.definitions                  produced by reading the span, not by renaming an attribute
 #
 #   scalar_to_list
-#     gen_ai.response.finish_reasons           wraps a scalar in a list, changing the type
+#     gen_ai.response.finish_reasons           translates 4 values through a lookup table; wraps a scalar in a list, changing the type
 #
 #   value_transform
 #     gen_ai.operation.name                    translates 6 values through a lookup table

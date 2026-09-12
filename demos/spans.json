@@ -1,0 +1,88 @@
+{
+  "braintrust": {
+    "support_triage_agent": {
+      "role": "model call",
+      "note": "The support agent's one model call. Braintrust's own client wrapper writes no OpenTelemetry, so the capture script opens this span around the chat request and sets the braintrust.* fields Braintrust documents, as an application would. Its single score, correctness, is the case the conventions can hold."
+    },
+    "scoring_span": {
+      "role": "scores only",
+      "note": "No model call and no tokens: a grader's verdicts, which Braintrust records as a span of their own with type score. It carries three scores — correctness, helpfulness and tone — and the conventions hold one evaluation per span, so braintrust.scores is listed below as flattened rather than one score being picked."
+    }
+  },
+  "langchain": {
+    "RunnableSequence.workflow": {
+      "role": "chain",
+      "note": "The whole chain, prompt then model. LangChain emits no OpenTelemetry of its own; this span and the two beneath it come from Traceloop's LangChain instrumentation."
+    },
+    "execute_task ChatPromptTemplate": {
+      "role": "prompt step",
+      "note": "The chain's first step: filling the prompt template with the question. No model is called on this span."
+    },
+    "ChatOpenAI.chat": {
+      "role": "model call",
+      "note": "The chat request made by the chain's model step."
+    }
+  },
+  "litellm": {
+    "litellm_request": {
+      "role": "model call",
+      "note": "LiteLLM's record of the completion it routed: the model, what it cost, and its proxy's key and budget metadata."
+    },
+    "raw_gen_ai_request": {
+      "role": "raw payload",
+      "note": "The request and response as the provider saw them, as llm.openai.* blobs beneath litellm_request. Nothing on this span identifies a library, so the translator leaves it alone; the facts it holds are read from litellm_request instead."
+    }
+  },
+  "openinference": {
+    "ChatCompletion": {
+      "role": "model call",
+      "note": "The chat request, recorded by OpenInference's OpenAI instrumentation."
+    }
+  },
+  "openllmetry": {
+    "support_triage_agent.workflow": {
+      "role": "workflow wrapper",
+      "note": "Opened by @workflow(name=\"support_triage_agent\") around the agent's function. It wraps the model call rather than being it: the call is its child span, openai.chat."
+    },
+    "openai.chat": {
+      "role": "model call",
+      "note": "The chat request itself, recorded by OpenLLMetry's OpenAI instrumentation. It inherits the workflow's name as traceloop.workflow.name."
+    }
+  },
+  "openllmetry-legacy": {
+    "openai.chat": {
+      "role": "model call",
+      "note": "The chat request in the shape OpenLLMetry wrote before it adopted the conventions: numbered gen_ai.prompt.N.* attributes and gen_ai.system. Current releases no longer emit this, so it is written by hand."
+    },
+    "POST": {
+      "role": "HTTP request",
+      "note": "The HTTP request underneath the model call. It carries only http.* and server.* attributes, so there is nothing about the model here to translate."
+    }
+  },
+  "raw": {
+    "chat gpt-4o-mini": {
+      "role": "model call",
+      "note": "OpenTelemetry's own OpenAI instrumentation, named the way the conventions say to: operation, then model. The control case — already written in the conventions, so the translator should find almost nothing to do."
+    }
+  },
+  "raw-folk": {
+    "call_model": {
+      "role": "model call",
+      "note": "A hand-rolled span with bare names like model and prompt_tokens, the way an in-house wrapper might write them. No library emits these, so it is written by hand."
+    }
+  },
+  "vercel": {
+    "ai.generateText": {
+      "role": "caller's call",
+      "note": "The generateText call the application made: the outer span, in the AI SDK's own ai.* names. The agent's name, support_triage_agent, appears here as ai.telemetry.functionId rather than as a span name."
+    },
+    "ai.generateText.doGenerate": {
+      "role": "model call",
+      "note": "The request to the provider, beneath generateText. It already uses gen_ai.* names, but spells the provider gen_ai.system."
+    },
+    "ai.toolCall": {
+      "role": "tool call",
+      "note": "The SDK running the lookup_order tool the model asked for. No model is called on this span."
+    }
+  }
+}

@@ -8,8 +8,8 @@
 #
 #   gen_ai.operation.name
 #   gen_ai.provider.name
-#   gen_ai.request.model
-#   gen_ai.response.finish_reasons
+#   gen_ai.request.model                       (PARTIAL; see below)
+#   gen_ai.response.finish_reasons             (PARTIAL; see below)
 #   gen_ai.usage.input_tokens
 #   gen_ai.usage.output_tokens
 #   gen_ai.usage.cache_read.input_tokens
@@ -23,7 +23,7 @@
 #   gen_ai.tool.call.id
 #   gen_ai.tool.call.arguments                 (PARTIAL; see below)
 #
-# WHAT THIS CARRIES ONLY SOMETIMES (1 attributes)
+# WHAT THIS CARRIES ONLY SOMETIMES (3 attributes)
 #
 #   This emitter writes these facts two ways: as the conventions' own
 #   attributes, which the statements below handle, and inside its own
@@ -35,9 +35,11 @@
 #   named here is not a weaker warning than being named there -- it is
 #   the same warning with a reason attached. Do not trust these.
 #
+#   gen_ai.request.model
+#   gen_ai.response.finish_reasons
 #   gen_ai.tool.call.arguments
 #
-# WHAT THIS CANNOT CARRY (15 attributes)
+# WHAT THIS CANNOT CARRY (16 attributes)
 #
 #   These come from reading the span rather than transforming a value --
 #   reassembling indexed message attributes into one document, lifting
@@ -58,6 +60,7 @@
 #   gen_ai.request.temperature
 #   gen_ai.request.top_k
 #   gen_ai.request.top_p
+#   gen_ai.response.model
 #   gen_ai.retrieval.documents
 #   gen_ai.tool.call.result
 #   gen_ai.tool.definitions
@@ -96,7 +99,6 @@ processors:
         conditions:
           - attributes["embedding.model_name"] != nil
           - attributes["llm.finish_reason"] != nil
-          - attributes["llm.model_name"] != nil
           - attributes["llm.provider"] != nil
           - attributes["llm.system"] != nil
           - attributes["llm.token_count.completion"] != nil
@@ -138,9 +140,14 @@ processors:
           - delete_key(attributes, "interlingua.__scratch")
           - delete_key(attributes, "gen_ai.provider.name") where attributes["llm.provider"] != nil and attributes["gen_ai.provider.name"] != nil and not IsMatch(attributes["gen_ai.provider.name"], "^(anthropic|aws\\.bedrock|azure\\.ai\\.inference|azure\\.ai\\.openai|cohere|deepseek|gcp\\.gemini|gcp\\.gen_ai|gcp\\.vertex_ai|groq|ibm\\.watsonx\\.ai|mistral_ai|moonshot_ai|openai|perplexity|x_ai)$")
           - delete_key(attributes, "gen_ai.provider.name") where attributes["llm.system"] != nil and attributes["gen_ai.provider.name"] != nil and not IsMatch(attributes["gen_ai.provider.name"], "^(anthropic|aws\\.bedrock|azure\\.ai\\.inference|azure\\.ai\\.openai|cohere|deepseek|gcp\\.gemini|gcp\\.gen_ai|gcp\\.vertex_ai|groq|ibm\\.watsonx\\.ai|mistral_ai|moonshot_ai|openai|perplexity|x_ai)$")
-          - set(attributes["gen_ai.request.model"], attributes["llm.model_name"]) where attributes["llm.model_name"] != nil
-          - set(attributes["gen_ai.request.model"], attributes["embedding.model_name"]) where attributes["llm.model_name"] == nil and attributes["embedding.model_name"] != nil
+          - set(attributes["gen_ai.request.model"], attributes["embedding.model_name"]) where attributes["embedding.model_name"] != nil
           - set(attributes["gen_ai.response.finish_reasons"], attributes["llm.finish_reason"]) where attributes["llm.finish_reason"] != nil
+          - set(attributes["interlingua.__scratch"], "content_filter") where attributes["gen_ai.response.finish_reasons"] == "content-filter"
+          - set(attributes["interlingua.__scratch"], "tool_call") where attributes["gen_ai.response.finish_reasons"] == "function_call"
+          - set(attributes["interlingua.__scratch"], "tool_call") where attributes["gen_ai.response.finish_reasons"] == "tool-calls"
+          - set(attributes["interlingua.__scratch"], "tool_call") where attributes["gen_ai.response.finish_reasons"] == "tool_calls"
+          - set(attributes["gen_ai.response.finish_reasons"], attributes["interlingua.__scratch"]) where attributes["interlingua.__scratch"] != nil
+          - delete_key(attributes, "interlingua.__scratch")
           - set(attributes["gen_ai.response.finish_reasons"], [attributes["gen_ai.response.finish_reasons"]]) where attributes["gen_ai.response.finish_reasons"] != nil and IsString(attributes["gen_ai.response.finish_reasons"])
           - set(attributes["gen_ai.usage.input_tokens"], attributes["llm.token_count.prompt"]) where attributes["llm.token_count.prompt"] != nil
           - set(attributes["gen_ai.usage.output_tokens"], attributes["llm.token_count.completion"]) where attributes["llm.token_count.completion"] != nil
@@ -160,5 +167,5 @@ processors:
           - set(attributes["interlingua.hops"], attributes["interlingua.hops"] + 1) where attributes["interlingua.hops"] != nil
           - set(attributes["interlingua.hops"], 1) where attributes["interlingua.hops"] == nil
           - set(attributes["interlingua.export"], "ottl")
-          - set(attributes["interlingua.export.unsupported"], ["gen_ai.input.messages", "gen_ai.output.messages", "gen_ai.request.choice.count", "gen_ai.request.frequency_penalty", "gen_ai.request.max_tokens", "gen_ai.request.presence_penalty", "gen_ai.request.seed", "gen_ai.request.stop_sequences", "gen_ai.request.stream", "gen_ai.request.temperature", "gen_ai.request.top_k", "gen_ai.request.top_p", "gen_ai.retrieval.documents", "gen_ai.tool.call.arguments", "gen_ai.tool.call.result", "gen_ai.tool.definitions"])
-          - set(attributes["interlingua.export.partial"], ["gen_ai.tool.call.arguments"])
+          - set(attributes["interlingua.export.unsupported"], ["gen_ai.input.messages", "gen_ai.output.messages", "gen_ai.request.choice.count", "gen_ai.request.frequency_penalty", "gen_ai.request.max_tokens", "gen_ai.request.model", "gen_ai.request.presence_penalty", "gen_ai.request.seed", "gen_ai.request.stop_sequences", "gen_ai.request.stream", "gen_ai.request.temperature", "gen_ai.request.top_k", "gen_ai.request.top_p", "gen_ai.response.finish_reasons", "gen_ai.response.model", "gen_ai.retrieval.documents", "gen_ai.tool.call.arguments", "gen_ai.tool.call.result", "gen_ai.tool.definitions"])
+          - set(attributes["interlingua.export.partial"], ["gen_ai.request.model", "gen_ai.response.finish_reasons", "gen_ai.tool.call.arguments"])

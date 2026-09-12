@@ -58,9 +58,10 @@ carries `interlingua.lossy`: the list of keys this span is *not* a faithful
 carrier of. A translation layer that silently drops data is worse than no
 translation layer, because you will trust the result.
 
-**It never destroys your originals by default.** `preserve_original` is on. The
-emitter's own attributes stay on the span next to the normalized ones, so a
-mapping this repository got wrong is a mapping you can still see through.
+**It never destroys your originals by default.** `originals: keep` is the
+default. The emitter's own attributes stay on the span next to the normalized
+ones, so a mapping this repository got wrong is a mapping you can still see
+through.
 
 **Detection is a judgement, and says so.** Dialects are scored, not first-matched.
 The winner's margin over the runner-up is written to the span as
@@ -141,7 +142,7 @@ with all 30 still on it, plus:
 gen_ai.provider.name           = openai            # was gen_ai.system = "OpenAI"
 gen_ai.operation.name          = chat              # was llm.request.type
 gen_ai.request.model           = gpt-4o-mini
-gen_ai.response.finish_reasons = tool_calls
+gen_ai.response.finish_reasons = tool_call         # was tool_calls, in gen_ai.completion.0.finish_reason
 gen_ai.usage.input_tokens      = 412               # was gen_ai.usage.prompt_tokens
 gen_ai.usage.output_tokens     = 27                # was gen_ai.usage.completion_tokens
 
@@ -166,7 +167,7 @@ Flags:
 | | |
 | --- | --- |
 | `-target` | `v1.41.0` (default) or `genai-main` |
-| `-strip-original` | drop the source attributes the dialect consumed. Off by default. |
+| `-originals` | what becomes of the emitter's own attributes: `keep` (default), `dedupe` (remove exact copies only), or `prune` (remove everything a dialect read). `-strip-original` still works and means `prune`. |
 | `-emit` | print the mapping instead of applying it: `ottl` or `schema-file` |
 | `-dialect` | with `-emit`, which emitter to export the mapping for |
 | `-version` | print version and default target |
@@ -269,7 +270,7 @@ fails if it drifts.
 ## The provenance attributes are a published registry
 
 [`registry/`](registry/) is a Weaver semantic convention registry defining the
-nine `interlingua.*` attributes — which vocabulary a span arrived in, which one
+the `interlingua.*` attributes — which vocabulary a span arrived in, which one
 it left in, how confident the identification was, and what the trip cost.
 
 ```console
@@ -296,7 +297,7 @@ would have to happen first.
 processors:
   genaiinterlingua:
     target: v1.41.0
-    preserve_original: true
+    originals: keep
 
 service:
   pipelines:
@@ -345,7 +346,7 @@ That is a real span from that stack, and it is worth reading closely:
   below it. *(That mapping exists because capturing a real span found it
   missing.)*
 - **`gen_ai.usage.total_tokens: 439`** is on the span **and** named in
-  `interlingua.lossy`. `preserve_original` did not throw it away, and the span
+  `interlingua.lossy`. `originals: keep` did not throw it away, and the span
   says plainly that the conventions have no field for it.
 - **`interlingua.dialect: openllmetry`** with **`confidence: 3`** — low, and
   honestly so: current OpenLLMetry has largely migrated to the conventions, so
@@ -503,7 +504,7 @@ a key they care about does not care which half of the pipeline dropped it.
 
 [`COMPATIBILITY.md`](COMPATIBILITY.md) explains every code, and lists the
 transformations that change your data *without* being losses: provider names
-rewritten, `gen_ai.system` renamed, `tool-calls` respelled to `tool_calls`,
+rewritten, `gen_ai.system` renamed, finish reasons respelled onto `tool_call`,
 Vercel's milliseconds divided into the conventions' seconds. Those are the ones
 worth reading, because they change your values silently and correctly.
 
@@ -633,14 +634,21 @@ file where that is the only question being asked.
 
 ## Preserving originals
 
-`preserve_original` defaults to **true**, and `-strip-original` inverts it. The
+`originals` defaults to **keep**, and `-originals` sets it on the CLI. The
 default keeps the emitter's own attributes beside the normalized ones: the
 `openllmetry-legacy` span used above goes in with 30 attributes and comes out
-with 49. (The HTTP span sharing that trace goes in with 3 and comes out with 3.)
+with 50. (The HTTP span sharing that trace goes in with 3 and comes out with 3.)
 
-That is the right default anyway: a normalizer that is sometimes wrong should not
-also be the last reader of its input. Turn it off once you trust the mapping for
-the emitters you actually run.
+`dedupe` removes only the originals the span now carries unchanged under a
+conventions name, and brings that span to 42; nothing it removes exists nowhere
+else on the span. `prune` removes everything a dialect read, the keys listed in
+`interlingua.lossy` included, and brings it to 26. The v0.5.0 names still work:
+`-strip-original` is `-originals prune`, and `preserve_original: true` and
+`false` are `keep` and `prune`.
+
+Keep is the right default anyway: a normalizer that is sometimes wrong should not
+also be the last reader of its input. Move to dedupe when size matters, and to
+prune only once you trust the mapping for the emitters you actually run.
 
 ## Status
 
@@ -657,11 +665,28 @@ Apple M1 Pro, `go test -bench . -benchmem`:
 
 | | ns/op | allocs/op | B/op |
 | --- | --- | --- | --- |
-| Decline a non-GenAI span (library) | 943 | **1** | 16 |
-| Decline a non-GenAI span (Collector) | 2,331 | 3 | 832 |
-| Normalize a GenAI span (library) | 15,091 | 88 | 18,840 |
-| Normalize a 2-span batch (Collector) | 39,472 | 216 | 37,592 |
-| Full CLI path: decode, normalize, encode | 116,368 | 316 | 76,530 |
+| Decline a non-GenAI span (library) | 960 | **1** | 16 |
+| Decline a non-GenAI span (Collector) | 2,580 | 3 | 832 |
+| Normalize a GenAI span (library) | 19,752 | 109 | 24,928 |
+| Normalize a 2-span batch (Collector) | 46,702 | 254 | 47,272 |
+| Full CLI path: decode, normalize, encode | 121,268 | 353 | 86,738 |
+
+Medians of repeated runs rather than a single pass, because the ns/op column
+moves a few percent between runs and the allocation columns do not move at all.
+The declining row is the one that matters for a pipeline where most spans are
+not GenAI, and it is one allocation.
+
+Recording what a translation did costs something, and these numbers are after
+paying it. Benchmarking either side of the commit that added them, declaring what
+each dialect reads a key as and keeping what could not be carried cost eleven
+allocations and 3,800 bytes on the normalizing row — 98 to 109, 21,128 B to
+24,928 B. The rest of the distance from the figures this table used to carry
+accumulated before that, unmeasured, which is its own argument for re-running
+these rather than copying them forward.
+
+That is the trade this repository keeps making on purpose: a translation layer
+that cannot tell you what it did is the failure mode, and bookkeeping is not
+free.
 
 **Read the first two rows first.** Almost every span in a real pipeline is an
 HTTP handler or a database call, so the cost of *declining* is paid constantly

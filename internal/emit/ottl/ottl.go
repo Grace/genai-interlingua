@@ -318,7 +318,7 @@ func statements(r dialect.Rule, key string, target semconv.Target) ([]string, er
 		//
 		// The processor does not delete a non-conformant value that was already
 		// sitting under the conventions attribute -- it records the loss and
-		// leaves the original alone, because preserve_original is on by
+		// leaves the original alone, because originals: keep is the
 		// default. A LangChain span carrying gen_ai.provider.name: langchain is
 		// exactly that case, and an unguarded delete here destroys an attribute
 		// the processor keeps, which makes the export more lossy than the thing

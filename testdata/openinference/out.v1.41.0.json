@@ -234,7 +234,7 @@
                 {
                   "key": "gen_ai.request.model",
                   "value": {
-                    "stringValue": "gpt-4o-mini-2024-07-18"
+                    "stringValue": "gpt-4o-mini"
                   }
                 },
                 {
@@ -255,10 +255,16 @@
                     "arrayValue": {
                       "values": [
                         {
-                          "stringValue": "tool_calls"
+                          "stringValue": "tool_call"
                         }
                       ]
                     }
+                  }
+                },
+                {
+                  "key": "gen_ai.response.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini-2024-07-18"
                   }
                 },
                 {
@@ -330,9 +336,6 @@
                           "stringValue": "llm.input_messages.*"
                         },
                         {
-                          "stringValue": "llm.invocation_parameters"
-                        },
-                        {
                           "stringValue": "llm.output_messages.*"
                         },
                         {
@@ -351,7 +354,13 @@
                 {
                   "key": "interlingua.lossy.count",
                   "value": {
-                    "intValue": "10"
+                    "intValue": "9"
+                  }
+                },
+                {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "731a97a6a88ed466"
                   }
                 },
                 {

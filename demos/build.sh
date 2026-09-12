@@ -73,6 +73,45 @@ echo "copying conformance.html and conformance.json"
 cp demos/conformance.html "$OUT/conformance.html"
 cp docs/conformance.json "$OUT/conformance.json"
 
+# The inspector: a React/TypeScript page over the same WASM binary, showing the
+# per-attribute detail the conformance table aggregates away -- which source key
+# each field was read from, and which fields no single key produced.
+#
+# Its source lives in this repository, unlike index.html, ui.js and samples.js,
+# which for months existed only as the deployed copy. That is the same failure
+# this script's header describes, and there is no point fixing it for the WASM
+# and then repeating it for the page that loads it.
+#
+# esbuild and tsc come from demos/inspector/node_modules, which is gitignored.
+# Missing them is fatal rather than skippable: a build that quietly deployed a
+# stale inspector.js next to a fresh .wasm would put a page and a binary that
+# disagree about the export list in front of a reader, which fails at load with
+# nothing useful on screen.
+echo "building the inspector"
+INSPECTOR="$(dirname "$0")/inspector"
+if [ ! -x "$INSPECTOR/node_modules/.bin/esbuild" ]; then
+  echo "no esbuild under $INSPECTOR/node_modules" >&2
+  echo "run: (cd $INSPECTOR && npm install)" >&2
+  exit 1
+fi
+(cd "$INSPECTOR" && ./node_modules/.bin/tsc --noEmit -p tsconfig.json)
+(cd "$INSPECTOR" && npm run --silent build)
+
+mkdir -p "$OUT/inspector"
+cp "$INSPECTOR/index.html" "$OUT/inspector/index.html"
+cp "$INSPECTOR/inspector.js" "$OUT/inspector/inspector.js"
+
+# The inspector needs the binary and the shim beside it, because a page served
+# from a subdirectory cannot fetch them from its parent without the paths
+# becoming a thing to get wrong on a rename.
+cp "$OUT/genai-interlingua.wasm" "$OUT/inspector/genai-interlingua.wasm"
+cp "$OUT/wasm_exec.js" "$OUT/inspector/wasm_exec.js"
+
+# Both pages get their captures from the fixtures rather than from a copy, for
+# the same reason the conformance page gets its numbers from conformance.json.
+echo "generating samples.js from the fixtures"
+"$(dirname "$0")/samples.py" "$OUT/inspector/samples.js"
+
 echo "copying LICENSE and NOTICE"
 cp LICENSE "$OUT/LICENSE"
 cp NOTICE "$OUT/NOTICE"
@@ -111,6 +150,8 @@ echo
 echo "built:"
 ls -lh "$OUT/genai-interlingua.wasm" "$OUT/wasm_exec.js" \
        "$OUT/conformance.html" "$OUT/conformance.json" \
+       "$OUT/inspector/index.html" "$OUT/inspector/inspector.js" \
+       "$OUT/inspector/samples.js" \
        "$OUT/LICENSE" "$OUT/NOTICE" "$OUT/LICENSE.go" | awk '{print "  " $9 "  " $5}'
 echo
 echo "the .wasm is committed to the blog repository, so commit it there."

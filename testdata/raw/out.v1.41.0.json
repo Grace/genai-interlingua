@@ -111,7 +111,7 @@
                     "arrayValue": {
                       "values": [
                         {
-                          "stringValue": "tool_calls"
+                          "stringValue": "tool_call"
                         }
                       ]
                     }
@@ -175,6 +175,24 @@
                   "key": "interlingua.lossy.count",
                   "value": {
                     "intValue": "1"
+                  }
+                },
+                {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "731a97a6a88ed466"
+                  }
+                },
+                {
+                  "key": "interlingua.replaced.gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "tool_calls"
+                        }
+                      ]
+                    }
                   }
                 },
                 {

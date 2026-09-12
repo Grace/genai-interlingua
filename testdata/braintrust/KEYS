@@ -4,8 +4,8 @@
 # A change here is the emitter changing what it produces.
 
 [spans]
-grade
-support_triage
+scoring_span
+support_triage_agent
 
 [attributes]
 braintrust.context_json

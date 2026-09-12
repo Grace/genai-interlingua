@@ -6,7 +6,7 @@
           {
             "key": "service.name",
             "value": {
-              "stringValue": "support-triage"
+              "stringValue": "support-triage-agent"
             }
           },
           {
@@ -162,7 +162,7 @@
                 {
                   "key": "traceloop.workflow.name",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {
@@ -198,7 +198,7 @@
                 {
                   "key": "gen_ai.output.messages",
                   "value": {
-                    "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"tool_call\",\"id\":\"call_9RtYbK2mXqLp\",\"name\":\"lookup_order\",\"arguments\":{\"order_id\":\"A-1187\"}}],\"finish_reason\":\"tool_calls\"}]"
+                    "stringValue": "[{\"role\":\"assistant\",\"parts\":[{\"type\":\"tool_call\",\"id\":\"call_9RtYbK2mXqLp\",\"name\":\"lookup_order\",\"arguments\":{\"order_id\":\"A-1187\"}}],\"finish_reason\":\"tool_call\"}]"
                   }
                 },
                 {
@@ -267,7 +267,7 @@
                     "arrayValue": {
                       "values": [
                         {
-                          "stringValue": "tool_calls"
+                          "stringValue": "tool_call"
                         }
                       ]
                     }
@@ -312,7 +312,7 @@
                 {
                   "key": "gen_ai.workflow.name",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {
@@ -358,6 +358,12 @@
                   "key": "interlingua.lossy.count",
                   "value": {
                     "intValue": "4"
+                  }
+                },
+                {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "731a97a6a88ed466"
                   }
                 },
                 {

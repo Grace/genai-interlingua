@@ -47,8 +47,8 @@ the dialect parsed it.
 | `gen_ai.request.stop_sequences` | y | y | - | - | - | y | - | - |
 | `gen_ai.request.stream` | y | y | - | - | - | y | - | - |
 | `gen_ai.response.id` | y | y | - | - | - | y | y | y |
-| `gen_ai.response.model` | y | y | y | y | - | y | y | y |
-| `gen_ai.response.finish_reasons` | y | y | - | - | y | y | y | y |
+| `gen_ai.response.model` | y | y | y | y | y | y | y | y |
+| `gen_ai.response.finish_reasons` | y | y | - | y | y | y | y | y |
 | `gen_ai.usage.input_tokens` | y | y | y | y | y | y | y | y |
 | `gen_ai.usage.cache_read.input_tokens` | y | y | - | - | y | - | - | - |
 | `gen_ai.usage.cache_write.input_tokens` | y | y | - | - | - | y | - | - |
@@ -62,8 +62,8 @@ the dialect parsed it.
 | `gen_ai.tool.call.result` | y | y | - | - | - | - | - | y |
 | `gen_ai.tool.definitions` | y | y | - | y | y | y | - | y |
 | `gen_ai.operation.name` | y | y | y | y | y | y | y | y |
-| `gen_ai.input.messages` | y | y | - | y | y | y | y | y |
-| `gen_ai.output.messages` | y | y | - | y | y | y | y | y |
+| `gen_ai.input.messages` | y | y | y | y | y | y | y | y |
+| `gen_ai.output.messages` | y | y | y | y | y | y | y | y |
 | `gen_ai.evaluation.name` | y | y | y | - | - | - | - | - |
 | `gen_ai.evaluation.score.value` | y | y | y | - | - | - | - | - |
 | `gen_ai.prompt.name` | y | y | - | - | - | y | - | - |
@@ -82,7 +82,7 @@ reports on the span itself.
 ### braintrust
 
 - **no_field** — `braintrust.expected_json`, `braintrust.metadata`, `braintrust.metrics`, `braintrust.span_attributes`, `braintrust.tags`
-- **unstructured** — `braintrust.context_json`, `braintrust.input_json`, `braintrust.output_json`
+- **unstructured** — `braintrust.context_json`
 - **flattened** — `braintrust.scores`
 
 ### litellm
@@ -92,7 +92,7 @@ reports on the span itself.
 ### openinference
 
 - **no_field** — `input.mime_type`, `llm.token_count.total`, `output.mime_type`
-- **unstructured** — `input.value`, `llm.invocation_parameters`, `output.value`
+- **unstructured** — `input.value`, `output.value`
 - **flattened** — `llm.input_messages.*`, `llm.output_messages.*`
 
 ### openllmetry
@@ -124,9 +124,9 @@ the default target is a decision rather than a constant.
   - **no_attribute** — `gen_ai.usage.audio.input_tokens`, `gen_ai.usage.audio.output_tokens`
 - openllmetry
   - **no_attribute** — `gen_ai.prompt.version`
-  - **no_value** — `gen_ai.provider.name`
+  - **no_value** — `gen_ai.operation.name`, `gen_ai.provider.name`
 
 ### genai-main
 
 - openllmetry
-  - **no_value** — `gen_ai.provider.name`
+  - **no_value** — `gen_ai.operation.name`, `gen_ai.provider.name`

@@ -19,178 +19,25 @@
           },
           "spans": [
             {
-              "traceId": "85ebdb4d13864fa11366570a33194c67",
-              "spanId": "ac8b47bbdc82ad55",
-              "parentSpanId": "65c9090446d31433",
-              "flags": 257,
-              "name": "ai.toolCall",
-              "kind": 1,
-              "startTimeUnixNano": "1788788016873000000",
-              "endTimeUnixNano": "1788788016873241417",
-              "attributes": [
-                {
-                  "key": "operation.name",
-                  "value": {
-                    "stringValue": "ai.toolCall support_triage"
-                  }
-                },
-                {
-                  "key": "resource.name",
-                  "value": {
-                    "stringValue": "support_triage"
-                  }
-                },
-                {
-                  "key": "ai.operationId",
-                  "value": {
-                    "stringValue": "ai.toolCall"
-                  }
-                },
-                {
-                  "key": "ai.telemetry.functionId",
-                  "value": {
-                    "stringValue": "support_triage"
-                  }
-                },
-                {
-                  "key": "ai.toolCall.name",
-                  "value": {
-                    "stringValue": "lookup_order"
-                  }
-                },
-                {
-                  "key": "ai.toolCall.id",
-                  "value": {
-                    "stringValue": "call_9RtYbK2mXqLp"
-                  }
-                },
-                {
-                  "key": "ai.toolCall.args",
-                  "value": {
-                    "stringValue": "{\"order_id\":\"A-1187\"}"
-                  }
-                },
-                {
-                  "key": "ai.toolCall.result",
-                  "value": {
-                    "stringValue": "{\"order_id\":\"A-1187\",\"status\":\"in transit\"}"
-                  }
-                },
-                {
-                  "key": "gen_ai.operation.name",
-                  "value": {
-                    "stringValue": "execute_tool"
-                  }
-                },
-                {
-                  "key": "gen_ai.tool.call.arguments",
-                  "value": {
-                    "stringValue": "{\"order_id\":\"A-1187\"}"
-                  }
-                },
-                {
-                  "key": "gen_ai.tool.call.id",
-                  "value": {
-                    "stringValue": "call_9RtYbK2mXqLp"
-                  }
-                },
-                {
-                  "key": "gen_ai.tool.call.result",
-                  "value": {
-                    "stringValue": "{\"order_id\":\"A-1187\",\"status\":\"in transit\"}"
-                  }
-                },
-                {
-                  "key": "gen_ai.tool.name",
-                  "value": {
-                    "stringValue": "lookup_order"
-                  }
-                },
-                {
-                  "key": "gen_ai.workflow.name",
-                  "value": {
-                    "stringValue": "support_triage"
-                  }
-                },
-                {
-                  "key": "interlingua.dialect",
-                  "value": {
-                    "stringValue": "vercel"
-                  }
-                },
-                {
-                  "key": "interlingua.dialect.confidence",
-                  "value": {
-                    "intValue": "4"
-                  }
-                },
-                {
-                  "key": "interlingua.hops",
-                  "value": {
-                    "intValue": "1"
-                  }
-                },
-                {
-                  "key": "interlingua.lossy.count",
-                  "value": {
-                    "intValue": "0"
-                  }
-                },
-                {
-                  "key": "interlingua.target",
-                  "value": {
-                    "stringValue": "v1.41.0"
-                  }
-                }
-              ],
-              "events": [],
-              "links": [],
-              "status": {
-                "code": 0
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "resource": {
-        "attributes": [
-          {
-            "key": "service.name",
-            "value": {
-              "stringValue": "capture"
-            }
-          }
-        ],
-        "droppedAttributesCount": 0
-      },
-      "scopeSpans": [
-        {
-          "scope": {
-            "name": "ai"
-          },
-          "spans": [
-            {
-              "traceId": "85ebdb4d13864fa11366570a33194c67",
-              "spanId": "abfee917dad68884",
-              "parentSpanId": "65c9090446d31433",
+              "traceId": "4ef604eea4bfdd5d35d597bf95347808",
+              "spanId": "3a02c9353bcbd929",
+              "parentSpanId": "7d432baf4483b988",
               "flags": 257,
               "name": "ai.generateText.doGenerate",
               "kind": 1,
-              "startTimeUnixNano": "1788788016851000000",
-              "endTimeUnixNano": "1788788016870754458",
+              "startTimeUnixNano": "1789123131206000000",
+              "endTimeUnixNano": "1789123131238221667",
               "attributes": [
                 {
                   "key": "operation.name",
                   "value": {
-                    "stringValue": "ai.generateText.doGenerate support_triage"
+                    "stringValue": "ai.generateText.doGenerate support_triage_agent"
                   }
                 },
                 {
                   "key": "resource.name",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {
@@ -202,7 +49,7 @@
                 {
                   "key": "ai.telemetry.functionId",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {
@@ -379,7 +226,7 @@
                     "arrayValue": {
                       "values": [
                         {
-                          "stringValue": "tool_calls"
+                          "stringValue": "tool_call"
                         }
                       ]
                     }
@@ -418,7 +265,7 @@
                 {
                   "key": "gen_ai.workflow.name",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {
@@ -476,6 +323,24 @@
                   }
                 },
                 {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "731a97a6a88ed466"
+                  }
+                },
+                {
+                  "key": "interlingua.replaced.gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "tool-calls"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "v1.41.0"
@@ -511,24 +376,24 @@
           },
           "spans": [
             {
-              "traceId": "85ebdb4d13864fa11366570a33194c67",
-              "spanId": "65c9090446d31433",
+              "traceId": "4ef604eea4bfdd5d35d597bf95347808",
+              "spanId": "7d432baf4483b988",
               "flags": 257,
               "name": "ai.generateText",
               "kind": 1,
-              "startTimeUnixNano": "1788788016849000000",
-              "endTimeUnixNano": "1788788016874767334",
+              "startTimeUnixNano": "1789123131203000000",
+              "endTimeUnixNano": "1789123131243146917",
               "attributes": [
                 {
                   "key": "operation.name",
                   "value": {
-                    "stringValue": "ai.generateText support_triage"
+                    "stringValue": "ai.generateText support_triage_agent"
                   }
                 },
                 {
                   "key": "resource.name",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {
@@ -540,7 +405,7 @@
                 {
                   "key": "ai.telemetry.functionId",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {
@@ -657,7 +522,7 @@
                     "arrayValue": {
                       "values": [
                         {
-                          "stringValue": "tool_calls"
+                          "stringValue": "tool_call"
                         }
                       ]
                     }
@@ -678,7 +543,7 @@
                 {
                   "key": "gen_ai.workflow.name",
                   "value": {
-                    "stringValue": "support_triage"
+                    "stringValue": "support_triage_agent"
                   }
                 },
                 {
@@ -730,6 +595,171 @@
                   "key": "interlingua.lossy.count",
                   "value": {
                     "intValue": "6"
+                  }
+                },
+                {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "731a97a6a88ed466"
+                  }
+                },
+                {
+                  "key": "interlingua.target",
+                  "value": {
+                    "stringValue": "v1.41.0"
+                  }
+                }
+              ],
+              "events": [],
+              "links": [],
+              "status": {
+                "code": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "capture"
+            }
+          }
+        ],
+        "droppedAttributesCount": 0
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "ai"
+          },
+          "spans": [
+            {
+              "traceId": "4ef604eea4bfdd5d35d597bf95347808",
+              "spanId": "8be7df145a4757d4",
+              "parentSpanId": "7d432baf4483b988",
+              "flags": 257,
+              "name": "ai.toolCall",
+              "kind": 1,
+              "startTimeUnixNano": "1789123131240000000",
+              "endTimeUnixNano": "1789123131240180875",
+              "attributes": [
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "ai.toolCall support_triage_agent"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "support_triage_agent"
+                  }
+                },
+                {
+                  "key": "ai.operationId",
+                  "value": {
+                    "stringValue": "ai.toolCall"
+                  }
+                },
+                {
+                  "key": "ai.telemetry.functionId",
+                  "value": {
+                    "stringValue": "support_triage_agent"
+                  }
+                },
+                {
+                  "key": "ai.toolCall.name",
+                  "value": {
+                    "stringValue": "lookup_order"
+                  }
+                },
+                {
+                  "key": "ai.toolCall.id",
+                  "value": {
+                    "stringValue": "call_9RtYbK2mXqLp"
+                  }
+                },
+                {
+                  "key": "ai.toolCall.args",
+                  "value": {
+                    "stringValue": "{\"order_id\":\"A-1187\"}"
+                  }
+                },
+                {
+                  "key": "ai.toolCall.result",
+                  "value": {
+                    "stringValue": "{\"order_id\":\"A-1187\",\"status\":\"in transit\"}"
+                  }
+                },
+                {
+                  "key": "gen_ai.operation.name",
+                  "value": {
+                    "stringValue": "execute_tool"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.call.arguments",
+                  "value": {
+                    "stringValue": "{\"order_id\":\"A-1187\"}"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.call.id",
+                  "value": {
+                    "stringValue": "call_9RtYbK2mXqLp"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.call.result",
+                  "value": {
+                    "stringValue": "{\"order_id\":\"A-1187\",\"status\":\"in transit\"}"
+                  }
+                },
+                {
+                  "key": "gen_ai.tool.name",
+                  "value": {
+                    "stringValue": "lookup_order"
+                  }
+                },
+                {
+                  "key": "gen_ai.workflow.name",
+                  "value": {
+                    "stringValue": "support_triage_agent"
+                  }
+                },
+                {
+                  "key": "interlingua.dialect",
+                  "value": {
+                    "stringValue": "vercel"
+                  }
+                },
+                {
+                  "key": "interlingua.dialect.confidence",
+                  "value": {
+                    "intValue": "4"
+                  }
+                },
+                {
+                  "key": "interlingua.hops",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "731a97a6a88ed466"
                   }
                 },
                 {

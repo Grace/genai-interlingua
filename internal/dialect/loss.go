@@ -2,6 +2,8 @@
 
 package dialect
 
+import "github.com/Grace/genai-interlingua/internal/semconv"
+
 // Reason is why a source attribute did not survive into the IR. The set is
 // closed and small on purpose: COMPATIBILITY.md is organized by these codes, and
 // a reason that cannot be explained in one sentence is not a reason.
@@ -36,6 +38,11 @@ type Loss struct {
 	Key    string
 	Reason Reason
 	Detail string
+
+	// Candidates are the fields an ambiguous value could have meant, so a
+	// reader can see what the translator declined to choose between. Empty for
+	// every other reason.
+	Candidates []semconv.Field
 }
 
 // LossKeys returns the source attribute keys in a loss list. This is the value

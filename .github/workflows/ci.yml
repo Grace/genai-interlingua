@@ -76,7 +76,7 @@ jobs:
       - name: regenerating is a no-op
         run: |
           go test ./internal/normalize -update
-          if ! git diff --exit-code -- testdata/ docs/conformance.md; then
+          if ! git diff --exit-code -- testdata/ docs/conformance.md docs/conformance.json; then
             echo "::error::-update was not idempotent; generated output is unstable"
             exit 1
           fi
@@ -260,3 +260,36 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  inspector:
+    name: the demo inspector
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v5.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: demos/inspector/package-lock.json
+
+      # The page is TypeScript over the WASM build of this repository, and until
+      # this job existed nothing in CI compiled it. A broken inspector could land
+      # on main with every check green, which is close to what happened: a Go nil
+      # slice encodes as null, the page read .length off it, React unmounted the
+      # whole tree, and one capture rendered a blank document. The types said the
+      # field was an array and were believed -- a declaration about what crosses a
+      # JSON boundary is a claim, not a check.
+      # The inspector shows a note beside every span name, from demos/spans.json.
+      # samples.py refuses to write when a fixture span has no note or a note
+      # names a span no fixture carries, so a re-capture that adds or renames a
+      # span fails here instead of reaching the page unexplained.
+      - name: span notes cover every fixture span
+        run: python3 demos/samples.py "$RUNNER_TEMP/samples.js"
+
+      - name: typecheck and build
+        working-directory: demos/inspector
+        run: |
+          npm ci
+          npm run typecheck
+          npm run build

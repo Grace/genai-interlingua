@@ -11,12 +11,12 @@
 #   gen_ai.response.model                      (emitted conformant; no statement needed)
 #   gen_ai.usage.input_tokens                  (PARTIAL; see below)
 #   gen_ai.usage.output_tokens                 (PARTIAL; see below)
-#   gen_ai.input.messages                      (emitted conformant; no statement needed)
-#   gen_ai.output.messages                     (emitted conformant; no statement needed)
+#   gen_ai.input.messages                      (PARTIAL; see below)
+#   gen_ai.output.messages                     (PARTIAL; see below)
 #   gen_ai.operation.name                      (PARTIAL; see below)
 #   gen_ai.tool.definitions
 #
-# WHAT THIS CARRIES ONLY SOMETIMES (3 attributes)
+# WHAT THIS CARRIES ONLY SOMETIMES (5 attributes)
 #
 #   This emitter writes these facts two ways: as the conventions' own
 #   attributes, which the statements below handle, and inside its own
@@ -28,7 +28,9 @@
 #   named here is not a weaker warning than being named there -- it is
 #   the same warning with a reason attached. Do not trust these.
 #
+#   gen_ai.input.messages
 #   gen_ai.operation.name
+#   gen_ai.output.messages
 #   gen_ai.usage.input_tokens
 #   gen_ai.usage.output_tokens
 #
@@ -102,5 +104,5 @@ processors:
           - set(attributes["interlingua.hops"], attributes["interlingua.hops"] + 1) where attributes["interlingua.hops"] != nil
           - set(attributes["interlingua.hops"], 1) where attributes["interlingua.hops"] == nil
           - set(attributes["interlingua.export"], "ottl")
-          - set(attributes["interlingua.export.unsupported"], ["gen_ai.evaluation.name", "gen_ai.evaluation.score.value", "gen_ai.operation.name", "gen_ai.usage.cache_read.input_tokens", "gen_ai.usage.input_tokens", "gen_ai.usage.output_tokens", "gen_ai.usage.reasoning.output_tokens"])
-          - set(attributes["interlingua.export.partial"], ["gen_ai.operation.name", "gen_ai.usage.input_tokens", "gen_ai.usage.output_tokens"])
+          - set(attributes["interlingua.export.unsupported"], ["gen_ai.evaluation.name", "gen_ai.evaluation.score.value", "gen_ai.input.messages", "gen_ai.operation.name", "gen_ai.output.messages", "gen_ai.usage.cache_read.input_tokens", "gen_ai.usage.input_tokens", "gen_ai.usage.output_tokens", "gen_ai.usage.reasoning.output_tokens"])
+          - set(attributes["interlingua.export.partial"], ["gen_ai.input.messages", "gen_ai.operation.name", "gen_ai.output.messages", "gen_ai.usage.input_tokens", "gen_ai.usage.output_tokens"])

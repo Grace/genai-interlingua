@@ -114,6 +114,39 @@ attributes:
       it.
     examples: [1, 2]
 
+  - key: interlingua.mapping
+    type: string
+    stability: development
+    brief: A digest of the mapping rules that produced this span.
+    note: >
+      `interlingua.target` answers "what is this span supposed to be". This
+      answers "which build of the translator decided that", which is the
+      question a reader actually has when two spans that should agree do not.
+      Without it, a disagreement between two spans is indistinguishable from a
+      disagreement between two versions of this tool.
+
+      It covers the declared mapping rules, and it does not cover everything: see
+      `dialect.Digest` for exactly what goes into it and what cannot. A digest
+      that changed tells you the rules moved; a digest that did not is not a
+      promise that nothing else did.
+    examples: ["731a97a6a88ed466"]
+
+  - key: interlingua.replaced
+    type: template[string]
+    stability: development
+    brief: The value a rewrite replaced, under the key it replaced it for.
+    note: >
+      Prefixed rather than listed. `interlingua.lossy` answers "which keys is
+      this span not a faithful carrier of", which is a question about keys. The
+      useful question here is "what did this key say before", and that needs the
+      value beside the key to be answerable at all -- so the old value is written
+      at `interlingua.replaced.<key>` rather than collected into a list.
+
+      Only written where a rewrite actually changed a value. A key this tool
+      rewrote to the same value it already had does not appear, because nothing
+      was lost and an entry saying so would be noise in every span.
+    examples: ["assistant"]
+
   - key: interlingua.export
     type: string
     stability: development

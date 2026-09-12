@@ -18,12 +18,12 @@ that count comes from.
 
 | dialect | target | mappings | representable | processor | OTTL | schema file |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| `braintrust` | `v1.41.0` | 13 | 13 | 13 | 6 | 5 |
-| `braintrust` | `genai-main` | 13 | 13 | 13 | 6 | 5 |
+| `braintrust` | `v1.41.0` | 13 | 13 | 13 | 4 | 3 |
+| `braintrust` | `genai-main` | 13 | 13 | 13 | 4 | 3 |
 | `litellm` | `v1.41.0` | 24 | 24 | 24 | 20 | 18 |
 | `litellm` | `genai-main` | 24 | 24 | 24 | 20 | 18 |
-| `openinference` | `v1.41.0` | 31 | 29 | 29 | 11 | 8 |
-| `openinference` | `genai-main` | 31 | 31 | 31 | 15 | 10 |
+| `openinference` | `v1.41.0` | 32 | 30 | 30 | 9 | 8 |
+| `openinference` | `genai-main` | 32 | 32 | 32 | 13 | 10 |
 | `openllmetry` | `v1.41.0` | 27 | 26 | 26 | 18 | 15 |
 | `openllmetry` | `genai-main` | 27 | 27 | 27 | 20 | 16 |
 | `vercel` | `v1.41.0` | 25 | 25 | 25 | 20 | 11 |
@@ -39,12 +39,12 @@ format succeeding:
 
 | dialect | target | renames written | needed no rename | could not be expressed |
 | --- | --- | ---: | ---: | ---: |
-| `braintrust` | `v1.41.0` | 1 | 4 | 8 |
-| `braintrust` | `genai-main` | 1 | 4 | 8 |
+| `braintrust` | `v1.41.0` | 1 | 2 | 10 |
+| `braintrust` | `genai-main` | 1 | 2 | 10 |
 | `litellm` | `v1.41.0` | 0 | 18 | 6 |
 | `litellm` | `genai-main` | 1 | 17 | 6 |
-| `openinference` | `v1.41.0` | 8 | 0 | 23 |
-| `openinference` | `genai-main` | 10 | 0 | 21 |
+| `openinference` | `v1.41.0` | 8 | 0 | 24 |
+| `openinference` | `genai-main` | 10 | 0 | 22 |
 | `openllmetry` | `v1.41.0` | 9 | 6 | 12 |
 | `openllmetry` | `genai-main` | 10 | 6 | 11 |
 | `vercel` | `v1.41.0` | 5 | 6 | 14 |
@@ -65,12 +65,12 @@ cannot rewrite a value" is.
 | --- | --- | ---: |
 | `value_transform` | the value changes, not the name: provider aliases, operation aliases, case folding, unit conversion | 16 |
 | `scalar_to_list` | the target types the attribute as an array and the emitter writes a scalar; a rename cannot change a type | 4 |
-| `ambiguous_precedence` | two source spellings for one field where the newer wins; `attribute_map` carries both entries but not the ordering | 22 |
+| `ambiguous_precedence` | two source spellings for one field where the newer wins; `attribute_map` carries both entries but not the ordering | 20 |
 | `closed_value_set` | the target admits a fixed set of values and the emitter can produce others; there is no conditional drop | 2 |
 | `no_attribute` | the target schema has no attribute for this field, so there is nothing to rename to | 3 |
-| `not_a_name` | a reading of the span rather than a transformation of an attribute | 76 |
+| `not_a_name` | a reading of the span rather than a transformation of an attribute | 84 |
 
-`value_transform`, `scalar_to_list`, `ambiguous_precedence` and `closed_value_set` are what a format change could fix: 44 mappings that fail only because
+`value_transform`, `scalar_to_list`, `ambiguous_precedence` and `closed_value_set` are what a format change could fix: 42 mappings that fail only because
 the format has no transformation for them. That is the room
 [OTEP 0152](https://github.com/open-telemetry/opentelemetry-specification/blob/main/oteps/0152-telemetry-schemas.md)
 left when it held the transformation set to "the bare minimum ... with more

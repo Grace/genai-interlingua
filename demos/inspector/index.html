@@ -1,0 +1,499 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Normalization inspector — genai-interlingua</title>
+<link rel="icon" href="data:,">
+
+<style>
+/* One palette, stated once. The ground is a cool slate rather than a neutral
+   grey: the subject is telemetry, and the accents have to read as a judgement
+   without any of them looking like an error. Teal marks a value the tool
+   produced, the muted ink marks what the library originally wrote, and red is
+   reserved for loss -- the only thing on this page a reader might act on. */
+:root {
+  color-scheme: light;
+  --bg: #f6f7f9;
+  --panel: #ffffff;
+  --ink: #16191d;
+  --ink-dim: #5b646e;
+  --ink-faint: #8b949e;
+  --line: #dfe3e8;
+  --rule-soft: #eceff2;
+  --src: #6a737d;
+  --dst: #0f6f6a;
+  --dst-bg: #e2f2f0;
+  --loss: #a03027;
+  --loss-bg: #fbe9e7;
+  --derived: #8a5a00;
+  --add: #1a6b32;
+  --add-bg: #e5f3e8;
+  --fold-bg: #f0f2f5;
+  --accent: #0f6f6a;
+  --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #14171b;
+    --panel: #1c2026;
+    --ink: #e8ebee;
+    --ink-dim: #a4adb7;
+    --ink-faint: #727c87;
+    --line: #2b313a;
+    --rule-soft: #232830;
+    --src: #98a2ad;
+    --dst: #63c9c0;
+    --dst-bg: #14322f;
+    --loss: #f08a80;
+    --loss-bg: #3a1f1c;
+    --derived: #e0ab54;
+    --add: #77c98c;
+    --add-bg: #17301f;
+    --fold-bg: #222830;
+    --accent: #63c9c0;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 2.5rem 1.5rem 5rem;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Two measures on one page, because they are two different things.
+   The tool is an instrument and wants room: a Sankey squeezed into an article
+   column is a diagram of a diagram. The prose below it is read left to right by
+   a person and wants roughly 65 characters, which is what 48rem buys. Reading
+   the page top to bottom you meet the product first and the explanation only if
+   you want it. */
+main { max-width: 90rem; margin: 0 auto; padding: 0 .5rem; }
+.essay { max-width: 48rem; margin: 4rem auto 0; padding-top: 2rem; border-top: 1px solid var(--line); }
+.essay header { padding-bottom: 0; border-bottom: 0; }
+
+.masthead { display: flex; flex-wrap: wrap; align-items: baseline; gap: .75rem 1.25rem; margin-bottom: 1.5rem; }
+.masthead h1 { margin: 0; font-size: 1.5rem; letter-spacing: -.015em; }
+.masthead p { margin: 0; color: var(--ink-dim); font-size: .95rem; }
+
+code { font-family: var(--mono); font-size: .9em; }
+
+/* ---- the first screen ---- */
+
+header { padding-bottom: 2rem; border-bottom: 1px solid var(--line); }
+
+h1 {
+  margin: 0 0 1rem;
+  font-size: 1.85rem;
+  line-height: 1.25;
+  letter-spacing: -.015em;
+  text-wrap: balance;
+}
+
+.lead { margin: 0 0 1.25rem; max-width: 46rem; color: var(--ink-dim); }
+.lead:last-child { margin-bottom: 0; }
+
+table.problem {
+  border-collapse: collapse;
+  margin: 0 0 1.5rem;
+  font-size: .82rem;
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+table.problem th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--ink-dim);
+  padding: .4rem 1.25rem .4rem 0;
+  white-space: nowrap;
+}
+table.problem thead th {
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-faint);
+  border-bottom: 1px solid var(--line);
+}
+table.problem td {
+  padding: .4rem 1.25rem .4rem 0;
+  border-bottom: 1px solid var(--rule-soft);
+  white-space: nowrap;
+}
+table.problem tbody th { border-bottom: 1px solid var(--rule-soft); }
+table.problem tr.goal th { color: var(--ink); }
+table.problem tr.goal code { color: var(--dst); font-weight: 600; }
+table.problem tr.goal th, table.problem tr.goal td { border-bottom: 0; }
+
+/* ---- controls ---- */
+
+.controls { display: flex; flex-wrap: wrap; gap: 2rem; margin: 1.75rem 0 .5rem; }
+.controls label { display: flex; flex-direction: column; gap: .35rem; }
+.controls > label > span {
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-faint);
+}
+.controls small { font-size: .76rem; color: var(--ink-faint); }
+select {
+  font: inherit;
+  padding: .45rem .6rem;
+  min-width: 15rem;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.spans { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin: 1.5rem 0 0; }
+.spans .label { font-size: .8rem; color: var(--ink-faint); margin-right: .3rem; }
+.spans button {
+  font: 600 .8rem/1 var(--mono);
+  padding: .38rem .65rem;
+  background: var(--panel);
+  color: var(--ink-dim);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.spans button.on { color: var(--ink); border-color: var(--accent); }
+.spans button .role {
+  margin-left: .45rem;
+  font: 400 .72rem/1 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--ink-faint);
+}
+.spans button.on .role { color: var(--ink-dim); }
+
+.scenario { margin: .9rem 0 0; font-size: .8rem; color: var(--ink-dim); max-width: 46rem; }
+.scenario code { font-size: .76rem; }
+
+/* ---- one span ---- */
+
+.headline { margin: 2.25rem 0 2rem; }
+.headline h2 { margin: 0 0 .5rem; font-size: 1.05rem; }
+.headline h2 code { font-size: 1rem; color: var(--ink); }
+.summary { margin: 0 0 .4rem; font-size: 1.05rem; line-height: 1.5; text-wrap: pretty; }
+.detected { margin: 0; font-size: .85rem; color: var(--ink-dim); }
+.detected strong { color: var(--ink); font-weight: 600; }
+.hint { color: var(--ink-faint); cursor: help; border-bottom: 1px dotted var(--line); }
+.about { margin: 0 0 .7rem; font-size: .88rem; line-height: 1.5; color: var(--ink-dim); max-width: 46rem; }
+.about .role {
+  display: inline-block;
+  margin-right: .35rem;
+  padding: .22rem .42rem;
+  font: 600 .66rem/1 var(--mono);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--ink-dim);
+  background: var(--fold-bg);
+  border-radius: 4px;
+  vertical-align: .08rem;
+}
+
+.group { margin: 0 0 2.25rem; }
+.group h3 {
+  margin: 0 0 .3rem;
+  font-size: .95rem;
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+}
+.group h4 {
+  margin: 1.5rem 0 .3rem;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.count {
+  font: 600 .7rem/1 var(--mono);
+  color: var(--ink-faint);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: .22rem .45rem;
+}
+.lede { margin: 0 0 .85rem; font-size: .83rem; color: var(--ink-dim); max-width: 46rem; }
+
+.group table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.group thead th {
+  text-align: left;
+  font-size: .66rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-faint);
+  font-weight: 600;
+  padding: 0 1rem .4rem 0;
+  border-bottom: 1px solid var(--line);
+  width: 50%;
+}
+.group tbody td {
+  padding: .5rem 1rem .5rem 0;
+  border-bottom: 1px solid var(--rule-soft);
+  vertical-align: top;
+  word-break: break-word;
+}
+.group tbody tr:last-child td { border-bottom: 0; }
+.group tbody td:last-child { padding-right: 0; }
+
+.src { color: var(--src); }
+.dst { color: var(--dst); font-weight: 600; }
+.muted { color: var(--ink-faint); }
+
+/* The value sits under its key rather than beside it: keys are long, values are
+   longer, and two columns of each would give four things fighting for one row. */
+.value {
+  display: block;
+  margin-top: .18rem;
+  font-family: var(--mono);
+  font-size: .78rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.value.muted { color: var(--ink-faint); }
+.value.empty { font-style: italic; color: var(--ink-faint); font-family: inherit; }
+button.value {
+  text-align: left;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: inherit;
+}
+button.value:hover { color: var(--accent); }
+
+ul.loss { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .9rem; }
+ul.loss li { font-size: .84rem; }
+ul.loss code { color: var(--loss); }
+ul.loss p { margin: .2rem 0 0; color: var(--ink-dim); }
+.reason {
+  display: inline-block;
+  font: 600 .66rem/1 var(--mono);
+  padding: .24rem .42rem;
+  border-radius: 4px;
+  margin-left: .5rem;
+  color: var(--loss);
+  background: var(--loss-bg);
+}
+.reason[title] { cursor: help; }
+.none { margin: 0; font-size: .85rem; color: var(--ink-faint); }
+
+.legend { margin: 1.25rem 0 0; display: flex; flex-direction: column; gap: .35rem; max-width: 46rem; }
+.legend > div { display: flex; align-items: baseline; gap: .6rem; font-size: .8rem; color: var(--ink-dim); }
+.legend dt, .legend dd { margin: 0; }
+.legend .reason { margin-left: 0; white-space: nowrap; }
+
+.payloads { display: flex; flex-direction: column; gap: .6rem; margin: 2.5rem 0 1.5rem; }
+details summary { cursor: pointer; font-size: .85rem; color: var(--ink-dim); }
+details summary:hover { color: var(--accent); }
+details pre {
+  margin: .7rem 0 0;
+  padding: 1rem;
+  max-height: 26rem;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-family: var(--mono);
+  font-size: .74rem;
+  line-height: 1.5;
+}
+
+.footnote {
+  margin: 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  font-size: .78rem;
+  color: var(--ink-faint);
+  max-width: 46rem;
+}
+.footnote code { color: var(--ink-dim); }
+
+/* ---- the flow ---- */
+
+.flow { margin: 1.75rem 0 2.25rem; }
+.flow svg { display: block; max-width: 100%; height: auto; overflow: visible; }
+.flow figcaption {
+  margin: .9rem auto 0;
+  max-width: 44rem;
+  font-size: .8rem;
+  color: var(--ink-dim);
+}
+
+/* Links are strokes, not fills; d3-sankey gives a path whose width is the
+   stroke width, so a fill would paint a solid blob under every band. */
+.flow .link { fill: none; stroke-opacity: .34; }
+.flow .link.carried { stroke: var(--dst); }
+.flow .link.rebuilt { stroke: var(--derived); }
+.flow .link.lost { stroke: var(--loss); }
+
+.flow .node { stroke: none; }
+.flow .node.carried { fill: var(--dst); }
+.flow .node.rebuilt { fill: var(--derived); }
+.flow .node.lost { fill: var(--loss); }
+
+.flow .nodelabel {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  fill: var(--ink-dim);
+}
+.flow .nodelabel.lost { fill: var(--loss); }
+
+/* ---- what becomes of the emitter's own attributes ---- */
+
+.origs { margin: 0 0 1.5rem; }
+.origs .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.origs .seg button {
+  font: inherit; font-size: .82rem; font-family: var(--mono);
+  padding: .3rem .8rem; border: 0; border-right: 1px solid var(--line);
+  background: var(--panel); color: var(--ink-dim); cursor: pointer;
+}
+.origs .seg button:last-child { border-right: 0; }
+.origs .seg button[aria-pressed="true"] { background: var(--dst-bg); color: var(--dst); font-weight: 600; }
+.origbars { margin-top: .8rem; display: flex; flex-direction: column; gap: .3rem; }
+.origrow { display: grid; grid-template-columns: 4.5rem 1fr 2.5rem auto; align-items: center; gap: .6rem; font-size: .78rem; }
+.origrow .k { font-family: var(--mono); color: var(--ink-faint); }
+.origrow.on .k { color: var(--ink); font-weight: 600; }
+.origrow .t { height: .75rem; background: var(--rule-soft); border-radius: 2px; overflow: hidden; }
+.origrow .t i { display: block; height: 100%; background: var(--ink-faint);
+  transition: width .45s cubic-bezier(.4,0,.2,1); }
+.origrow.on .t i { background: var(--dst); }
+.origrow .n { font-family: var(--mono); text-align: right; color: var(--ink-dim); }
+.origrow.on .n { color: var(--ink); font-weight: 600; }
+.origrow .d { color: var(--ink-faint); }
+.origwhy { margin: .7rem 0 0; font-size: .8rem; color: var(--ink-dim); max-width: 46rem; }
+
+/* ---- the stage: diagram, and the panel explaining a pinned path ---- */
+
+.stage { display: grid; grid-template-columns: 1fr; gap: 1.25rem; align-items: start; }
+.stage.pinned { grid-template-columns: minmax(0, 1fr) 24rem; }
+@media (max-width: 68rem) { .stage.pinned { grid-template-columns: 1fr; } }
+
+.flow .pickable { cursor: pointer; }
+.flow .picked .node { stroke: var(--ink); stroke-width: 2px; }
+/* Dimmed rather than hidden: the rest of the span is still context for the one
+   path being explained, and removing it would answer a narrower question than
+   the reader asked. */
+.flow .dimmed { opacity: .28; }
+
+.prov {
+  position: relative;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 1.1rem 1.25rem 1.25rem; font-size: .84rem;
+}
+.prov h3 { margin: 0 0 .2rem; font-size: .95rem; }
+.prov .qq { margin: 0 0 1rem; font-family: var(--mono); font-size: .82rem; color: var(--dst); word-break: break-all; }
+.prov dl { margin: 0; }
+.prow { padding: .5rem 0; border-top: 1px solid var(--rule-soft); }
+.prow:first-child { border-top: 0; padding-top: 0; }
+.prow dt { font-size: .66rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); margin-bottom: .22rem; }
+.prow dd { margin: 0; color: var(--ink-dim); line-height: 1.5; }
+.prow dd code { color: var(--ink); word-break: break-all; }
+.prov .foot { margin: 1rem 0 0; padding-top: .8rem; border-top: 1px solid var(--rule-soft);
+  font-size: .78rem; color: var(--ink-faint); }
+.prov .close {
+  position: absolute; top: .55rem; right: .6rem; width: 1.6rem; height: 1.6rem;
+  font-size: 1.1rem; line-height: 1; padding: 0; border: 1px solid var(--line);
+  border-radius: 6px; background: var(--bg); color: var(--ink-faint); cursor: pointer;
+}
+.prov .close:hover { color: var(--ink); border-color: var(--ink-faint); }
+
+.group tbody tr { cursor: pointer; }
+.group tbody tr:hover { background: var(--rule-soft); }
+.group tbody tr.picked { background: var(--dst-bg); }
+
+ul.loss li { cursor: pointer; }
+ul.loss li.picked code { text-decoration: underline; }
+
+/* ---- the diff ---- */
+
+.diff { margin: 2.5rem 0 1.5rem; }
+.diff > summary { font-size: .9rem; color: var(--ink); font-weight: 600; }
+.tally { margin-left: .6rem; font: 600 .78rem/1 var(--mono); }
+.tally .plus { color: var(--add); }
+.tally .minus { color: var(--loss); margin-left: .4rem; }
+
+.diffbody {
+  margin-top: .75rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: auto;
+  max-height: 34rem;
+  background: var(--panel);
+  font-family: var(--mono);
+  font-size: .73rem;
+  line-height: 1.55;
+}
+
+/* A grid rather than a table: the two gutters and the marker are fixed width,
+   the source takes the rest and scrolls with the container as one block, so the
+   line numbers cannot drift out of step with their lines. */
+.dl {
+  display: grid;
+  grid-template-columns: 3.2rem 3.2rem 1.2rem 1fr;
+  white-space: pre;
+  width: 100%;
+}
+.dl .ln {
+  text-align: right;
+  padding-right: .55rem;
+  color: var(--ink-faint);
+  user-select: none;
+  font-size: .68rem;
+}
+.dl .mark { text-align: center; color: var(--ink-faint); user-select: none; }
+.dl .src { padding-right: 1rem; }
+
+.dl.add { background: var(--add-bg); }
+.dl.add .mark, .dl.add .src { color: var(--add); }
+.dl.del { background: var(--loss-bg); }
+.dl.del .mark, .dl.del .src { color: var(--loss); }
+
+button.foldrow {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: .7rem;
+  padding: .25rem 0 .25rem 7.6rem;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: var(--fold-bg);
+  color: var(--ink-faint);
+  cursor: pointer;
+}
+button.foldrow:hover { color: var(--accent); }
+
+.footnotes {
+  margin: 2.5rem 0 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+  max-width: 46rem;
+}
+.footnotes p { margin: 0; font-size: .8rem; color: var(--ink-faint); }
+.footnotes strong { color: var(--ink-dim); font-weight: 600; }
+.footnotes code { color: var(--ink-dim); }
+
+.notice { margin: 2rem 0; color: var(--ink-dim); }
+.notice.error { color: var(--loss); }
+.notice.error h2 { font-size: 1rem; margin: 0 0 .5rem; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+
+<main id="app"></main>
+
+<script src="./wasm_exec.js"></script>
+<script src="./samples.js"></script>
+<script src="./inspector.js"></script>

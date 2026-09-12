@@ -53,6 +53,27 @@ func StrSeq(s []string) Value { return Value{Kind: KindStrSeq, StrSeq: s} }
 // Empty reports whether the value carries no payload.
 func (v Value) Empty() bool { return v.Kind == KindEmpty }
 
+// Equal reports whether two values carry the same payload of the same kind.
+// A Value is not comparable with == because of StrSeq, and an int 1 and a
+// string "1" are different facts however they render.
+func (v Value) Equal(o Value) bool {
+	if v.Kind != o.Kind {
+		return false
+	}
+	if v.Kind == KindStrSeq {
+		if len(v.StrSeq) != len(o.StrSeq) {
+			return false
+		}
+		for i := range v.StrSeq {
+			if v.StrSeq[i] != o.StrSeq[i] {
+				return false
+			}
+		}
+		return true
+	}
+	return v.Str == o.Str && v.Int == o.Int && v.Float == o.Float && v.Bool == o.Bool
+}
+
 // Span is the input side: one OTLP span reduced to the parts a dialect needs.
 // Attributes are the flat key/value map OTLP already gives us; nothing here
 // knows about resources or scopes, because no dialect signature depends on them.
@@ -111,10 +132,61 @@ type Parsed struct {
 	Fields     map[semconv.Field]Value
 	Consumed   []string
 	Loss       []Loss
+
+	// Source names the attribute the value under each field was read from,
+	// for the fields where that question has a single answer. A field absent
+	// from this map is not an omission: it was derived rather than renamed,
+	// by a method that read several attributes or none, and naming any one of
+	// them as its source would be a guess presented as a record. The two cases
+	// are kept distinct here for the same reason interlingua.lossy keeps
+	// "could not carry" distinct from "was never asked to" -- a blank means
+	// nobody can say, and that is worth being able to report.
+	Source map[semconv.Field]Origin
+
+	// Inputs names every attribute a derived field was rebuilt from: the
+	// fields Source leaves out because no one key produced them. All of them,
+	// because "derived from these" is the record and naming one would be the
+	// guess Source refuses to make.
+	Inputs map[semconv.Field][]string
+}
+
+// Origin is where one field's value came from.
+type Origin struct {
+	// Key is the source attribute.
+	Key string
+
+	// Lifted distinguishes a value taken out of a structured attribute from one
+	// read off a plain one.
+	//
+	// Both have a single source key, so both are attributable, but they are not
+	// the same act and a reader should not be shown them as if they were. A
+	// rename carries a value across: gen_ai.usage.prompt_tokens held 41 and
+	// gen_ai.usage.input_tokens holds 41. A lift reaches inside a document --
+	// braintrust.metrics is an entire JSON object and the field takes one
+	// number out of it -- so the source attribute's *value* is not the field's
+	// old value, it is the container it was in. Presenting the container as a
+	// before-value would show a reader a JSON blob turning into an integer and
+	// call it a transform.
+	Lifted bool
+
+	// When is the evidence the reading turned on, as the declared
+	// Interpretation states it -- traceloop.span.kind=tool -- or empty when the
+	// key alone decided. It is what lets a reader see that one key meant
+	// different things on two spans, and why.
+	When string
+
+	// BySpelling says the only evidence for the meaning was the key's name. See
+	// Interpretation.BySpelling.
+	BySpelling bool
 }
 
 // Set records a field, ignoring empty values so that callers can pass the result
 // of a failed lookup straight through without guarding every call.
+//
+// It also clears any source recorded for the field. A plain Set is the derived
+// case by definition -- the caller had a value and no single key to attribute it
+// to -- so when one overwrites a value a rule had renamed, the rule's key stops
+// being true of what the field now holds and must not survive the overwrite.
 func (p *Parsed) Set(f semconv.Field, v Value) {
 	if v.Empty() {
 		return
@@ -123,6 +195,86 @@ func (p *Parsed) Set(f semconv.Field, v Value) {
 		p.Fields = make(map[semconv.Field]Value)
 	}
 	p.Fields[f] = v
+	delete(p.Source, f)
+	delete(p.Inputs, f)
+}
+
+// setFrom records a field and the single source attribute it came from. The
+// source is recorded only if the value actually landed, so that a caller
+// passing an empty value through does not leave a key attributed to a field
+// that was never set.
+func (p *Parsed) setFrom(f semconv.Field, v Value, key string) {
+	p.setOrigin(f, v, Origin{Key: key})
+}
+
+// liftFrom is setFrom for a value taken out of a structured attribute. See
+// Origin.Lifted for why the two are not the same record.
+func (p *Parsed) liftFrom(f semconv.Field, v Value, key string) {
+	p.setOrigin(f, v, Origin{Key: key, Lifted: true})
+}
+
+// takeWhen is Take for a reading that turned on evidence elsewhere on the span,
+// recording that evidence the way the dialect's Interpretation declares it.
+func (p *Parsed) takeWhen(s Span, key string, f semconv.Field, when string) bool {
+	v, ok := s.Attr(key)
+	if !ok {
+		return false
+	}
+	p.setOrigin(f, v, Origin{Key: key, When: when})
+	p.Consumed = append(p.Consumed, key)
+	return true
+}
+
+// liftWhen is liftFrom for a lift that turned on evidence elsewhere on the span.
+func (p *Parsed) liftWhen(f semconv.Field, v Value, key, when string) {
+	p.setOrigin(f, v, Origin{Key: key, Lifted: true, When: when})
+}
+
+// setBySpelling records a field whose only evidence was the key's name. See
+// Interpretation.BySpelling.
+func (p *Parsed) setBySpelling(f semconv.Field, v Value, key string) {
+	p.setOrigin(f, v, Origin{Key: key, BySpelling: true})
+}
+
+// rebuild records a field assembled from several attributes, and every one of
+// them. Duplicates are dropped and the list sorted, so the record depends on
+// what was read rather than on the order the parser happened to read it in.
+func (p *Parsed) rebuild(f semconv.Field, v Value, inputs []string) {
+	p.Set(f, v)
+	if _, ok := p.Fields[f]; !ok || len(inputs) == 0 {
+		return
+	}
+	in := append([]string(nil), inputs...)
+	sort.Strings(in)
+	unique := in[:1]
+	for _, k := range in[1:] {
+		if k != unique[len(unique)-1] {
+			unique = append(unique, k)
+		}
+	}
+	if p.Inputs == nil {
+		p.Inputs = make(map[semconv.Field][]string)
+	}
+	p.Inputs[f] = unique
+}
+
+// ambiguous records a value the span does not carry the evidence to place, and
+// the fields it could have meant. Nothing is set: choosing one would be the
+// guess this exists to refuse.
+func (p *Parsed) ambiguous(key string, candidates []semconv.Field, detail string) {
+	p.Consumed = append(p.Consumed, key)
+	p.Loss = append(p.Loss, Loss{Key: key, Reason: ReasonAmbiguous, Detail: detail, Candidates: candidates})
+}
+
+func (p *Parsed) setOrigin(f semconv.Field, v Value, o Origin) {
+	p.Set(f, v)
+	if _, ok := p.Fields[f]; !ok {
+		return
+	}
+	if p.Source == nil {
+		p.Source = make(map[semconv.Field]Origin)
+	}
+	p.Source[f] = o
 }
 
 // Take reads key from span into field f, records the key as consumed, and
@@ -132,7 +284,7 @@ func (p *Parsed) Take(s Span, key string, f semconv.Field) bool {
 	if !ok {
 		return false
 	}
-	p.Set(f, v)
+	p.setFrom(f, v, key)
 	p.Consumed = append(p.Consumed, key)
 	return true
 }
@@ -211,6 +363,16 @@ func Dialects() []Dialect {
 	return out
 }
 
+// ByName returns the registered dialect with this name.
+func ByName(n Name) (Dialect, bool) {
+	for _, d := range registry {
+		if d.Name() == n {
+			return d, true
+		}
+	}
+	return nil, false
+}
+
 // fallback marks a dialect that recognizes spans by shape rather than by
 // signature, and is therefore consulted only when no dialect that knows what it
 // is looking at has claimed the span.
@@ -236,31 +398,61 @@ type fallback interface{ isFallback() }
 //
 // The second return is false when nothing claims the span at all: it carries no
 // GenAI evidence and should pass through untouched rather than be labeled.
-func Detect(s Span) (Dialect, int, bool) {
-	var best Dialect
-	var fallbacks []Dialect
-	high, second := 0, 0
+// Score is one dialect's evidence tally for one span, and whether it was
+// counted in the fallback tier.
+//
+// Exported so the tally can be shown rather than only asserted. A detector that
+// reports a winner and keeps its reasoning private asks to be trusted, which is
+// the thing this repository declines to do everywhere else.
+type Score struct {
+	Dialect  Name
+	Points   int
+	Fallback bool
+}
 
+// Scores returns every dialect's tally for a span, in registry order.
+//
+// Detect is written in terms of this rather than beside it, so the number a
+// reader is shown and the number that decided the winner cannot drift apart.
+func Scores(s Span) []Score {
+	out := make([]Score, 0, len(registry))
 	for _, d := range registry {
-		if f, ok := d.(fallback); ok {
-			fallbacks = append(fallbacks, f.(Dialect))
+		_, isFallback := d.(fallback)
+		out = append(out, Score{Dialect: d.Name(), Points: d.Score(s), Fallback: isFallback})
+	}
+	return out
+}
+
+func Detect(s Span) (Dialect, int, bool) {
+	byName := make(map[Name]Dialect, len(registry))
+	for _, d := range registry {
+		byName[d.Name()] = d
+	}
+
+	var best Dialect
+	high, second := 0, 0
+	for _, sc := range Scores(s) {
+		if sc.Fallback {
 			continue
 		}
-		n := d.Score(s)
 		switch {
-		case n > high:
-			best, high, second = d, n, high
-		case n > second:
-			second = n
+		case sc.Points > high:
+			best, high, second = byName[sc.Dialect], sc.Points, high
+		case sc.Points > second:
+			second = sc.Points
 		}
 	}
 	if best != nil {
 		return best, high - second, true
 	}
 
-	for _, d := range fallbacks {
-		if n := d.Score(s); n > high {
-			best, high = d, n
+	// The fallback tier is consulted only when nothing that knows what it is
+	// looking at claimed the span, and it reports a margin of zero when it wins:
+	// matching on shape is not the same kind of evidence as matching on a
+	// namespace, and the span should say so.
+	for _, sc := range Scores(s) {
+		if sc.Fallback && sc.Points > high {
+			best, high = byName[sc.Dialect], sc.Points
 		}
 	}
 	if best == nil {

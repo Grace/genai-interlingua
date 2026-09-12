@@ -1,0 +1,1124 @@
+# 731a97a6a88ed466
+
+dialect braintrust
+  rule provider.name <- gen_ai.provider.name,gen_ai.system
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.model <- gen_ai.request.model
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule response.model <- gen_ai.response.model
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.input_tokens <- gen_ai.usage.input_tokens,gen_ai.usage.prompt_tokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.output_tokens <- gen_ai.usage.output_tokens,gen_ai.usage.completion_tokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule input.messages <- gen_ai.input.messages
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule output.messages <- gen_ai.output.messages
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule operation.name <- gen_ai.operation.name
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule tool.definitions <- gen_ai.agent.tools
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  unstated evaluation.name
+  unstated evaluation.score.value
+  unstated input.messages
+  unstated operation.name
+  unstated output.messages
+  unstated usage.cache_read.input_tokens
+  unstated usage.input_tokens
+  unstated usage.output_tokens
+  unstated usage.reasoning.output_tokens
+  signature braintrust.context_json
+  signature braintrust.expected_json
+  signature braintrust.input_json
+  signature braintrust.metadata
+  signature braintrust.metrics
+  signature braintrust.output_json
+  signature braintrust.scores
+  signature braintrust.span_attributes
+  signature braintrust.tags
+  means braintrust.input when="braintrust.span_attributes type=llm" -> input.messages
+    candidates=
+    byspelling=false
+  means braintrust.input_json when="braintrust.span_attributes type=llm" -> input.messages
+    candidates=
+    byspelling=false
+  means braintrust.metrics#completion_reasoning_tokens when="" -> usage.reasoning.output_tokens
+    candidates=
+    byspelling=false
+  means braintrust.metrics#completion_tokens when="" -> usage.output_tokens
+    candidates=
+    byspelling=false
+  means braintrust.metrics#prompt_cached_tokens when="" -> usage.cache_read.input_tokens
+    candidates=
+    byspelling=false
+  means braintrust.metrics#prompt_tokens when="" -> usage.input_tokens
+    candidates=
+    byspelling=false
+  means braintrust.output when="braintrust.span_attributes type=llm" -> output.messages
+    candidates=
+    byspelling=false
+  means braintrust.output_json when="braintrust.span_attributes type=llm" -> output.messages
+    candidates=
+    byspelling=false
+  means braintrust.scores#name when="braintrust.scores holds exactly one score" -> evaluation.name
+    candidates=
+    byspelling=false
+  means braintrust.scores#value when="braintrust.scores holds exactly one score" -> evaluation.score.value
+    candidates=
+    byspelling=false
+  means braintrust.span_attributes#type when="" -> operation.name
+    candidates=
+    byspelling=false
+    value function=execute_tool
+    value llm=chat
+    value task=invoke_workflow
+    value tool=execute_tool
+dialect litellm
+  rule provider.name <- gen_ai.provider.name,gen_ai.system
+    lower=true
+    cutafter=""
+    trimsuffix=[]
+    map azure=azure.ai.openai
+    map azure_ai=azure.ai.inference
+    map bedrock=aws.bedrock
+    map gemini=gcp.gemini
+    map mistral=mistral_ai
+    map vertex_ai=gcp.vertex_ai
+    map watsonx=ibm.watsonx.ai
+    map watsonx_text=ibm.watsonx.ai
+    map xai=x_ai
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule operation.name <- gen_ai.operation.name,llm.request.type
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    map acompletion=chat
+    map aembedding=embeddings
+    map atext_completion=text_completion
+    map completion=chat
+    map embedding=embeddings
+    map text_completion=text_completion
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.model <- gen_ai.request.model
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule response.model <- gen_ai.response.model
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.max_tokens <- gen_ai.request.max_tokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.temperature <- gen_ai.request.temperature
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.top_p <- gen_ai.request.top_p
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.top_k <- gen_ai.request.top_k
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.seed <- gen_ai.request.seed
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.frequency_penalty <- gen_ai.request.frequency_penalty
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.presence_penalty <- gen_ai.request.presence_penalty
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.stop_sequences <- gen_ai.request.stop_sequences
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.stream <- gen_ai.request.stream
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.choice.count <- gen_ai.request.choice.count
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.input_tokens <- gen_ai.usage.input_tokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.output_tokens <- gen_ai.usage.output_tokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.cache_write.input_tokens <- gen_ai.usage.cache_creation.input_tokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.cache_read.input_tokens <- gen_ai.usage.cache_read.input_tokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule system_instructions <- gen_ai.system_instructions
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule conversation.id <- gen_ai.conversation.id
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  unstated input.messages
+  unstated output.messages
+  unstated response.finish_reasons
+  unstated tool.definitions
+  signature gen_ai.cost.total_cost
+  signature litellm.call_id
+  signature litellm.provider.model
+  means gen_ai.completion.* when="" -> output.messages
+    candidates=
+    byspelling=false
+  means gen_ai.completion.*.finish_reason when="" -> response.finish_reasons
+    candidates=
+    byspelling=false
+    value content-filter=content_filter
+    value function_call=tool_call
+    value tool-calls=tool_call
+    value tool_calls=tool_call
+  means gen_ai.input.messages when="" -> input.messages
+    candidates=
+    byspelling=false
+  means gen_ai.output.messages when="" -> output.messages
+    candidates=
+    byspelling=false
+  means gen_ai.prompt.* when="" -> input.messages
+    candidates=
+    byspelling=false
+  means gen_ai.response.finish_reasons when="" -> response.finish_reasons
+    candidates=
+    byspelling=false
+    value content-filter=content_filter
+    value function_call=tool_call
+    value tool-calls=tool_call
+    value tool_calls=tool_call
+  means llm.request.functions.* when="" -> tool.definitions
+    candidates=
+    byspelling=false
+dialect openinference
+  rule operation.name <- openinference.span.kind
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    map AGENT=invoke_agent
+    map CHAIN=invoke_workflow
+    map EMBEDDING=embeddings
+    map LLM=chat
+    map RETRIEVER=retrieval
+    map TOOL=execute_tool
+    mapunmatched=lose
+    divide=0
+    tolist=false
+  rule provider.name <- llm.provider,llm.system
+    lower=true
+    cutafter=""
+    trimsuffix=[]
+    map aws=aws.bedrock
+    map azure=azure.ai.openai
+    map google=gcp.gemini
+    map mistralai=mistral_ai
+    map vertexai=gcp.vertex_ai
+    map xai=x_ai
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.model <- embedding.model_name
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule response.finish_reasons <- llm.finish_reason
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    map content-filter=content_filter
+    map function_call=tool_call
+    map tool-calls=tool_call
+    map tool_calls=tool_call
+    mapunmatched=
+    divide=0
+    tolist=true
+  rule usage.input_tokens <- llm.token_count.prompt
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.output_tokens <- llm.token_count.completion
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.cache_read.input_tokens <- llm.token_count.prompt_details.cache_read
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.cache_write.input_tokens <- llm.token_count.prompt_details.cache_write
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.audio.input_tokens <- llm.token_count.prompt_details.audio
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.reasoning.output_tokens <- llm.token_count.completion_details.reasoning
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.audio.output_tokens <- llm.token_count.completion_details.audio
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule conversation.id <- session.id
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule tool.name <- tool_call.function.name,tool.name
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule tool.description <- tool.description
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule tool.call.id <- tool_call.id
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule tool.call.arguments <- tool_call.function.arguments
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  unstated input.messages
+  unstated output.messages
+  unstated request.choice.count
+  unstated request.frequency_penalty
+  unstated request.max_tokens
+  unstated request.model
+  unstated request.presence_penalty
+  unstated request.seed
+  unstated request.stop_sequences
+  unstated request.stream
+  unstated request.temperature
+  unstated request.top_k
+  unstated request.top_p
+  unstated response.model
+  unstated retrieval.documents
+  unstated tool.call.arguments
+  unstated tool.call.result
+  unstated tool.definitions
+  signature openinference.span.kind
+  means input.value when="openinference.span.kind=TOOL" -> tool.call.arguments
+    candidates=
+    byspelling=false
+  means llm.input_messages.* when="" -> input.messages
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#frequency_penalty when="" -> request.frequency_penalty
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#max_output_tokens when="" -> request.max_tokens
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#max_tokens when="" -> request.max_tokens
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#model when="" -> request.model
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#n when="" -> request.choice.count
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#presence_penalty when="" -> request.presence_penalty
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#seed when="" -> request.seed
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#stop when="" -> request.stop_sequences
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#stream when="" -> request.stream
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#temperature when="" -> request.temperature
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#top_k when="" -> request.top_k
+    candidates=
+    byspelling=false
+  means llm.invocation_parameters#top_p when="" -> request.top_p
+    candidates=
+    byspelling=false
+  means llm.model_name when="the span carries a response (llm.output_messages or llm.token_count.completion)" -> response.model
+    candidates=
+    byspelling=false
+  means llm.model_name when="the span carries no response" -> 
+    candidates=request.model,response.model
+    byspelling=false
+  means llm.output_messages.* when="" -> output.messages
+    candidates=
+    byspelling=false
+  means llm.tools.* when="" -> tool.definitions
+    candidates=
+    byspelling=false
+  means output.value when="openinference.span.kind=TOOL" -> tool.call.result
+    candidates=
+    byspelling=false
+  means retrieval.documents.* when="" -> retrieval.documents
+    candidates=
+    byspelling=false
+dialect openllmetry
+  rule provider.name <- gen_ai.provider.name,gen_ai.system
+    lower=true
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.model <- gen_ai.request.model
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule response.model <- gen_ai.response.model
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule response.id <- gen_ai.response.id
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.max_tokens <- gen_ai.request.max_tokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.temperature <- gen_ai.request.temperature
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.top_p <- gen_ai.request.top_p
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.top_k <- llm.top_k
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.frequency_penalty <- gen_ai.request.frequency_penalty,llm.frequency_penalty
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.presence_penalty <- gen_ai.request.presence_penalty,llm.presence_penalty
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.stop_sequences <- llm.chat.stop_sequences
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.stream <- gen_ai.is_streaming,llm.is_streaming
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.input_tokens <- gen_ai.usage.prompt_tokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.output_tokens <- gen_ai.usage.completion_tokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.cache_write.input_tokens <- gen_ai.usage.cache_creation_input_tokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.cache_read.input_tokens <- gen_ai.usage.cache_read_input_tokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.reasoning.output_tokens <- gen_ai.usage.reasoning_tokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule workflow.name <- traceloop.workflow.name
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule prompt.name <- traceloop.prompt.key
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule prompt.version <- traceloop.prompt.version
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  unstated agent.name
+  unstated input.messages
+  unstated operation.name
+  unstated output.messages
+  unstated response.finish_reasons
+  unstated tool.definitions
+  unstated tool.name
+  signature traceloop.entity.input
+  signature traceloop.entity.name
+  signature traceloop.entity.output
+  signature traceloop.span.kind
+  signature traceloop.workflow.name
+  means gen_ai.completion.* when="" -> output.messages
+    candidates=
+    byspelling=false
+  means gen_ai.completion.*.finish_reason when="" -> response.finish_reasons
+    candidates=
+    byspelling=false
+    value content-filter=content_filter
+    value function_call=tool_call
+    value tool-calls=tool_call
+    value tool_calls=tool_call
+  means gen_ai.prompt.* when="" -> input.messages
+    candidates=
+    byspelling=false
+  means gen_ai.response.finish_reasons when="" -> response.finish_reasons
+    candidates=
+    byspelling=false
+    value content-filter=content_filter
+    value function_call=tool_call
+    value tool-calls=tool_call
+    value tool_calls=tool_call
+  means llm.request.functions.* when="" -> tool.definitions
+    candidates=
+    byspelling=false
+  means llm.request.type when="" -> operation.name
+    candidates=
+    byspelling=false
+    value chat=chat
+    value completion=text_completion
+    value embedding=embeddings
+  means traceloop.entity.name when="traceloop.span.kind names neither an agent nor a tool" -> 
+    candidates=agent.name,tool.name
+    byspelling=false
+  means traceloop.entity.name when="traceloop.span.kind=agent" -> agent.name
+    candidates=
+    byspelling=false
+  means traceloop.entity.name when="traceloop.span.kind=tool" -> tool.name
+    candidates=
+    byspelling=false
+  means traceloop.span.kind when="" -> operation.name
+    candidates=
+    byspelling=false
+    value agent=invoke_agent
+    value tool=execute_tool
+    value workflow=invoke_workflow
+dialect raw
+  unruled
+  means completion_tokens when="" -> usage.output_tokens
+    candidates=
+    byspelling=true
+  means finish_reason when="" -> response.finish_reasons
+    candidates=
+    byspelling=true
+    value content-filter=content_filter
+    value function_call=tool_call
+    value tool-calls=tool_call
+    value tool_calls=tool_call
+  means gen_ai.* when="" -> 
+    candidates=
+    byspelling=true
+  means gen_ai.response.finish_reasons when="" -> response.finish_reasons
+    candidates=
+    byspelling=true
+    value content-filter=content_filter
+    value function_call=tool_call
+    value tool-calls=tool_call
+    value tool_calls=tool_call
+  means input_tokens when="" -> usage.input_tokens
+    candidates=
+    byspelling=true
+  means llm.completion_tokens when="" -> usage.output_tokens
+    candidates=
+    byspelling=true
+  means llm.max_tokens when="" -> request.max_tokens
+    candidates=
+    byspelling=true
+  means llm.model when="" -> request.model
+    candidates=
+    byspelling=true
+  means llm.model_name when="" -> request.model
+    candidates=
+    byspelling=true
+  means llm.prompt_tokens when="" -> usage.input_tokens
+    candidates=
+    byspelling=true
+  means llm.provider when="" -> provider.name
+    candidates=
+    byspelling=true
+  means llm.temperature when="" -> request.temperature
+    candidates=
+    byspelling=true
+  means max_tokens when="" -> request.max_tokens
+    candidates=
+    byspelling=true
+  means model when="" -> request.model
+    candidates=
+    byspelling=true
+  means model_name when="" -> request.model
+    candidates=
+    byspelling=true
+  means openai.model when="" -> request.model
+    candidates=
+    byspelling=true
+  means output_tokens when="" -> usage.output_tokens
+    candidates=
+    byspelling=true
+  means prompt_tokens when="" -> usage.input_tokens
+    candidates=
+    byspelling=true
+  means provider when="" -> provider.name
+    candidates=
+    byspelling=true
+  means request_id when="" -> response.id
+    candidates=
+    byspelling=true
+  means response_id when="" -> response.id
+    candidates=
+    byspelling=true
+  means temperature when="" -> request.temperature
+    candidates=
+    byspelling=true
+  means top_p when="" -> request.top_p
+    candidates=
+    byspelling=true
+  means usage.completion_tokens when="" -> usage.output_tokens
+    candidates=
+    byspelling=true
+  means usage.prompt_tokens when="" -> usage.input_tokens
+    candidates=
+    byspelling=true
+dialect vercel
+  rule provider.name <- ai.model.provider,gen_ai.system
+    lower=true
+    cutafter="."
+    trimsuffix=[]
+    map amazon-bedrock=aws.bedrock
+    map anthropic=anthropic
+    map azure=azure.ai.openai
+    map cohere=cohere
+    map deepseek=deepseek
+    map google=gcp.gemini
+    map google-vertex=gcp.vertex_ai
+    map groq=groq
+    map mistral=mistral_ai
+    map openai=openai
+    map perplexity=perplexity
+    map xai=x_ai
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule operation.name <- ai.operationId
+    lower=false
+    cutafter=""
+    trimsuffix=[".doGenerate" ".doStream" ".doEmbed"]
+    map ai.embed=embeddings
+    map ai.embedMany=embeddings
+    map ai.generateObject=chat
+    map ai.generateText=chat
+    map ai.streamObject=chat
+    map ai.streamText=chat
+    map ai.toolCall=execute_tool
+    mapunmatched=lose
+    divide=0
+    tolist=false
+  rule request.model <- gen_ai.request.model,ai.model.id
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.max_tokens <- gen_ai.request.max_tokens,ai.settings.maxOutputTokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.temperature <- gen_ai.request.temperature
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.top_p <- gen_ai.request.top_p
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.top_k <- gen_ai.request.top_k
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.frequency_penalty <- gen_ai.request.frequency_penalty
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.presence_penalty <- gen_ai.request.presence_penalty
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule request.stop_sequences <- gen_ai.request.stop_sequences
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule response.id <- gen_ai.response.id,ai.response.id
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule response.model <- gen_ai.response.model,ai.response.model
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.input_tokens <- gen_ai.usage.input_tokens,ai.usage.promptTokens,ai.usage.tokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule usage.output_tokens <- gen_ai.usage.output_tokens,ai.usage.completionTokens
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule response.finish_reasons <- gen_ai.response.finish_reasons,ai.response.finishReason
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    map content-filter=content_filter
+    map function_call=tool_call
+    map tool-calls=tool_call
+    map tool_calls=tool_call
+    mapunmatched=
+    divide=0
+    tolist=true
+  rule response.time_to_first_chunk <- ai.response.msToFirstChunk
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=1000
+    tolist=false
+  rule workflow.name <- ai.telemetry.functionId
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule tool.name <- ai.toolCall.name
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule tool.call.id <- ai.toolCall.id
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule tool.call.arguments <- ai.toolCall.args
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  rule tool.call.result <- ai.toolCall.result
+    lower=false
+    cutafter=""
+    trimsuffix=[]
+    mapunmatched=
+    divide=0
+    tolist=false
+  unstated input.messages
+  unstated output.messages
+  unstated system_instructions
+  unstated tool.definitions
+  signature ai.operationId
+  means ai.prompt.messages when="" -> input.messages
+    candidates=
+    byspelling=false
+  means ai.prompt.tools when="" -> tool.definitions
+    candidates=
+    byspelling=false
+  means ai.response.text when="" -> output.messages
+    candidates=
+    byspelling=false
+  means ai.response.toolCalls when="" -> output.messages
+    candidates=
+    byspelling=false
+target v1.41.0
+  provider.name -> gen_ai.provider.name
+    enum anthropic,aws.bedrock,azure.ai.inference,azure.ai.openai,cohere,deepseek,gcp.gemini,gcp.gen_ai,gcp.vertex_ai,groq,ibm.watsonx.ai,mistral_ai,openai,perplexity,x_ai
+  request.model -> gen_ai.request.model
+  request.max_tokens -> gen_ai.request.max_tokens
+  request.choice.count -> gen_ai.request.choice.count
+  request.temperature -> gen_ai.request.temperature
+  request.top_p -> gen_ai.request.top_p
+  request.top_k -> gen_ai.request.top_k
+  request.stop_sequences -> gen_ai.request.stop_sequences
+  request.frequency_penalty -> gen_ai.request.frequency_penalty
+  request.presence_penalty -> gen_ai.request.presence_penalty
+  request.encoding_formats -> gen_ai.request.encoding_formats
+  request.seed -> gen_ai.request.seed
+  request.stream -> gen_ai.request.stream
+  response.id -> gen_ai.response.id
+  response.model -> gen_ai.response.model
+  response.finish_reasons -> gen_ai.response.finish_reasons
+  response.time_to_first_chunk -> gen_ai.response.time_to_first_chunk
+  usage.input_tokens -> gen_ai.usage.input_tokens
+  usage.cache_read.input_tokens -> gen_ai.usage.cache_read.input_tokens
+  usage.cache_write.input_tokens -> gen_ai.usage.cache_creation.input_tokens
+  usage.output_tokens -> gen_ai.usage.output_tokens
+  usage.reasoning.output_tokens -> gen_ai.usage.reasoning.output_tokens
+  token.type -> gen_ai.token.type
+    enum input,output
+  conversation.id -> gen_ai.conversation.id
+  agent.id -> gen_ai.agent.id
+  agent.name -> gen_ai.agent.name
+  agent.description -> gen_ai.agent.description
+  agent.version -> gen_ai.agent.version
+  tool.name -> gen_ai.tool.name
+  tool.call.id -> gen_ai.tool.call.id
+  tool.description -> gen_ai.tool.description
+  tool.type -> gen_ai.tool.type
+  tool.call.arguments -> gen_ai.tool.call.arguments
+  tool.call.result -> gen_ai.tool.call.result
+  tool.definitions -> gen_ai.tool.definitions
+  data_source.id -> gen_ai.data_source.id
+  operation.name -> gen_ai.operation.name
+    enum chat,create_agent,embeddings,execute_tool,generate_content,invoke_agent,invoke_workflow,retrieval,text_completion
+  output.type -> gen_ai.output.type
+    enum image,json,speech,text
+  embeddings.dimension.count -> gen_ai.embeddings.dimension.count
+  retrieval.documents -> gen_ai.retrieval.documents
+  retrieval.query.text -> gen_ai.retrieval.query.text
+  system_instructions -> gen_ai.system_instructions
+  input.messages -> gen_ai.input.messages
+  output.messages -> gen_ai.output.messages
+  evaluation.name -> gen_ai.evaluation.name
+  evaluation.score.value -> gen_ai.evaluation.score.value
+  evaluation.score.label -> gen_ai.evaluation.score.label
+  evaluation.explanation -> gen_ai.evaluation.explanation
+  prompt.name -> gen_ai.prompt.name
+  workflow.name -> gen_ai.workflow.name
+target genai-main
+  provider.name -> gen_ai.provider.name
+    enum anthropic,aws.bedrock,azure.ai.inference,azure.ai.openai,cohere,deepseek,gcp.gemini,gcp.gen_ai,gcp.vertex_ai,groq,ibm.watsonx.ai,mistral_ai,moonshot_ai,openai,perplexity,x_ai
+  request.model -> gen_ai.request.model
+  request.max_tokens -> gen_ai.request.max_tokens
+  request.choice.count -> gen_ai.request.choice.count
+  request.temperature -> gen_ai.request.temperature
+  request.top_p -> gen_ai.request.top_p
+  request.top_k -> gen_ai.request.top_k
+  request.stop_sequences -> gen_ai.request.stop_sequences
+  request.frequency_penalty -> gen_ai.request.frequency_penalty
+  request.presence_penalty -> gen_ai.request.presence_penalty
+  request.encoding_formats -> gen_ai.request.encoding_formats
+  request.seed -> gen_ai.request.seed
+  request.stream -> gen_ai.request.stream
+  request.reasoning.level -> gen_ai.request.reasoning.level
+  request.previous_response.id -> gen_ai.request.previous_response.id
+  request.stream_cursor -> gen_ai.request.stream_cursor
+  response.id -> gen_ai.response.id
+  response.model -> gen_ai.response.model
+  response.finish_reasons -> gen_ai.response.finish_reasons
+  response.status -> gen_ai.response.status
+    enum cancelled,completed,failed,in_progress,incomplete,queued
+  response.time_to_first_chunk -> gen_ai.response.time_to_first_chunk
+  usage.input_tokens -> gen_ai.usage.input_tokens
+  usage.cache_read.input_tokens -> gen_ai.usage.cache_read.input_tokens
+  usage.cache_write.input_tokens -> gen_ai.usage.cache_write.input_tokens
+  usage.text.input_tokens -> gen_ai.usage.text.input_tokens
+  usage.image.input_tokens -> gen_ai.usage.image.input_tokens
+  usage.audio.input_tokens -> gen_ai.usage.audio.input_tokens
+  usage.output_tokens -> gen_ai.usage.output_tokens
+  usage.reasoning.output_tokens -> gen_ai.usage.reasoning.output_tokens
+  usage.text.output_tokens -> gen_ai.usage.text.output_tokens
+  usage.image.output_tokens -> gen_ai.usage.image.output_tokens
+  usage.audio.output_tokens -> gen_ai.usage.audio.output_tokens
+  usage.text.cache_read.input_tokens -> gen_ai.usage.text.cache_read.input_tokens
+  usage.image.cache_read.input_tokens -> gen_ai.usage.image.cache_read.input_tokens
+  usage.audio.cache_read.input_tokens -> gen_ai.usage.audio.cache_read.input_tokens
+  token.type -> gen_ai.token.type
+    enum input,output
+  conversation.id -> gen_ai.conversation.id
+  conversation.compacted -> gen_ai.conversation.compacted
+  agent.id -> gen_ai.agent.id
+  agent.name -> gen_ai.agent.name
+  agent.description -> gen_ai.agent.description
+  agent.version -> gen_ai.agent.version
+  tool.name -> gen_ai.tool.name
+  tool.call.id -> gen_ai.tool.call.id
+  tool.description -> gen_ai.tool.description
+  tool.type -> gen_ai.tool.type
+  tool.call.arguments -> gen_ai.tool.call.arguments
+  tool.call.result -> gen_ai.tool.call.result
+  tool.definitions -> gen_ai.tool.definitions
+  data_source.id -> gen_ai.data_source.id
+  operation.name -> gen_ai.operation.name
+    enum chat,create_agent,create_memory,create_memory_store,delete_memory,delete_memory_store,embeddings,execute_tool,fetch_response,generate_content,invoke_agent,invoke_workflow,plan,retrieval,search_memory,text_completion,update_memory,upsert_memory
+  output.type -> gen_ai.output.type
+    enum image,json,speech,text
+  embeddings.dimension.count -> gen_ai.embeddings.dimension.count
+  retrieval.documents -> gen_ai.retrieval.documents
+  retrieval.query.text -> gen_ai.retrieval.query.text
+  retrieval.top_k -> gen_ai.retrieval.top_k
+  memory.store.id -> gen_ai.memory.store.id
+  memory.record.id -> gen_ai.memory.record.id
+  memory.record.count -> gen_ai.memory.record.count
+  memory.query.text -> gen_ai.memory.query.text
+  memory.records -> gen_ai.memory.records
+  system_instructions -> gen_ai.system_instructions
+  input.messages -> gen_ai.input.messages
+  output.messages -> gen_ai.output.messages
+  evaluation.name -> gen_ai.evaluation.name
+  evaluation.score.value -> gen_ai.evaluation.score.value
+  evaluation.score.label -> gen_ai.evaluation.score.label
+  evaluation.explanation -> gen_ai.evaluation.explanation
+  prompt.name -> gen_ai.prompt.name
+  prompt.version -> gen_ai.prompt.version
+  prompt.variable -> gen_ai.prompt.variable
+  workflow.name -> gen_ai.workflow.name

@@ -64,11 +64,15 @@ func main() {
 func run() error {
 	target := flag.String("target", semconv.DefaultTarget.String(),
 		fmt.Sprintf("schema version to normalize to, one of %v", semconv.Targets))
-	// The default is to keep the emitter's own attributes. Stripping them makes
-	// the output smaller and the normalizer the last reader of its input, which
-	// is a trade worth making only once you trust the mapping.
-	strip := flag.Bool("strip-original", false,
-		"remove the source attributes the dialect consumed")
+	// The default is to keep the emitter's own attributes. dedupe drops only the
+	// exact copies a plain rename leaves behind. prune drops everything a dialect
+	// read, which makes the output smallest and the normalizer the last reader of
+	// its input -- a trade worth making only once you trust the mapping.
+	originals := flag.String("originals", string(normalize.OriginalsKeep),
+		fmt.Sprintf("what to do with the emitter's own attributes, one of %v", normalize.AllOriginals))
+	// The v0.5.0 spelling of -originals prune, kept so scripts written against it
+	// still run.
+	strip := flag.Bool("strip-original", false, "deprecated: use -originals prune")
 	// -emit turns the tool inside out: instead of normalizing spans, it prints
 	// the mapping in a form something else can run. There is no detection in an
 	// exported config -- see internal/emit/ottl -- so a dialect has to be named.
@@ -102,9 +106,27 @@ func run() error {
 		return fmt.Errorf("read stdin: %w", err)
 	}
 
+	mode, err := normalize.ParseOriginals(*originals)
+	if err != nil {
+		return err
+	}
+	if *strip {
+		explicit := false
+		flag.Visit(func(f *flag.Flag) { explicit = explicit || f.Name == "originals" })
+		if explicit && mode != normalize.OriginalsPrune {
+			return fmt.Errorf("-strip-original means -originals prune, which conflicts with -originals %s; "+
+				"-strip-original is deprecated, so pass -originals alone", mode)
+		}
+		fmt.Fprintln(os.Stderr, "interlingua: -strip-original is deprecated; use -originals prune")
+		mode = normalize.OriginalsPrune
+	}
+
 	opts := normalize.DefaultOptions()
 	opts.Target = t
-	opts.PreserveOriginal = !*strip
+	opts.Originals = mode
+	if err := opts.Validate(); err != nil {
+		return err
+	}
 
 	out, err := normalize.Payload(in, opts)
 	if err != nil {

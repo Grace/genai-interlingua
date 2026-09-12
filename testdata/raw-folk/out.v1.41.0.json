@@ -213,6 +213,12 @@
                   }
                 },
                 {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "731a97a6a88ed466"
+                  }
+                },
+                {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "v1.41.0"
