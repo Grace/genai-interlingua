@@ -342,6 +342,30 @@ details pre {
 }
 .flow .nodelabel.lost { fill: var(--loss); }
 
+/* ---- what becomes of the emitter's own attributes ---- */
+
+.origs { margin: 0 0 1.5rem; }
+.origs .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+.origs .seg button {
+  font: inherit; font-size: .82rem; font-family: var(--mono);
+  padding: .3rem .8rem; border: 0; border-right: 1px solid var(--line);
+  background: var(--panel); color: var(--ink-dim); cursor: pointer;
+}
+.origs .seg button:last-child { border-right: 0; }
+.origs .seg button[aria-pressed="true"] { background: var(--dst-bg); color: var(--dst); font-weight: 600; }
+.origbars { margin-top: .8rem; display: flex; flex-direction: column; gap: .3rem; }
+.origrow { display: grid; grid-template-columns: 4.5rem 1fr 2.5rem auto; align-items: center; gap: .6rem; font-size: .78rem; }
+.origrow .k { font-family: var(--mono); color: var(--ink-faint); }
+.origrow.on .k { color: var(--ink); font-weight: 600; }
+.origrow .t { height: .75rem; background: var(--rule-soft); border-radius: 2px; overflow: hidden; }
+.origrow .t i { display: block; height: 100%; background: var(--ink-faint);
+  transition: width .45s cubic-bezier(.4,0,.2,1); }
+.origrow.on .t i { background: var(--dst); }
+.origrow .n { font-family: var(--mono); text-align: right; color: var(--ink-dim); }
+.origrow.on .n { color: var(--ink); font-weight: 600; }
+.origrow .d { color: var(--ink-faint); }
+.origwhy { margin: .7rem 0 0; font-size: .8rem; color: var(--ink-dim); max-width: 46rem; }
+
 /* ---- the stage: diagram, and the panel explaining a pinned path ---- */
 
 .stage { display: grid; grid-template-columns: 1fr; gap: 1.25rem; align-items: start; }
