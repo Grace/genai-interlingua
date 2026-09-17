@@ -695,7 +695,7 @@
                 {
                   "key": "interlingua.mapping",
                   "value": {
-                    "stringValue": "731a97a6a88ed466"
+                    "stringValue": "9538b9aeee97b3f9"
                   }
                 },
                 {
@@ -813,6 +813,96 @@
                   "key": "llm.openai.usage",
                   "value": {
                     "stringValue": "{'completion_tokens': 27, 'prompt_tokens': 412, 'total_tokens': 439, 'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 8, 'rejected_prediction_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 'cache_write_tokens': None, 'cached_tokens': 256}}"
+                  }
+                },
+                {
+                  "key": "interlingua.dialect",
+                  "value": {
+                    "stringValue": "raw"
+                  }
+                },
+                {
+                  "key": "interlingua.dialect.confidence",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "interlingua.hops",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
+                  "key": "interlingua.lossy",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "llm.openai.choices"
+                        },
+                        {
+                          "stringValue": "llm.openai.created"
+                        },
+                        {
+                          "stringValue": "llm.openai.extra_body"
+                        },
+                        {
+                          "stringValue": "llm.openai.id"
+                        },
+                        {
+                          "stringValue": "llm.openai.max_tokens"
+                        },
+                        {
+                          "stringValue": "llm.openai.messages"
+                        },
+                        {
+                          "stringValue": "llm.openai.model"
+                        },
+                        {
+                          "stringValue": "llm.openai.moderation"
+                        },
+                        {
+                          "stringValue": "llm.openai.object"
+                        },
+                        {
+                          "stringValue": "llm.openai.service_tier"
+                        },
+                        {
+                          "stringValue": "llm.openai.system_fingerprint"
+                        },
+                        {
+                          "stringValue": "llm.openai.temperature"
+                        },
+                        {
+                          "stringValue": "llm.openai.tools"
+                        },
+                        {
+                          "stringValue": "llm.openai.top_p"
+                        },
+                        {
+                          "stringValue": "llm.openai.usage"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "15"
+                  }
+                },
+                {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "9538b9aeee97b3f9"
+                  }
+                },
+                {
+                  "key": "interlingua.target",
+                  "value": {
+                    "stringValue": "genai-main"
                   }
                 }
               ],

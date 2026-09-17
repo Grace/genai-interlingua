@@ -87,7 +87,8 @@ reports on the span itself.
 
 ### litellm
 
-- **no_field** — `gen_ai.completion.0.function_call.arguments`, `gen_ai.completion.0.function_call.name`, `gen_ai.cost.cache_read_cost`, `gen_ai.cost.discount_amount`, `gen_ai.cost.discount_percent`, `gen_ai.cost.input_cost`, `gen_ai.cost.margin_fixed_amount`, `gen_ai.cost.margin_percent`, `gen_ai.cost.margin_total_amount`, `gen_ai.cost.original_cost`, `gen_ai.cost.output_cost`, `gen_ai.cost.reasoning_cost`, `gen_ai.cost.tool_usage_cost`, `gen_ai.cost.total_cost`, `gen_ai.usage.total_tokens`, `litellm.call_id`, `litellm.provider.model`, `llm.is_streaming`, `llm.request.type`, `metadata.applied_guardrails`, `metadata.cold_storage_object_key`, `metadata.mcp_tool_call_metadata`, `metadata.prompt_management_metadata`, `metadata.requester_custom_headers`, `metadata.requester_ip_address`, `metadata.requester_metadata`, `metadata.routing_decision`, `metadata.spend_logs_metadata`, `metadata.team_alias`, `metadata.team_id`, `metadata.usage_object`, `metadata.user_agent`, `metadata.user_api_key_alias`, `metadata.user_api_key_auth_metadata`, `metadata.user_api_key_budget_reset_at`, `metadata.user_api_key_end_user_id`, `metadata.user_api_key_hash`, `metadata.user_api_key_max_budget`, `metadata.user_api_key_org_alias`, `metadata.user_api_key_org_id`, `metadata.user_api_key_project_alias`, `metadata.user_api_key_project_id`, `metadata.user_api_key_request_route`, `metadata.user_api_key_spend`, `metadata.user_api_key_team_alias`, `metadata.user_api_key_team_id`, `metadata.user_api_key_team_max_budget`, `metadata.user_api_key_team_spend`, `metadata.user_api_key_user_email`, `metadata.user_api_key_user_id`, `metadata.user_api_key_user_max_budget`, `metadata.user_api_key_user_spend`, `metadata.vector_store_request_metadata`
+- **no_field** — `gen_ai.completion.0.function_call.arguments`, `gen_ai.completion.0.function_call.name`, `gen_ai.cost.cache_read_cost`, `gen_ai.cost.discount_amount`, `gen_ai.cost.discount_percent`, `gen_ai.cost.input_cost`, `gen_ai.cost.margin_fixed_amount`, `gen_ai.cost.margin_percent`, `gen_ai.cost.margin_total_amount`, `gen_ai.cost.original_cost`, `gen_ai.cost.output_cost`, `gen_ai.cost.reasoning_cost`, `gen_ai.cost.tool_usage_cost`, `gen_ai.cost.total_cost`, `gen_ai.usage.total_tokens`, `litellm.call_id`, `litellm.provider.model`, `llm.is_streaming`, `llm.request.type`, `metadata.applied_guardrails`, `metadata.cold_storage_object_key`, `metadata.mcp_tool_call_metadata`, `metadata.prompt_management_metadata`, `metadata.requester_custom_headers`, `metadata.requester_ip_address`, `metadata.requester_metadata`, `metadata.routing_decision`, `metadata.spend_logs_metadata`, `metadata.team_alias`, `metadata.team_id`, `metadata.user_agent`, `metadata.user_api_key_alias`, `metadata.user_api_key_auth_metadata`, `metadata.user_api_key_budget_reset_at`, `metadata.user_api_key_end_user_id`, `metadata.user_api_key_hash`, `metadata.user_api_key_max_budget`, `metadata.user_api_key_org_alias`, `metadata.user_api_key_org_id`, `metadata.user_api_key_project_alias`, `metadata.user_api_key_project_id`, `metadata.user_api_key_request_route`, `metadata.user_api_key_spend`, `metadata.user_api_key_team_alias`, `metadata.user_api_key_team_id`, `metadata.user_api_key_team_max_budget`, `metadata.user_api_key_team_spend`, `metadata.user_api_key_user_email`, `metadata.user_api_key_user_id`, `metadata.user_api_key_user_max_budget`, `metadata.user_api_key_user_spend`, `metadata.vector_store_request_metadata`
+- **unstructured** — `metadata.usage_object`
 
 ### openinference
 
@@ -104,13 +105,15 @@ reports on the span itself.
 
 ### raw
 
-- **no_field** — `gen_ai.retry_count`, `llm.cache_hit`, `openai.response.system_fingerprint`, `total_tokens`
-- **unstructured** — `completion`, `prompt`
+- **no_field** — `gen_ai.retry_count`, `llm.cache_hit`, `llm.openai.choices`, `llm.openai.created`, `llm.openai.extra_body`, `llm.openai.id`, `llm.openai.max_tokens`, `llm.openai.messages`, `llm.openai.model`, `llm.openai.moderation`, `llm.openai.object`, `llm.openai.service_tier`, `llm.openai.system_fingerprint`, `llm.openai.temperature`, `llm.openai.tools`, `llm.openai.top_p`, `llm.openai.usage`, `openai.response.system_fingerprint`, `total_tokens`
+- **unstructured** — `completion`, `prompt`, `usage`
+- **ambiguous** — `completionTokens`, `promptTokens`, `tokens.in`, `tokens.out`
 
 ### vercel
 
 - **no_field** — `ai.prompt.toolChoice`, `ai.request.headers.user-agent`, `ai.response.timestamp`, `ai.settings.maxRetries`, `ai.settings.temperature`, `ai.settings.topP`
 - **unstructured** — `ai.prompt`, `ai.response.providerMetadata`
+- **ambiguous** — `ai.usage.completionTokens`, `ai.usage.promptTokens`
 
 ## What each target could not express
 

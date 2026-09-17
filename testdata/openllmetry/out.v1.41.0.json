@@ -247,13 +247,19 @@
                 {
                   "key": "interlingua.mapping",
                   "value": {
-                    "stringValue": "731a97a6a88ed466"
+                    "stringValue": "9538b9aeee97b3f9"
                   }
                 },
                 {
                   "key": "interlingua.target",
                   "value": {
                     "stringValue": "v1.41.0"
+                  }
+                },
+                {
+                  "key": "interlingua.usage.cache_included_in_input",
+                  "value": {
+                    "stringValue": "unknown"
                   }
                 }
               ],
@@ -400,7 +406,7 @@
                 {
                   "key": "interlingua.mapping",
                   "value": {
-                    "stringValue": "731a97a6a88ed466"
+                    "stringValue": "9538b9aeee97b3f9"
                   }
                 },
                 {

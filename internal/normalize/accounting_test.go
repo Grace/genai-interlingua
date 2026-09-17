@@ -42,3 +42,17 @@ func TestSpansWithoutCachedTokensSayNothingAboutAccounting(t *testing.T) {
 		t.Errorf("a span reporting no cached tokens answered a question it was never asked: %q", v.Str)
 	}
 }
+
+// A span that already spells a cached count the conventions' way has no rule
+// read it: there is nothing to rename. It still arrives carrying a cached count,
+// so it still needs the convention, and gating on the parse alone missed exactly
+// these. Two golden spans were in this state before this test existed.
+func TestAlreadyConformantCachedCountsStillCarryTheConvention(t *testing.T) {
+	r := mustNormalize(t, chatSpan(map[string]dialect.Value{
+		"gen_ai.usage.cache_read.input_tokens": dialect.Int(256),
+	}), semconv.TargetGenAIMain)
+
+	if _, ok := r.Set[AttrCacheAccounting]; !ok {
+		t.Error("a span whose cached count needed no rename said nothing about whether it is inside the input count")
+	}
+}

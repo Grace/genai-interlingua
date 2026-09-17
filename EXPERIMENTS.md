@@ -62,3 +62,50 @@ declaration needs no new plumbing.
 (OpenAI is the easiest to cite), declare it for a dialect that passes that
 provider through, and re-run the three-way pricing. That turns one `unknown` into
 a priced span and shows the attribute doing work.
+
+## 2026-09-17 — Can any dialect stop saying "unknown" yet?
+
+**Claim.** OpenAI documents that its cached tokens are counted inside the input
+total, so a dialect that can see the provider is OpenAI could declare `included`
+with a citation instead of `unknown`.
+
+**Decision it informs.** Whether to write provider-aware answers now, or leave
+every dialect at `unknown`.
+
+**Test.** Rung 1. Read OpenAI's prompt-caching guide, then check the regenerated
+fixtures span by span to confirm the declaration would reach a span that needs it.
+
+**Result on the citation.** Documented, 2026-09-17,
+developers.openai.com/api/docs/guides/prompt-caching. The guide does not say it
+in prose, but its own arithmetic does:
+
+    ordinary_input_tokens = input_tokens - cached_tokens - cache_write_tokens
+
+So cached *and* cache-write tokens are both subsets of the input total, which
+matches how genai-observability's estimator subtracts them. Cached tokens are
+billed at a reduced rate rather than counted separately.
+
+**Result on the plumbing: a bug in the previous commit.** Verified by execution.
+Checking every golden span for "carries a cached count but no convention" found 4:
+`openllmetry/openai.chat` and `langchain/ChatOpenAI.chat` at both targets. Those
+spans already spell the count the conventions' way, so no rule reads them, nothing
+lands in the parsed fields, and the gate that asked the *parse* never fired --
+while the count sits on the span the whole time. The attribute was missing from
+exactly the spans that are already conformant.
+
+Fixed by asking the span as it leaves instead of the parse: a cached count this
+pass wrote, or one the emitter already spelled correctly. Regression test is
+`TestAlreadyConformantCachedCountsStillCarryTheConvention`. Re-checked: 0
+mismatched spans across all 18 goldens, full suite green in both modules.
+
+**Decision.** Keep the citation, do not write the declaration yet. The provider
+answer belongs in a change of its own, after the parallel loss-accounting work is
+committed, because it moves the mapping digest again and every dialect's answer
+needs its own source. The bug fix lands now, because it is a hole in what already
+shipped.
+
+**Next cheapest test.** Declare `included` for OpenAI on one dialect that carries
+the provider, re-run the three-way pricing, and confirm a fixture that priced
+`unknown` now prices. The OTTL export cannot express a provider condition, so
+watch `equivalence.sh`: a provider-aware answer has to be reported as unsupported
+there rather than silently disagreeing with the processor.

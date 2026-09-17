@@ -311,6 +311,12 @@
                         },
                         {
                           "stringValue": "ai.settings.topP"
+                        },
+                        {
+                          "stringValue": "ai.usage.completionTokens"
+                        },
+                        {
+                          "stringValue": "ai.usage.promptTokens"
                         }
                       ]
                     }
@@ -319,13 +325,13 @@
                 {
                   "key": "interlingua.lossy.count",
                   "value": {
-                    "intValue": "7"
+                    "intValue": "9"
                   }
                 },
                 {
                   "key": "interlingua.mapping",
                   "value": {
-                    "stringValue": "731a97a6a88ed466"
+                    "stringValue": "9538b9aeee97b3f9"
                   }
                 },
                 {
@@ -600,7 +606,7 @@
                 {
                   "key": "interlingua.mapping",
                   "value": {
-                    "stringValue": "731a97a6a88ed466"
+                    "stringValue": "9538b9aeee97b3f9"
                   }
                 },
                 {
@@ -759,7 +765,7 @@
                 {
                   "key": "interlingua.mapping",
                   "value": {
-                    "stringValue": "731a97a6a88ed466"
+                    "stringValue": "9538b9aeee97b3f9"
                   }
                 },
                 {

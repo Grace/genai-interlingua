@@ -4,20 +4,32 @@
 # A change here is the emitter changing what it produces.
 
 [spans]
+GET /v1/chat/completions
 call_model
+call_model_camel
+call_model_packed
+call_model_sparse
 
 [attributes]
 completion
+completionTokens
 completion_tokens
 finish_reason
 gen_ai.retry_count
+http.request.method
+http.response.header.x-ratelimit-remaining-tokens
+http.response.status_code
 llm.cache_hit
 max_tokens
 model
 prompt
+promptTokens
 prompt_tokens
 provider
 request_id
 temperature
+tokens.in
+tokens.out
 total_tokens
+usage
 user_id

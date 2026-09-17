@@ -215,7 +215,7 @@
                 {
                   "key": "interlingua.mapping",
                   "value": {
-                    "stringValue": "731a97a6a88ed466"
+                    "stringValue": "9538b9aeee97b3f9"
                   }
                 },
                 {
@@ -226,6 +226,352 @@
                 }
               ],
               "status": {}
+            },
+            {
+              "traceId": "0d1e2f3a4b5c6d7e8f90a1b2c3d4e5f6",
+              "spanId": "a1b2c3d4e5f60719",
+              "name": "call_model_sparse",
+              "kind": 3,
+              "startTimeUnixNano": "1749841200000000000",
+              "endTimeUnixNano": "1749841201740000000",
+              "attributes": [
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "tokens.in",
+                  "value": {
+                    "intValue": "412"
+                  }
+                },
+                {
+                  "key": "tokens.out",
+                  "value": {
+                    "intValue": "27"
+                  }
+                },
+                {
+                  "key": "finish_reason",
+                  "value": {
+                    "stringValue": "stop"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "stop"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "interlingua.dialect",
+                  "value": {
+                    "stringValue": "raw"
+                  }
+                },
+                {
+                  "key": "interlingua.dialect.confidence",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "interlingua.hops",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
+                  "key": "interlingua.lossy",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "tokens.in"
+                        },
+                        {
+                          "stringValue": "tokens.out"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "9538b9aeee97b3f9"
+                  }
+                },
+                {
+                  "key": "interlingua.target",
+                  "value": {
+                    "stringValue": "v1.41.0"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "0d1e2f3a4b5c6d7e8f90a1b2c3d4e5f6",
+              "spanId": "a1b2c3d4e5f6071a",
+              "name": "call_model_camel",
+              "kind": 3,
+              "startTimeUnixNano": "1749841200000000000",
+              "endTimeUnixNano": "1749841201740000000",
+              "attributes": [
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "provider",
+                  "value": {
+                    "stringValue": "OpenAI"
+                  }
+                },
+                {
+                  "key": "promptTokens",
+                  "value": {
+                    "intValue": "412"
+                  }
+                },
+                {
+                  "key": "completionTokens",
+                  "value": {
+                    "intValue": "27"
+                  }
+                },
+                {
+                  "key": "finish_reason",
+                  "value": {
+                    "stringValue": "stop"
+                  }
+                },
+                {
+                  "key": "gen_ai.provider.name",
+                  "value": {
+                    "stringValue": "openai"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "stop"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "interlingua.dialect",
+                  "value": {
+                    "stringValue": "raw"
+                  }
+                },
+                {
+                  "key": "interlingua.dialect.confidence",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "interlingua.hops",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
+                  "key": "interlingua.lossy",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "completionTokens"
+                        },
+                        {
+                          "stringValue": "promptTokens"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "2"
+                  }
+                },
+                {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "9538b9aeee97b3f9"
+                  }
+                },
+                {
+                  "key": "interlingua.target",
+                  "value": {
+                    "stringValue": "v1.41.0"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "0d1e2f3a4b5c6d7e8f90a1b2c3d4e5f6",
+              "spanId": "a1b2c3d4e5f6071b",
+              "name": "call_model_packed",
+              "kind": 3,
+              "startTimeUnixNano": "1749841200000000000",
+              "endTimeUnixNano": "1749841201740000000",
+              "attributes": [
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "usage",
+                  "value": {
+                    "stringValue": "{'completion_tokens': 27, 'prompt_tokens': 412, 'total_tokens': 439, 'prompt_tokens_details': {'cached_tokens': 256}}"
+                  }
+                },
+                {
+                  "key": "finish_reason",
+                  "value": {
+                    "stringValue": "stop"
+                  }
+                },
+                {
+                  "key": "gen_ai.request.model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "gen_ai.response.finish_reasons",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "stop"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "interlingua.dialect",
+                  "value": {
+                    "stringValue": "raw"
+                  }
+                },
+                {
+                  "key": "interlingua.dialect.confidence",
+                  "value": {
+                    "intValue": "0"
+                  }
+                },
+                {
+                  "key": "interlingua.hops",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
+                  "key": "interlingua.lossy",
+                  "value": {
+                    "arrayValue": {
+                      "values": [
+                        {
+                          "stringValue": "usage"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "key": "interlingua.lossy.count",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
+                  "key": "interlingua.mapping",
+                  "value": {
+                    "stringValue": "9538b9aeee97b3f9"
+                  }
+                },
+                {
+                  "key": "interlingua.target",
+                  "value": {
+                    "stringValue": "v1.41.0"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "0d1e2f3a4b5c6d7e8f90a1b2c3d4e5f6",
+              "spanId": "a1b2c3d4e5f6071c",
+              "name": "GET /v1/chat/completions",
+              "kind": 3,
+              "startTimeUnixNano": "1749841200000000000",
+              "endTimeUnixNano": "1749841201740000000",
+              "attributes": [
+                {
+                  "key": "http.request.method",
+                  "value": {
+                    "stringValue": "GET"
+                  }
+                },
+                {
+                  "key": "http.response.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                },
+                {
+                  "key": "http.response.header.x-ratelimit-remaining-tokens",
+                  "value": {
+                    "intValue": "39616"
+                  }
+                },
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                }
+              ]
             }
           ]
         }

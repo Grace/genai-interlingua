@@ -534,7 +534,6 @@
         "metadata.spend_logs_metadata",
         "metadata.team_alias",
         "metadata.team_id",
-        "metadata.usage_object",
         "metadata.user_agent",
         "metadata.user_api_key_alias",
         "metadata.user_api_key_auth_metadata",
@@ -557,6 +556,9 @@
         "metadata.user_api_key_user_max_budget",
         "metadata.user_api_key_user_spend",
         "metadata.vector_store_request_metadata"
+      ],
+      "unstructured": [
+        "metadata.usage_object"
       ]
     },
     "openinference": {
@@ -609,18 +611,44 @@
       ]
     },
     "raw": {
+      "ambiguous": [
+        "completionTokens",
+        "promptTokens",
+        "tokens.in",
+        "tokens.out"
+      ],
       "no_field": [
         "gen_ai.retry_count",
         "llm.cache_hit",
+        "llm.openai.choices",
+        "llm.openai.created",
+        "llm.openai.extra_body",
+        "llm.openai.id",
+        "llm.openai.max_tokens",
+        "llm.openai.messages",
+        "llm.openai.model",
+        "llm.openai.moderation",
+        "llm.openai.object",
+        "llm.openai.service_tier",
+        "llm.openai.system_fingerprint",
+        "llm.openai.temperature",
+        "llm.openai.tools",
+        "llm.openai.top_p",
+        "llm.openai.usage",
         "openai.response.system_fingerprint",
         "total_tokens"
       ],
       "unstructured": [
         "completion",
-        "prompt"
+        "prompt",
+        "usage"
       ]
     },
     "vercel": {
+      "ambiguous": [
+        "ai.usage.completionTokens",
+        "ai.usage.promptTokens"
+      ],
       "no_field": [
         "ai.prompt.toolChoice",
         "ai.request.headers.user-agent",
@@ -722,7 +750,7 @@
         "litellm": 0,
         "openinference": 0,
         "openllmetry": 3,
-        "raw": 32,
+        "raw": 33,
         "vercel": 0
       },
       "fallback": [
@@ -756,7 +784,7 @@
         "litellm": 5,
         "openinference": 0,
         "openllmetry": 3,
-        "raw": 24,
+        "raw": 26,
         "vercel": 0
       },
       "fallback": [
@@ -766,6 +794,23 @@
       "margin": 2
     },
     {
+      "fixture": "litellm",
+      "span": "raw_gen_ai_request",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 0,
+        "raw": 1,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "raw",
+      "margin": 0
+    },
+    {
       "fixture": "openinference",
       "span": "ChatCompletion",
       "scores": {
@@ -773,7 +818,7 @@
         "litellm": 0,
         "openinference": 7,
         "openllmetry": 0,
-        "raw": 0,
+        "raw": 8,
         "vercel": 0
       },
       "fallback": [
@@ -790,7 +835,7 @@
         "litellm": 0,
         "openinference": 0,
         "openllmetry": 7,
-        "raw": 12,
+        "raw": 16,
         "vercel": 0
       },
       "fallback": [
@@ -807,7 +852,7 @@
         "litellm": 0,
         "openinference": 0,
         "openllmetry": 3,
-        "raw": 30,
+        "raw": 32,
         "vercel": 0
       },
       "fallback": [
@@ -841,7 +886,58 @@
         "litellm": 0,
         "openinference": 0,
         "openllmetry": 0,
-        "raw": 8,
+        "raw": 9,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "raw",
+      "margin": 0
+    },
+    {
+      "fixture": "raw-folk",
+      "span": "call_model_sparse",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 0,
+        "raw": 4,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "raw",
+      "margin": 0
+    },
+    {
+      "fixture": "raw-folk",
+      "span": "call_model_camel",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 0,
+        "raw": 5,
+        "vercel": 0
+      },
+      "fallback": [
+        "raw"
+      ],
+      "winner": "raw",
+      "margin": 0
+    },
+    {
+      "fixture": "raw-folk",
+      "span": "call_model_packed",
+      "scores": {
+        "braintrust": 0,
+        "litellm": 0,
+        "openinference": 0,
+        "openllmetry": 0,
+        "raw": 3,
         "vercel": 0
       },
       "fallback": [
@@ -875,7 +971,7 @@
         "litellm": 0,
         "openinference": 0,
         "openllmetry": 0,
-        "raw": 18,
+        "raw": 20,
         "vercel": 8
       },
       "fallback": [
@@ -892,7 +988,7 @@
         "litellm": 0,
         "openinference": 0,
         "openllmetry": 0,
-        "raw": 0,
+        "raw": 2,
         "vercel": 7
       },
       "fallback": [

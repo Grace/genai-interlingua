@@ -3,12 +3,20 @@
     {
       "resource": {
         "attributes": [
-          { "key": "service.name", "value": { "stringValue": "internal-tools" } }
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "internal-tools"
+            }
+          }
         ]
       },
       "scopeSpans": [
         {
-          "scope": { "name": "internal-tools/llm", "version": "" },
+          "scope": {
+            "name": "internal-tools/llm",
+            "version": ""
+          },
           "spans": [
             {
               "traceId": "0d1e2f3a4b5c6d7e8f90a1b2c3d4e5f6",
@@ -18,22 +26,228 @@
               "startTimeUnixNano": "1749841200000000000",
               "endTimeUnixNano": "1749841201740000000",
               "attributes": [
-                { "key": "model", "value": { "stringValue": "gpt-4o-mini" } },
-                { "key": "provider", "value": { "stringValue": "OpenAI" } },
-                { "key": "temperature", "value": { "doubleValue": 0.7 } },
-                { "key": "max_tokens", "value": { "intValue": "1024" } },
-                { "key": "prompt_tokens", "value": { "intValue": "412" } },
-                { "key": "completion_tokens", "value": { "intValue": "27" } },
-                { "key": "total_tokens", "value": { "intValue": "439" } },
-                { "key": "finish_reason", "value": { "stringValue": "stop" } },
-                { "key": "request_id", "value": { "stringValue": "chatcmpl-CD8yqQ2y3kZs1o0Wm7bT" } },
-                { "key": "prompt", "value": { "stringValue": "Where is order A-1187?" } },
-                { "key": "completion", "value": { "stringValue": "Let me check that for you." } },
-                { "key": "gen_ai.retry_count", "value": { "intValue": "1" } },
-                { "key": "llm.cache_hit", "value": { "boolValue": false } },
-                { "key": "user_id", "value": { "stringValue": "u-7741" } }
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "provider",
+                  "value": {
+                    "stringValue": "OpenAI"
+                  }
+                },
+                {
+                  "key": "temperature",
+                  "value": {
+                    "doubleValue": 0.7
+                  }
+                },
+                {
+                  "key": "max_tokens",
+                  "value": {
+                    "intValue": "1024"
+                  }
+                },
+                {
+                  "key": "prompt_tokens",
+                  "value": {
+                    "intValue": "412"
+                  }
+                },
+                {
+                  "key": "completion_tokens",
+                  "value": {
+                    "intValue": "27"
+                  }
+                },
+                {
+                  "key": "total_tokens",
+                  "value": {
+                    "intValue": "439"
+                  }
+                },
+                {
+                  "key": "finish_reason",
+                  "value": {
+                    "stringValue": "stop"
+                  }
+                },
+                {
+                  "key": "request_id",
+                  "value": {
+                    "stringValue": "chatcmpl-CD8yqQ2y3kZs1o0Wm7bT"
+                  }
+                },
+                {
+                  "key": "prompt",
+                  "value": {
+                    "stringValue": "Where is order A-1187?"
+                  }
+                },
+                {
+                  "key": "completion",
+                  "value": {
+                    "stringValue": "Let me check that for you."
+                  }
+                },
+                {
+                  "key": "gen_ai.retry_count",
+                  "value": {
+                    "intValue": "1"
+                  }
+                },
+                {
+                  "key": "llm.cache_hit",
+                  "value": {
+                    "boolValue": false
+                  }
+                },
+                {
+                  "key": "user_id",
+                  "value": {
+                    "stringValue": "u-7741"
+                  }
+                }
               ],
               "status": {}
+            },
+            {
+              "traceId": "0d1e2f3a4b5c6d7e8f90a1b2c3d4e5f6",
+              "spanId": "a1b2c3d4e5f60719",
+              "name": "call_model_sparse",
+              "kind": 3,
+              "startTimeUnixNano": "1749841200000000000",
+              "endTimeUnixNano": "1749841201740000000",
+              "attributes": [
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "tokens.in",
+                  "value": {
+                    "intValue": "412"
+                  }
+                },
+                {
+                  "key": "tokens.out",
+                  "value": {
+                    "intValue": "27"
+                  }
+                },
+                {
+                  "key": "finish_reason",
+                  "value": {
+                    "stringValue": "stop"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "0d1e2f3a4b5c6d7e8f90a1b2c3d4e5f6",
+              "spanId": "a1b2c3d4e5f6071a",
+              "name": "call_model_camel",
+              "kind": 3,
+              "startTimeUnixNano": "1749841200000000000",
+              "endTimeUnixNano": "1749841201740000000",
+              "attributes": [
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "provider",
+                  "value": {
+                    "stringValue": "OpenAI"
+                  }
+                },
+                {
+                  "key": "promptTokens",
+                  "value": {
+                    "intValue": "412"
+                  }
+                },
+                {
+                  "key": "completionTokens",
+                  "value": {
+                    "intValue": "27"
+                  }
+                },
+                {
+                  "key": "finish_reason",
+                  "value": {
+                    "stringValue": "stop"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "0d1e2f3a4b5c6d7e8f90a1b2c3d4e5f6",
+              "spanId": "a1b2c3d4e5f6071b",
+              "name": "call_model_packed",
+              "kind": 3,
+              "startTimeUnixNano": "1749841200000000000",
+              "endTimeUnixNano": "1749841201740000000",
+              "attributes": [
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                },
+                {
+                  "key": "usage",
+                  "value": {
+                    "stringValue": "{'completion_tokens': 27, 'prompt_tokens': 412, 'total_tokens': 439, 'prompt_tokens_details': {'cached_tokens': 256}}"
+                  }
+                },
+                {
+                  "key": "finish_reason",
+                  "value": {
+                    "stringValue": "stop"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "0d1e2f3a4b5c6d7e8f90a1b2c3d4e5f6",
+              "spanId": "a1b2c3d4e5f6071c",
+              "name": "GET /v1/chat/completions",
+              "kind": 3,
+              "startTimeUnixNano": "1749841200000000000",
+              "endTimeUnixNano": "1749841201740000000",
+              "attributes": [
+                {
+                  "key": "http.request.method",
+                  "value": {
+                    "stringValue": "GET"
+                  }
+                },
+                {
+                  "key": "http.response.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                },
+                {
+                  "key": "http.response.header.x-ratelimit-remaining-tokens",
+                  "value": {
+                    "intValue": "39616"
+                  }
+                },
+                {
+                  "key": "model",
+                  "value": {
+                    "stringValue": "gpt-4o-mini"
+                  }
+                }
+              ]
             }
           ]
         }

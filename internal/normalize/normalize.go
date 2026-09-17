@@ -389,6 +389,7 @@ func fromParsed(s dialect.Span, p dialect.Parsed, opts Options) Result {
 	}
 
 	r.TargetLoss = append(r.TargetLoss, unread(s, p, r, opts)...)
+	r.DialectLoss = append(r.DialectLoss, unreadUsage(s, p, r, opts)...)
 
 	r.Set[AttrDialect] = dialect.String(string(r.Dialect))
 	r.Set[AttrConfidence] = dialect.Int(int64(r.Confidence))
@@ -400,7 +401,16 @@ func fromParsed(s dialect.Span, p dialect.Parsed, opts Options) Result {
 	// just named, for the same reason r.Dialect itself is: on a second hop the
 	// span is written in the conventions' vocabulary, and the convention its
 	// numbers were counted under is a fact about the emitter they came from.
-	if dialect.ReportsCacheTokens(p) {
+	//
+	// Asked of the span as it leaves rather than of the fields a rule produced.
+	// An emitter that already spells a cached count the conventions' way has no
+	// rule read it -- there is nothing to rename -- so the count arrives, passes
+	// through untouched, and is on the span at the end. Gating on the parse
+	// alone left exactly those spans carrying a cached count with nothing saying
+	// what it means, which is the case this attribute exists for. Found by
+	// checking the regenerated fixtures span by span rather than by reasoning
+	// about the gate.
+	if reportsCacheTokens(s, r, opts.Target) {
 		if d, ok := dialect.ByName(r.Dialect); ok {
 			r.Set[AttrCacheAccounting] = dialect.String(string(dialect.CacheAccountingOf(d, p)))
 		}
@@ -426,7 +436,16 @@ func fromParsed(s dialect.Span, p dialect.Parsed, opts Options) Result {
 
 	switch opts.Originals {
 	case OriginalsPrune:
-		r.Remove = removals(p.Consumed, r.Set)
+		// A span claimed on usage evidence alone has had nothing mapped: the
+		// fallback recognized that a token count is here and read none of it,
+		// which is the honest answer for a spelling no mapping knows. Pruning
+		// it would delete the span's only copy of its own data on the strength
+		// of a detection guess, leaving a span that says which dialect it was
+		// and nothing about what it measured. Prune removes what was carried
+		// across; here nothing was.
+		if len(p.Fields) > 0 {
+			r.Remove = removals(p.Consumed, r.Set)
+		}
 	case OriginalsDedupe:
 		r.Remove = duplicates(s, r, p.Consumed)
 	}
@@ -494,6 +513,92 @@ func unread(s dialect.Span, p dialect.Parsed, r Result, opts Options) []Loss {
 		}
 	}
 	return out
+}
+
+// unreadUsage names the token counts nobody read.
+//
+// It runs for every dialect rather than inside the fallback, because the gap is
+// not the fallback's. Any emitter can write a quantity under a spelling this
+// repository's mappings do not know -- LiteLLM packs a whole usage object into a
+// Python repr, a wrapper writes tokens.in, a TypeScript codebase writes
+// promptTokens -- and on every one of those spans the count was being walked
+// past with interlingua.lossy.count reporting 0. A span that says it lost
+// nothing while dropping the only number on it with a price attached is the
+// exact failure this repository exists to make impossible.
+//
+// Nothing here is mapped. A key is named and left alone: the spelling is
+// evidence that a count is there and no evidence at all of which field it
+// belongs to, and writing gen_ai.usage.input_tokens on the strength of a word
+// would be the silent mismapping the loss list is the alternative to. The two
+// reasons say which kind of gap it is -- ambiguous for a bare count, since the
+// direction word narrows the candidates without settling them, and unstructured
+// for a packed object, which is a shape this declines to parse rather than a
+// meaning it cannot place.
+func unreadUsage(s dialect.Span, p dialect.Parsed, r Result, opts Options) []dialect.Loss {
+	read := make(map[string]bool, len(p.Consumed)+len(p.Loss))
+	for _, k := range p.Consumed {
+		read[k] = true
+	}
+	// A key the dialect already recorded is already named, and naming it twice
+	// with a second reason would report one gap as two.
+	for _, l := range p.Loss {
+		read[l.Key] = true
+	}
+
+	var out []dialect.Loss
+	for _, k := range s.Keys() {
+		if read[k] {
+			continue
+		}
+		if _, written := r.Set[k]; written {
+			continue
+		}
+		// Spelled the way the target spells a field, and therefore already on
+		// the span under the name a reader would look for. unread() checks
+		// whether its value conforms; nothing is lost here.
+		if f, ok := semconv.FieldForKey(k); ok {
+			if key, ok := opts.Target.Key(f); ok && key == k {
+				continue
+			}
+		}
+
+		v := s.Attributes[k]
+		switch {
+		case dialect.PackedUsage(k, v):
+			out = append(out, dialect.Loss{
+				Key:    k,
+				Reason: dialect.ReasonUnstructured,
+				Detail: "a serialized usage object; the counts inside it were not lifted out, because the shape varies per provider and a wrong lift prices the call wrong",
+			})
+		case dialect.UsageShaped(k):
+			out = append(out, dialect.Loss{
+				Key:        k,
+				Reason:     dialect.ReasonAmbiguous,
+				Detail:     "a token count under a spelling no mapping reads; named rather than mapped, because the key's name is the only evidence of what it means",
+				Candidates: usageCandidates(k),
+			})
+		}
+	}
+	return out
+}
+
+// usageCandidates is what a usage-shaped key could have meant, from its
+// direction word alone. It is deliberately a list: the point of recording an
+// ambiguity is to show a reader what was declined, and a single candidate
+// presented as the answer would be the guess this refuses to make.
+func usageCandidates(key string) []semconv.Field {
+	in := semconv.UsageInputTokens
+	out := semconv.UsageOutputTokens
+	switch {
+	case dialect.HasWord(key, "prompt"), dialect.HasWord(key, "input"), dialect.HasWord(key, "in"),
+		dialect.HasWord(key, "cache"), dialect.HasWord(key, "cached"):
+		return []semconv.Field{in}
+	case dialect.HasWord(key, "completion"), dialect.HasWord(key, "output"), dialect.HasWord(key, "out"),
+		dialect.HasWord(key, "reasoning"):
+		return []semconv.Field{out}
+	}
+	// "total" and anything else the shape matched: both, and neither settled.
+	return []semconv.Field{in, out}
 }
 
 // provenance is what an earlier normalization left on a span.
@@ -613,4 +718,38 @@ func duplicates(s dialect.Span, r Result, consumed []string) []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+// reportsCacheTokens reports whether the span carries a cached-token count once
+// normalization has finished with it: one this pass wrote under a target key, or
+// one the emitter already spelled that way and nothing had to touch.
+//
+// The question the accounting attribute answers is about the numbers a reader
+// will find on the span, not about which of them a rule happened to produce, so
+// this asks the span rather than the parse.
+func reportsCacheTokens(s dialect.Span, r Result, target semconv.Target) bool {
+	for _, f := range cacheFields {
+		key, ok := target.Key(f)
+		if !ok {
+			continue
+		}
+		if _, ok := r.Set[key]; ok {
+			return true
+		}
+		if v, ok := s.Attributes[key]; ok && !v.Empty() {
+			return true
+		}
+	}
+	return false
+}
+
+// cacheFields is every field whose value is a cached-token count, including the
+// per-modality ones: a span reporting only image cache reads raises the same
+// question as one reporting the aggregate.
+var cacheFields = []semconv.Field{
+	semconv.UsageCacheReadInputTokens,
+	semconv.UsageCacheWriteInputTokens,
+	semconv.UsageTextCacheReadInputTokens,
+	semconv.UsageImageCacheReadInputTokens,
+	semconv.UsageAudioCacheReadInputTokens,
 }
