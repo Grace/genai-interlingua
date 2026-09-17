@@ -131,6 +131,31 @@ attributes:
       promise that nothing else did.
     examples: ["731a97a6a88ed466"]
 
+  - key: interlingua.usage.cache_included_in_input
+    type: string
+    stability: development
+    brief: Whether this span's cached-token counts are already inside its input count.
+    note: >
+      Two integers cannot answer this. OpenAI reports `prompt_tokens` 412 with
+      `cached_tokens` 256 counted inside it; Anthropic reports `input_tokens`
+      excluding its `cache_read_input_tokens`, so the same pair of numbers means
+      668 tokens there and 412 here. A consumer that adds them, or prices them,
+      gets a different answer under each convention, and nothing in the numbers
+      says which one it was handed.
+
+      So the convention is recorded where it is still knowable, at translation
+      time, rather than left to the query. `included` means billed input is the
+      input count minus the cached count; `excluded` means the counts are
+      disjoint; `unknown` means the dialect that read the span states nothing,
+      which is a fact worth writing down rather than a placeholder. A consumer
+      that prices an `unknown` span is guessing, and this attribute is what tells
+      it so.
+
+      Written only on spans that report cached tokens, because that is where the
+      question exists. Its absence means the span carried no cached-token counts,
+      not that nobody asked.
+    examples: ["included", "excluded", "unknown"]
+
   - key: interlingua.replaced
     type: template[string]
     stability: development

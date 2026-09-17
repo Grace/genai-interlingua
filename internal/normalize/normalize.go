@@ -63,6 +63,20 @@ const (
 	// agree do not. See dialect.Digest for what it covers and what it cannot.
 	AttrMapping = "interlingua.mapping"
 
+	// AttrCacheAccounting says whether the cached-token counts on this span are
+	// already inside its input count, as the dialect that read the span states
+	// it: included, excluded, or unknown.
+	//
+	// It is written only on spans that report cached tokens, because that is
+	// where the question exists, and its absence therefore means the span
+	// carried no cache counts rather than that nobody asked.
+	//
+	// Two integers cannot answer this and no consumer can recover it later, so a
+	// translator that carried the counts across without the convention would be
+	// handing on a number that prices two different ways. See
+	// dialect.CacheAccounting.
+	AttrCacheAccounting = "interlingua.usage.cache_included_in_input"
+
 	// AttrReplaced prefixes the value a rewrite replaced, so that nothing an
 	// emitter stated is destroyed without a record.
 	//
@@ -381,6 +395,16 @@ func fromParsed(s dialect.Span, p dialect.Parsed, opts Options) Result {
 	r.Set[AttrTarget] = dialect.String(string(opts.Target))
 	r.Set[AttrMapping] = dialect.String(dialect.Digest())
 	r.Set[AttrHops] = dialect.Int(int64(prior.hops + 1))
+
+	// Asked of the dialect the first pass recorded, not of the one detection
+	// just named, for the same reason r.Dialect itself is: on a second hop the
+	// span is written in the conventions' vocabulary, and the convention its
+	// numbers were counted under is a fact about the emitter they came from.
+	if dialect.ReportsCacheTokens(p) {
+		if d, ok := dialect.ByName(r.Dialect); ok {
+			r.Set[AttrCacheAccounting] = dialect.String(string(dialect.CacheAccountingOf(d, p)))
+		}
+	}
 	// The list and its length are both written, and the length is written even
 	// when it is zero.
 	//

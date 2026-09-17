@@ -56,6 +56,7 @@ func TestRegistryDefinesEveryAttributeWeWrite(t *testing.T) {
 		normalize.AttrLossyCount,
 		normalize.AttrHops,
 		normalize.AttrMapping,
+		normalize.AttrCacheAccounting,
 		normalize.AttrReplaced,
 		ottl.AttrExport,
 		ottl.AttrExportUnsupported,

@@ -100,6 +100,14 @@ func canonical() string {
 			b.WriteString("  unruled\n")
 		}
 
+		// What the dialect says about cached tokens sitting inside its input
+		// count, as it answers for a span that states nothing else. A dialect
+		// whose answer follows the provider underneath is rendered by its
+		// default, so moving that default moves the digest and teaching it a new
+		// provider does not -- the same limit writeInterpretations has, and for
+		// the same reason: the declaration is data, the reading is not.
+		fmt.Fprintf(&b, "  cache_accounting %s\n", CacheAccountingOf(d, Parsed{}))
+
 		writeInterpretations(&b, d)
 	}
 

@@ -19,6 +19,7 @@ Every span this processor claims carries attributes of its own:
 | `interlingua.lossy.count` | how many, written even when it is zero |
 | `interlingua.hops` | how many times this span has been translated |
 | `interlingua.mapping` | a digest of the mappings that read it |
+| `interlingua.usage.cache_included_in_input` | whether its cached-token counts are inside its input count, on spans that report any |
 | `interlingua.replaced.<key>` | the value a rewrite of `<key>` replaced, where there was one |
 
 `interlingua.mapping` identifies the *route*, as `interlingua.target` identifies
@@ -210,6 +211,20 @@ removes a key named there. What survives every mode is
 These alter your values and are deliberately **not** in `interlingua.lossy`,
 because nothing was lost. They are listed here because a value changing silently
 is worth knowing about even when the change is correct.
+
+**Cached-token counts are carried as stated, with the convention beside them.**
+Emitters disagree about whether a cached-token count is already inside the
+input count: OpenAI reports `prompt_tokens` 412 with `cached_tokens` 256 counted
+inside it, while Anthropic reports `input_tokens` with
+`cache_read_input_tokens` beside it, so the same pair means 412 tokens under one
+convention and 668 under the other. Neither integer says which, and no consumer
+can work it out later, so the numbers are passed through untouched and
+`interlingua.usage.cache_included_in_input` records what the dialect states:
+`included`, `excluded`, or `unknown`. Adjusting the counts instead would be this
+translator deciding what a provider meant, which is the one thing it does not do.
+Every dialect states `unknown` today, because for a pass-through vocabulary the
+answer follows the provider underneath rather than the vocabulary, and no
+provider's answer has been cited here yet.
 
 **`gen_ai.system` becomes `gen_ai.provider.name`.** The conventions renamed the
 attribute. The Vercel AI SDK and LiteLLM both still write the old spelling, and

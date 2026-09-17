@@ -83,6 +83,13 @@ const (
 	// AttrHops is the translation counter, incremented rather than set, so a
 	// config re-applied to its own output says so instead of hiding it.
 	AttrHops = "interlingua.hops"
+
+	// AttrCacheAccounting is normalize.AttrCacheAccounting, spelled again here
+	// rather than imported, as AttrHops and the rest are: this package emits a
+	// config for someone else's Collector to run, and the keys it writes are
+	// part of that contract rather than a reference to the Go normalizer's.
+	// internal/emit/registry_test.go is what keeps the two spellings honest.
+	AttrCacheAccounting = "interlingua.usage.cache_included_in_input"
 )
 
 // Options selects what to emit.
@@ -196,6 +203,9 @@ func Config(opts Options) (Result, error) {
 		fmt.Sprintf(`set(attributes[%s], 1) where attributes[%s] == nil`, quote(AttrHops), quote(AttrHops)),
 		fmt.Sprintf(`set(attributes[%s], "ottl")`, quote(AttrExport)),
 	)
+	if s, ok := cacheAccountingStatement(opts); ok {
+		stmts = append(stmts, s)
+	}
 	if len(unsupported) > 0 {
 		stmts = append(stmts,
 			fmt.Sprintf(`set(attributes[%s], [%s])`, quote(AttrExportUnsupported), quoteList(unsupported)))
@@ -441,6 +451,47 @@ func conditions(gates []string) []string {
 		out[i] = fmt.Sprintf(`attributes[%s] != nil`, quote(k))
 	}
 	return out
+}
+
+// cacheAccountingStatement renders the dialect's cached-token convention, gated
+// on the span actually carrying a cached-token count so that it matches the
+// processor, which writes the attribute only then.
+//
+// The value is the dialect's answer for a span that states nothing else. A
+// dialect whose answer reads the provider off the span would need a condition
+// per provider, which is a reading and not a rename, so such a dialect belongs
+// in the unsupported list rather than here -- and until one exists, saying so in
+// a comment is the whole of the handling. equivalence.sh is what would catch it:
+// it diffs this config's output against the processor's, per fixture.
+func cacheAccountingStatement(opts Options) (string, bool) {
+	var keys []string
+	for _, r := range opts.Dialect.Rules() {
+		if !cacheFields[r.Field] {
+			continue
+		}
+		if key, ok := opts.Target.Key(r.Field); ok {
+			keys = append(keys, key)
+		}
+	}
+	if len(keys) == 0 {
+		return "", false
+	}
+	sort.Strings(keys)
+	return fmt.Sprintf(`set(attributes[%s], %s) where %s`,
+		quote(AttrCacheAccounting),
+		quote(string(dialect.CacheAccountingOf(opts.Dialect, dialect.Parsed{}))),
+		strings.Join(conditions(keys), " or ")), true
+}
+
+// cacheFields is the same set internal/dialect gates its attribute on, named
+// here because an export that gated on a different set would write the
+// convention onto spans the processor leaves alone.
+var cacheFields = map[semconv.Field]bool{
+	semconv.UsageCacheReadInputTokens:      true,
+	semconv.UsageCacheWriteInputTokens:     true,
+	semconv.UsageTextCacheReadInputTokens:  true,
+	semconv.UsageImageCacheReadInputTokens: true,
+	semconv.UsageAudioCacheReadInputTokens: true,
 }
 
 // partialKeys is the intersection of what a rule states and what Unstated
