@@ -59,25 +59,3 @@ func TestAnUnrecognizedAnswerBecomesUnknown(t *testing.T) {
 		t.Errorf("accounting = %q, want %q", got, CacheAccountingUnknown)
 	}
 }
-
-func TestOnlyCachedCountsRaiseTheQuestion(t *testing.T) {
-	cases := map[string]struct {
-		field semconv.Field
-		want  bool
-	}{
-		"aggregate cache read": {semconv.UsageCacheReadInputTokens, true},
-		"cache write":          {semconv.UsageCacheWriteInputTokens, true},
-		"per-modality":         {semconv.UsageImageCacheReadInputTokens, true},
-		"plain input tokens":   {semconv.UsageInputTokens, false},
-		"reasoning output":     {semconv.UsageReasoningOutputTokens, false},
-	}
-	for name, tc := range cases {
-		p := Parsed{Fields: map[semconv.Field]Value{tc.field: Int(256)}}
-		if got := ReportsCacheTokens(p); got != tc.want {
-			t.Errorf("%s: ReportsCacheTokens = %v, want %v", name, got, tc.want)
-		}
-	}
-	if ReportsCacheTokens(Parsed{}) {
-		t.Error("a span with no fields at all reported cached tokens")
-	}
-}

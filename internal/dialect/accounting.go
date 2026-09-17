@@ -2,8 +2,6 @@
 
 package dialect
 
-import "github.com/Grace/genai-interlingua/internal/semconv"
-
 // CacheAccounting is what a dialect says about whether the cached-prompt tokens
 // it reports are already counted inside the input total it reports.
 //
@@ -65,28 +63,4 @@ func CacheAccountingOf(d Dialect, p Parsed) CacheAccounting {
 	default:
 		return CacheAccountingUnknown
 	}
-}
-
-// cacheFields is every field whose value is a cached-token count, including the
-// per-modality ones: a span that reports only gen_ai.usage.image.cache_read.
-// input_tokens raises the same question as one reporting the aggregate.
-var cacheFields = map[semconv.Field]bool{
-	semconv.UsageCacheReadInputTokens:      true,
-	semconv.UsageCacheWriteInputTokens:     true,
-	semconv.UsageTextCacheReadInputTokens:  true,
-	semconv.UsageImageCacheReadInputTokens: true,
-	semconv.UsageAudioCacheReadInputTokens: true,
-}
-
-// ReportsCacheTokens reports whether the parsed span carries any cached-token
-// count. The accounting question exists only then: a span with no cache counts
-// has nothing that could be double-counted, and stating a convention about
-// numbers it does not have would be noise on every span in the corpus.
-func ReportsCacheTokens(p Parsed) bool {
-	for f := range p.Fields {
-		if cacheFields[f] {
-			return true
-		}
-	}
-	return false
 }
