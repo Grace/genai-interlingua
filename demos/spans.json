@@ -6,7 +6,7 @@
     },
     "scoring_span": {
       "role": "scores only",
-      "note": "No model call and no tokens: a grader's verdicts, which Braintrust records as a span of their own with type score. It carries three scores — correctness, helpfulness and tone — and the conventions hold one evaluation per span, so braintrust.scores is listed below as flattened rather than one score being picked."
+      "note": "No model call and no tokens: a grader's verdicts, which Braintrust records as a span of their own with type score. It carries three scores \u2014 correctness, helpfulness and tone \u2014 and the conventions hold one evaluation per span, so braintrust.scores is listed below as flattened rather than one score being picked."
     }
   },
   "langchain": {
@@ -62,13 +62,29 @@
   "raw": {
     "chat gpt-4o-mini": {
       "role": "model call",
-      "note": "OpenTelemetry's own OpenAI instrumentation, named the way the conventions say to: operation, then model. The control case — already written in the conventions, so the translator should find almost nothing to do."
+      "note": "OpenTelemetry's own OpenAI instrumentation, named the way the conventions say to: operation, then model. The control case \u2014 already written in the conventions, so the translator should find almost nothing to do."
     }
   },
   "raw-folk": {
     "call_model": {
       "role": "model call",
       "note": "A hand-rolled span with bare names like model and prompt_tokens, the way an in-house wrapper might write them. No library emits these, so it is written by hand."
+    },
+    "call_model_sparse": {
+      "role": "model call",
+      "note": "One folk spelling and a token count under a name nothing reads. Two folk spellings used to be the minimum for the fallback to claim a span, so this one passed through untouched: a span manifestly reporting what a call spent, leaving with no record that the count had been walked past."
+    },
+    "call_model_camel": {
+      "role": "model call",
+      "note": "The same exchange with promptTokens and completionTokens, the camelCase an in-house wrapper reaches for. The fallback claims the span on model and provider and reads neither count, so both are named in interlingua.lossy rather than mapped on the strength of a word."
+    },
+    "call_model_packed": {
+      "role": "model call",
+      "note": "The whole usage object in one string, the shape LiteLLM's raw span carries. It is recognized and deliberately not parsed: lifting a number out of a Python repr by guessing at the shape is the silent mismapping the loss list exists to prevent."
+    },
+    "GET /v1/chat/completions": {
+      "role": "not a model call",
+      "note": "The negative control. It carries a token word in a rate-limit header and a model name, and it is not a model call. Most spans in a pipeline look like this, so a detector that claims it has done more damage than the gap it closed: it must leave with no interlingua.* at all."
     }
   },
   "vercel": {

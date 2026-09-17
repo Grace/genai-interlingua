@@ -1,4 +1,4 @@
-# 731a97a6a88ed466
+# 9538b9aeee97b3f9
 
 dialect braintrust
   rule provider.name <- gen_ai.provider.name,gen_ai.system
@@ -82,6 +82,7 @@ dialect braintrust
   signature braintrust.scores
   signature braintrust.span_attributes
   signature braintrust.tags
+  cache_accounting unknown
   means braintrust.input when="braintrust.span_attributes type=llm" -> input.messages
     candidates=
     byspelling=false
@@ -282,6 +283,7 @@ dialect litellm
   signature gen_ai.cost.total_cost
   signature litellm.call_id
   signature litellm.provider.model
+  cache_accounting unknown
   means gen_ai.completion.* when="" -> output.messages
     candidates=
     byspelling=false
@@ -459,6 +461,7 @@ dialect openinference
   unstated tool.call.result
   unstated tool.definitions
   signature openinference.span.kind
+  cache_accounting unknown
   means input.value when="openinference.span.kind=TOOL" -> tool.call.arguments
     candidates=
     byspelling=false
@@ -672,6 +675,7 @@ dialect openllmetry
   signature traceloop.entity.output
   signature traceloop.span.kind
   signature traceloop.workflow.name
+  cache_accounting unknown
   means gen_ai.completion.* when="" -> output.messages
     candidates=
     byspelling=false
@@ -718,6 +722,7 @@ dialect openllmetry
     value workflow=invoke_workflow
 dialect raw
   unruled
+  cache_accounting unknown
   means completion_tokens when="" -> usage.output_tokens
     candidates=
     byspelling=true
@@ -977,6 +982,7 @@ dialect vercel
   unstated system_instructions
   unstated tool.definitions
   signature ai.operationId
+  cache_accounting unknown
   means ai.prompt.messages when="" -> input.messages
     candidates=
     byspelling=false
@@ -1122,3 +1128,4 @@ target genai-main
   prompt.version -> gen_ai.prompt.version
   prompt.variable -> gen_ai.prompt.variable
   workflow.name -> gen_ai.workflow.name
+usage lexicon token,tokens | prompt,completion,input,output,in,out,total,reasoning,cache,cached | max,limit,ratelimit,remaining,reset,rate,budget,window,quota | usage,usage_object,token_usage,usagemetadata
