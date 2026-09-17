@@ -310,6 +310,20 @@ func (d liteLLM) losses(s Span, p *Parsed) {
 			p.Lose(k, ReasonNoField, "the conventions price nothing at any version")
 			continue
 		}
+		// The one metadata key that is not a tenancy dimension. It is the whole
+		// usage object as Python printed it, and it holds two counts the
+		// conventions do define -- reasoning tokens and cached tokens -- which
+		// the flat attributes beside it do not carry. Calling that no_field
+		// said the conventions have no concept for it, which is false: the
+		// concepts exist and this dialect declines to parse a Python repr to
+		// reach them. That is unstructured, and the difference matters to
+		// anyone pricing the call, because a dropped cached-token count prices
+		// every cached token at the full input rate.
+		if k == "metadata.usage_object" {
+			p.Lose(k, ReasonUnstructured,
+				"the whole usage object as a Python repr, including the reasoning and cached token counts the flat attributes omit")
+			continue
+		}
 		if strings.HasPrefix(k, "metadata.") {
 			p.Lose(k, ReasonNoField, "proxy tenancy dimensions the conventions do not model")
 		}

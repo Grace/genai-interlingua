@@ -194,3 +194,111 @@ func TestRawDoesNotReportUnrelatedAttributesAsLosses(t *testing.T) {
 		}
 	}
 }
+
+// A token count is evidence on its own, and these three spans are the gaps that
+// went unrecorded before it was. Each carries a quantity the span is manifestly
+// reporting and no mapping reads: unclaimed, they left the pipeline with no
+// interlingua.* on them at all, so nothing said the count had been walked past.
+// Claimed, the count is named in interlingua.lossy. Nothing here maps it.
+func TestRawClaimsASpanOnATokenCountAlone(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		span map[string]string
+	}{
+		{
+			// Under the two-folk-spelling threshold: one alias and a count
+			// nothing reads.
+			name: "one alias and an unread count",
+			span: map[string]string{
+				"model":      "gpt-4o-mini",
+				"tokens.out": "27",
+			},
+		},
+		{
+			// Spellings no library emits and rawAliases does not carry.
+			name: "unaliased counts",
+			span: map[string]string{
+				"tokens.in":  "412",
+				"tokens.out": "27",
+			},
+		},
+		{
+			name: "camelCase counts",
+			span: map[string]string{
+				"promptTokens":     "412",
+				"completionTokens": "27",
+			},
+		},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if n := (raw{}).Score(spanOf(c.span)); n == 0 {
+				t.Fatalf("raw declined a span reporting a token count: %v", c.span)
+			}
+		})
+	}
+}
+
+// The packed case: one string holding the whole usage object. It is claimed for
+// the same reason and parsed for none -- a Python repr is not a format this
+// reads, and lifting a number out of it by guessing at the shape would be the
+// silent mismapping the loss list exists to prevent.
+func TestRawClaimsAPackedUsageBlob(t *testing.T) {
+	s := Span{Attributes: map[string]Value{
+		"llm.openai.max_tokens": String("1024"),
+		"llm.openai.usage": String(
+			"{'completion_tokens': 27, 'prompt_tokens': 412, 'total_tokens': 439}"),
+	}}
+	if n := (raw{}).Score(s); n == 0 {
+		t.Fatal("raw declined a span carrying a packed usage object")
+	}
+	p := mustParse(t, s)
+	if _, ok := p.Fields[semconv.UsageInputTokens]; ok {
+		t.Error("a packed usage blob was parsed into an input token count; it must be recorded, not guessed at")
+	}
+	var named bool
+	for _, l := range p.Loss {
+		if l.Key == "llm.openai.usage" {
+			named = true
+		}
+	}
+	if !named {
+		t.Error("llm.openai.usage was not named in the loss list")
+	}
+}
+
+// The counterweight to the three tests above. Most spans in a pipeline are HTTP,
+// several of them carry a token word, and none of them is a model call. A
+// detector that claims one of these is worse than the gap it closed.
+func TestRawDeclinesCeilingsAndRateLimits(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		span map[string]string
+	}{
+		{
+			name: "rate limit headers on an http span",
+			span: map[string]string{
+				"http.request.method":                               "POST",
+				"http.response.header.x-ratelimit-remaining-tokens": "39616",
+				"http.response.header.x-ratelimit-limit-tokens":     "40000",
+			},
+		},
+		{
+			// A ceiling is not a quantity spent, so it is not evidence. Two
+			// folk aliases still claim a span on the older rule -- model plus
+			// max_tokens scores 2 and always has -- so this pairs the ceiling
+			// with a key that is not an alias, to ask only whether the ceiling
+			// itself brought anything.
+			name: "a request ceiling alone",
+			span: map[string]string{
+				"http.request.method": "POST",
+				"max_tokens":          "1024",
+			},
+		},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if n := (raw{}).Score(spanOf(c.span)); n != 0 {
+				t.Errorf("raw scored %d on %s, want 0", n, c.name)
+			}
+		})
+	}
+}

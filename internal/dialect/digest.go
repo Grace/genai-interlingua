@@ -130,6 +130,13 @@ func canonical() string {
 		}
 	}
 
+	// The usage lexicon decides two things no rule covers: which spans the
+	// fallback claims on a token count alone, and which unread keys are named
+	// in interlingua.lossy. Widening it makes spans arrive that did not before;
+	// narrowing it makes counts go unrecorded again. Both change what this build
+	// produces from the same input, which is what the digest is for.
+	fmt.Fprintf(&b, "usage lexicon %s\n", usageLexicon())
+
 	return b.String()
 }
 

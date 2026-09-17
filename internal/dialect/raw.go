@@ -82,9 +82,11 @@ var rawPayloads = []string{
 // span, a database span and a hand-rolled LLM span equally, and claiming all
 // three would be worse than claiming none.
 func (raw) Score(s Span) int {
-	conformant, folk := 0, 0
+	conformant, folk, usage := 0, 0, 0
 	for k, v := range s.Attributes {
 		if v.Empty() {
+			// An unreadable value can still be a packed usage object, but not
+			// one this codec can search, so it is not counted as evidence.
 			continue
 		}
 		if _, ok := semconv.FieldForKey(k); ok {
@@ -93,13 +95,24 @@ func (raw) Score(s Span) int {
 		}
 		if _, ok := rawAliases[k]; ok {
 			folk++
+			continue
+		}
+		if UsageShaped(k) || PackedUsage(k, v) {
+			usage++
 		}
 	}
 
-	if conformant == 0 && folk < 2 {
+	// A token count is evidence on its own, where a lone folk spelling is not.
+	// The asymmetry is deliberate: model belongs to a machine learning span, a
+	// database span and a hand-rolled LLM span equally, but a span that counts
+	// the tokens a call spent is a span about a model call whatever else it
+	// carries. Claiming it is what lets the count be named in interlingua.lossy
+	// instead of walked past -- and claiming it maps nothing, because a spelling
+	// no mapping reads is exactly the case where guessing would be wrong.
+	if conformant == 0 && folk < 2 && usage == 0 {
 		return 0
 	}
-	return conformant*2 + folk
+	return conformant*2 + folk + usage
 }
 
 // Interpretations are every reading this dialect performs, and every one of
