@@ -100,13 +100,6 @@ and `main` already differ):
 It also reconstructs indexed messages into a JSON string where this repository
 builds a nested document. That is a design difference, not a gap.
 
-**These differences are being taken upstream rather than maintained in
-competition.** A second component in this space would be worse for everyone than
-one good one; the useful thing this repository has is measurements and three
-more mapping tables built from captured spans, and those belong in the component
-that already has distribution. Progress is tracked in
-[`docs/upstream.md`](docs/upstream.md).
-
 Two adjacent components:
 [`processor/transform`](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor/transformprocessor)
 (general-purpose OTTL — which is why this repository can
